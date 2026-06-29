@@ -11,7 +11,7 @@ Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`
 - Use `bun test` instead of `jest` or `vitest`
-- Use `bun build <file.html|file.ts|file.css>` instead of `webpack` or `esbuild`
+- The frontend is bundled with **Vite** (see the Frontend section). Use `vite build` for the production build, not `bun build`, `webpack`, or `esbuild`.
 - Use `bun install` instead of `npm install` or `yarn install` or `pnpm install`
 - Use `bun run <script>` instead of `npm run <script>` or `yarn run <script>` or `pnpm run <script>`
 - Use `bunx <package> <command>` instead of `npx <package> <command>`
@@ -41,74 +41,47 @@ test("hello world", () => {
 
 ## Frontend
 
-Use HTML imports with `Bun.serve()`. Don't use `vite`. HTML imports fully support React, CSS, Tailwind.
+The frontend is a React SPA bundled with **Vite** (config in `vite.config.ts`). Bun stays the package manager / runtime — run Vite through it (`bun run dev`, `bun run build`, `bun run preview`).
 
-Server:
+- Entry: `index.html` at the project root loads `/src/frontend.tsx`, which mounts `<App />` into `#root`.
+- Dev server with HMR / React Fast Refresh: `bun run dev` (alias for `vite`).
+- Production build to `dist/`: `bun run build` (`vite build`). Preview it with `bun run preview`.
+- Vite handles `.tsx/.jsx/.ts/.js`, CSS, and asset imports (`.png`, `.svg` resolve to URL strings — see `src/vite-env.d.ts`).
+- Non-relative imports resolve against `baseUrl: "./src/"` and the `@/*` alias from `tsconfig.json`, wired into Vite via `vite-tsconfig-paths`.
+- Browser-exposed env vars use the `VITE_` prefix and are read via `import.meta.env.VITE_*`.
 
-```ts#index.ts
-import index from "./index.html"
+Emotion is the styling library and is configured in `vite.config.ts` through `@vitejs/plugin-react`:
 
-Bun.serve({
-  routes: {
-    "/": index,
-    "/api/users/:id": {
-      GET: (req) => {
-        return new Response(JSON.stringify({ id: req.params.id }));
-      },
-    },
-  },
-  // optional websocket support
-  websocket: {
-    open: (ws) => {
-      ws.send("Hello, world!");
-    },
-    message: (ws, message) => {
-      ws.send(message);
-    },
-    close: (ws) => {
-      // handle close
-    }
-  },
-  development: {
-    hmr: true,
-    console: true,
-  }
-})
+```ts#vite.config.ts
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tsconfigPaths from "vite-tsconfig-paths";
+
+export default defineConfig({
+  plugins: [
+    react({
+      jsxImportSource: "@emotion/react",
+      babel: { plugins: ["@emotion/babel-plugin"] },
+    }),
+    tsconfigPaths(),
+  ],
+});
 ```
 
-HTML files can import .tsx, .jsx or .js files directly and Bun's bundler will transpile & bundle automatically. `<link>` tags can point to stylesheets and Bun's CSS bundler will bundle.
+This enables the emotion `css` prop (`jsxImportSource`) and `@emotion/babel-plugin` (component labels + source maps for `styled`). Use `@emotion/styled` and `@emotion/react` (`Global`, `css`) for styling.
 
-```html#index.html
-<html>
-  <body>
-    <h1>Hello, world!</h1>
-    <script type="module" src="./frontend.tsx"></script>
-  </body>
-</html>
-```
-
-With the following `frontend.tsx`:
+`frontend.tsx` mounts the app:
 
 ```tsx#frontend.tsx
-import React from "react";
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { App } from "./App";
 
-// import .css files directly and it works
-import './index.css';
-
-const root = createRoot(document.body);
-
-export default function Frontend() {
-  return <h1>Hello, world!</h1>;
-}
-
-root.render(<Frontend />);
-```
-
-Then, run index.ts
-
-```sh
-bun --hot ./index.ts
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+);
 ```
 
 For more information, read the Bun API docs in `node_modules/bun-types/docs/**.mdx`.

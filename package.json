@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --hot src/index.ts",
-    "build": "bun build ./src/index.html --outdir=dist --sourcemap --target=browser --minify --define:process.env.NODE_ENV='\"production\"' --env='BUN_PUBLIC_*'",
-    "start": "NODE_ENV=production bun src/index.ts",
+    "dev": "bunx --bun vite",
+    "build": "bunx --bun vite build",
+    "preview": "bunx --bun vite preview",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -18,9 +18,12 @@
     "react-router": "8"
   },
   "devDependencies": {
-    "@types/bun": "latest",
+    "@emotion/babel-plugin": "^11.13.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "prettier": "^3.9.1"
+    "@vitejs/plugin-react": "^5.0.0",
+    "prettier": "^3.9.1",
+    "vite": "^7.0.0",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

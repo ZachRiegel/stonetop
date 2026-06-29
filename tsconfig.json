@@ -6,8 +6,9 @@
     "module": "Preserve",
     "moduleDetection": "force",
     "jsx": "react-jsx",
+    "jsxImportSource": "@emotion/react",
     "allowJs": true,
-    "types": ["bun", "react"],
+    "types": ["vite/client", "react"],
 
     // Bundler mode
     "moduleResolution": "bundler",

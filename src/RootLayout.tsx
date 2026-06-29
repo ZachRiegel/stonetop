@@ -5,6 +5,20 @@ const RootLayout = () => (
   <>
     <Global
       styles={css`
+        /* Grayscale palette: 0 = black (dark), 900 = white (light) */
+        :root,
+        dialog {
+          --neutral-0: #000000;
+          --neutral-100: #1c1c1c;
+          --neutral-200: #393939;
+          --neutral-300: #555555;
+          --neutral-400: #717171;
+          --neutral-500: #8e8e8e;
+          --neutral-600: #aaaaaa;
+          --neutral-700: #c6c6c6;
+          --neutral-800: #e3e3e3;
+          --neutral-900: #ffffff;
+        }
         /* 1. Use a more-intuitive box-sizing model */
         *,
         *::before,
