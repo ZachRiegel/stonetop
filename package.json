@@ -13,11 +13,14 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "aws-amplify": "^6.18.0",
     "react": "^19",
     "react-dom": "^19",
     "react-router": "8"
   },
   "devDependencies": {
+    "@aws-amplify/backend": "^1.23.0",
+    "@aws-amplify/backend-cli": "^1.8.3",
     "@emotion/babel-plugin": "^11.13.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
