@@ -3,16 +3,15 @@ backend:
   phases:
     build:
       commands:
-        - 'npm install -g bun'
-        - 'bun install --frozen-lockfile'
-        - 'bunx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID'
+        - 'yarn install --immutable'
+        - 'yarn dlx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID'
 frontend:
   phases:
     preBuild:
       commands:
     build:
       commands:
-        - 'bunx --bun vite build'
+        - 'yarn run build'
   artifacts:
     baseDirectory: dist
     files:

@@ -28,5 +28,6 @@
     "prettier": "^3.9.1",
     "vite": "^7.0.0",
     "vite-tsconfig-paths": "^5.1.4"
-  }
+  },
+  "packageManager": "yarn@4.17.0"
 }
