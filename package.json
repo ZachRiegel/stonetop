@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bunx --bun vite",
-    "build": "bunx --bun vite build",
-    "preview": "bunx --bun vite preview",
+    "dev": "yarn vite",
+    "build": "yarn vite build",
+    "preview": "yarn vite preview",
     "format": "../node_modules/.bin/prettier --write .",
     "format:check": "../node_modules/.bin/prettier --check ."
   },
