@@ -11,6 +11,7 @@
     "format:check": "../node_modules/.bin/prettier --check ."
   },
   "dependencies": {
+    "@aws-cdk/cli-plugin-contract": "2.182.2",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "aws-amplify": "^6.18.0",
@@ -21,10 +22,14 @@
   "devDependencies": {
     "@aws-amplify/backend": "^1.23.0",
     "@aws-amplify/backend-cli": "^1.8.3",
+    "@aws-sdk/types": "^3.973.14",
     "@emotion/babel-plugin": "^11.13.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.0.0",
+    "aws-cdk": "^2.1128.1",
+    "aws-cdk-lib": "^2.260.0",
+    "constructs": "^10.6.0",
     "prettier": "^3.9.1",
     "vite": "^7.0.0",
     "vite-tsconfig-paths": "^5.1.4"
