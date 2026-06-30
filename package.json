@@ -7,8 +7,8 @@
     "dev": "bunx --bun vite",
     "build": "bunx --bun vite build",
     "preview": "bunx --bun vite preview",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "../node_modules/.bin/prettier --write .",
+    "format:check": "../node_modules/.bin/prettier --check ."
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

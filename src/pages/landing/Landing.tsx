@@ -1,9 +1,9 @@
 import { useState } from "react";
 import styled from "@emotion/styled";
 
-import Text from "components/Text";
-import Input from "components/Input";
-import Button from "components/Button";
+import Text from "components/Text.tsx";
+import Input from "components/Input.tsx";
+import Button from "components/Button.tsx";
 
 import background from "assets/background.png";
 import footer from "./footer.png";
