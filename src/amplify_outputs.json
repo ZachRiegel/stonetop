@@ -1,0 +1,131 @@
+{
+  "auth": {
+    "user_pool_id": "us-west-1_EnzIYqcNN",
+    "aws_region": "us-west-1",
+    "user_pool_client_id": "2ceoqf4nnlscvdojk0p1gi358p",
+    "identity_pool_id": "us-west-1:2e3bcdb0-1fc5-4035-b214-37003cf38c54",
+    "mfa_methods": [],
+    "standard_required_attributes": [
+      "email"
+    ],
+    "username_attributes": [
+      "email"
+    ],
+    "user_verification_types": [
+      "email"
+    ],
+    "groups": [],
+    "mfa_configuration": "NONE",
+    "password_policy": {
+      "min_length": 8,
+      "require_lowercase": true,
+      "require_numbers": true,
+      "require_symbols": true,
+      "require_uppercase": true
+    },
+    "oauth": {
+      "identity_providers": [],
+      "redirect_sign_in_uri": [
+        "http://localhost:5173"
+      ],
+      "redirect_sign_out_uri": [
+        "http://localhost:5173"
+      ],
+      "response_type": "code",
+      "scopes": [
+        "phone",
+        "email",
+        "openid",
+        "profile",
+        "aws.cognito.signin.user.admin"
+      ],
+      "domain": "b8c636f028d7e5f87ed4.auth.us-west-1.amazoncognito.com"
+    },
+    "unauthenticated_identities_enabled": true
+  },
+  "data": {
+    "url": "https://yifka52gpveynbnqplbma7u5du.appsync-api.us-west-1.amazonaws.com/graphql",
+    "aws_region": "us-west-1",
+    "api_key": "da2-wmhw7w4muzgtbf6ceyaai2hbr4",
+    "default_authorization_type": "API_KEY",
+    "authorization_types": [
+      "AMAZON_COGNITO_USER_POOLS",
+      "AWS_IAM"
+    ],
+    "model_introspection": {
+      "version": 1,
+      "models": {
+        "TestingTable": {
+          "name": "TestingTable",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "content": {
+              "name": "content",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "TestingTables",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        }
+      },
+      "enums": {},
+      "nonModels": {}
+    }
+  },
+  "version": "1.3"
+}

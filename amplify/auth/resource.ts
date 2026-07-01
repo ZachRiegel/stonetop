@@ -15,7 +15,7 @@ export const auth = defineAuth({
            */
           clientId: secret("authClient"),
           clientSecret: secret("authSecret"),
-          issuerUrl: "https://your-domain.jp.auth0.com",
+          issuerUrl: "https://dev-upwpy2prgrn2zopf.us.auth0.com",
           scopes: ["openid", "profile", "email", "name"],
         },
       ],

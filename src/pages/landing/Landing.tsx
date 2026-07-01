@@ -5,6 +5,8 @@ import Text from "components/Text.tsx";
 import Input from "components/Input.tsx";
 import Button from "components/Button.tsx";
 
+import { signInWithRedirect } from "aws-amplify/auth";
+
 import background from "assets/background.png";
 import footer from "./footer.png";
 
@@ -24,15 +26,6 @@ const Content = styled.div`
   padding-top: 12vh;
 `;
 
-const Login = styled.form`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  width: 280px;
-  padding: 24px;
-`;
-
 const Footer = styled.img`
   display: block;
   position: fixed;
@@ -50,7 +43,10 @@ const Landing = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
+    await signInWithRedirect({
+      provider: { custom: "auth0" },
+    });
     // TODO: wire up authentication
     console.log("Log in", { username, password });
   };
@@ -61,16 +57,7 @@ const Landing = () => {
         <h1>
           <Text.Title80 text="Stonetop" />
         </h1>
-        <Login
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleLogin();
-          }}
-        >
-          <Input placeholder="Username" value={username} onChange={setUsername} />
-          <Input placeholder="Password" type="password" value={password} onChange={setPassword} />
-          <Button type="submit" text="Log In" />
-        </Login>
+        <Button type="submit" text="Log In" onClick={handleLogin} />
       </Content>
       <Footer src={footer} alt="" />
     </Page>

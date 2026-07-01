@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { TextCSS } from "./Text.tsx";
 
 const ButtonInternals = ({
   text,
@@ -17,17 +18,15 @@ const ButtonInternals = ({
 );
 
 const Button = styled(ButtonInternals)`
-  width: 100%;
-  padding: 12px 16px;
+  flex: 1;
+  min-width: 200px;
+  padding: 16px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 16px;
   cursor: pointer;
   background: var(--neutral-0);
   color: var(--neutral-900);
-  font-family: "adobe-caslon-pro", serif;
-  font-weight: 600;
-  font-style: normal;
-  font-size: 16px;
+  ${TextCSS.Normal16}
 `;
 
 export default Button;
