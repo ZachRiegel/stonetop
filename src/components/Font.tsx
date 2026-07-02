@@ -1,12 +1,23 @@
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
+import type { ElementType } from "react";
 
-const TextInternals = ({ text, className }: { text: string; className?: string }) => (
-  <span className={className}>{text}</span>
-);
+const TextInternals = ({
+  text,
+  className,
+  element: Element = "span",
+}: {
+  text: string;
+  className?: string;
+  element?: ElementType;
+}) => <Element className={className}>{text}</Element>;
 
 const BaseText = styled(TextInternals)`
-  display: contents;
+  ${({ element }) =>
+    !element &&
+    css`
+      display: contents;
+    `}
   font-family: "adobe-caslon-pro", serif;
   color: var(--neutral-700);
 `;
@@ -120,7 +131,7 @@ export const TextCSS = {
   `,
 };
 
-const Text = {
+const Font = {
   Normal14: styled(BaseText)(TextCSS.Normal14),
   Semibold14: styled(BaseText)(TextCSS.Semibold14),
 
@@ -146,4 +157,4 @@ const Text = {
   Title80: styled(BaseText)(TextCSS.Title80),
 };
 
-export default Text;
+export default Font;

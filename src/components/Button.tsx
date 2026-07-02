@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { TextCSS } from "./Text.tsx";
+import { TextCSS } from "./Font.tsx";
 
 const ButtonInternals = ({
   text,

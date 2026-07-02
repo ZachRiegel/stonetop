@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import styled from "@emotion/styled";
 
-import Text from "components/Text.tsx";
+import Font from "components/Font.tsx";
 import Input from "components/Input.tsx";
 import Button from "components/Button.tsx";
 
-import { signInWithRedirect } from "aws-amplify/auth";
+import { fetchAuthSession, getCurrentUser, signInWithRedirect } from "aws-amplify/auth";
 
 import background from "assets/background.png";
 import footer from "./footer.png";
+import { useNavigate } from "react-router";
 
 const Page = styled.div`
   display: flow-root;
@@ -39,23 +40,23 @@ const Footer = styled.img`
   opacity: 0.6;
 `;
 
-const Landing = () => {
+const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     await signInWithRedirect({
       provider: { custom: "auth0" },
     });
-    // TODO: wire up authentication
-    console.log("Log in", { username, password });
+    navigate("/");
   };
 
   return (
     <Page>
       <Content>
         <h1>
-          <Text.Title80 text="Stonetop" />
+          <Font.Title80 text="Stonetop" />
         </h1>
         <Button type="submit" text="Log In" onClick={handleLogin} />
       </Content>
@@ -64,4 +65,4 @@ const Landing = () => {
   );
 };
 
-export default Landing;
+export default Login;

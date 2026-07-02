@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import * as React from "react";
 import type { HTMLInputTypeAttribute } from "react";
-import { TextCSS } from "./Text.tsx";
+import { TextCSS } from "./Font.tsx";
 
 const InputInternals = ({
   value,

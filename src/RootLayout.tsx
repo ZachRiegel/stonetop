@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import { Global, css } from "@emotion/react";
+import { Suspense } from "react";
 
 const RootLayout = () => (
   <>
@@ -90,13 +91,25 @@ const RootLayout = () => (
         * {
           box-sizing: border-box;
         }
-
+        dialog {
+          width: 100vw;
+          height: 100vh;
+          background-color: transparent;
+          margin: 0;
+          padding: 0;
+          outline: none;
+          border: none;
+          max-width: unset;
+          max-height: unset;
+        }
         body {
           margin: 0;
         }
       `}
     />
-    <Outlet />
+    <Suspense>
+      <Outlet />
+    </Suspense>
   </>
 );
 
