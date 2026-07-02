@@ -7,19 +7,20 @@ const IconSvgs = {
 
 type IconName = keyof typeof IconSvgs;
 
-type IconPropsInternal = { icon: IconName; className?: string };
+type IconPropsInternal = { icon: IconName; className?: string; size: number };
 export type IconProps = Omit<IconPropsInternal, "icon">;
 
-const IconInternal = ({ icon, className }: IconPropsInternal) => (
+const IconInternal = ({ icon, className, size }: IconPropsInternal) => (
   <div className={className} dangerouslySetInnerHTML={{ __html: IconSvgs[icon] }} />
 );
 
-const StyledIcon = styled(IconInternal)`
+const StyledIcon = styled(IconInternal)<{ size: number }>`
   display: inline-flex;
 
   & svg {
-    width: 32px;
-    height: 32px;
+    --size: ${(props) => props.size}px;
+    width: var(--size);
+    height: var(--size);
     fill: currentColor;
     stroke: currentColor;
   }

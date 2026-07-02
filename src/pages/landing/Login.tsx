@@ -12,12 +12,16 @@ import footer from "./footer.png";
 import { useNavigate } from "react-router";
 
 const Page = styled.div`
-  display: flow-root;
+  display: grid;
+  justify-content: center;
+  align-content: center;
+  align-items: center;
   min-width: 100vw;
   min-height: 100vh;
   background-image: url("${background}");
   background-size: 100% 100%;
   background-repeat: no-repeat;
+  grid-template-rows: 1fr auto;
 `;
 
 const Content = styled.div`
@@ -25,21 +29,18 @@ const Content = styled.div`
   flex-direction: column;
   align-items: center;
   gap: 24px;
-  padding-top: 12vh;
+  height: max-content;
 `;
 
 const Footer = styled.img`
   display: block;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
   max-height: 600px;
   min-width: 100vw;
   object-position: top;
   object-fit: cover;
   mix-blend-mode: screen;
   opacity: 0.6;
+  aspect-ratio: 3309 / 1127;
 `;
 
 const Login = () => {
@@ -58,7 +59,7 @@ const Login = () => {
         <h1>
           <Font.Title80 text="Stonetop" />
         </h1>
-        <Button.Default type="submit" text="Log In" onClick={handleLogin} />
+        <Button.Primary type="submit" text="Log In" onClick={handleLogin} />
       </Content>
       <Footer src={footer} alt="" />
     </Page>

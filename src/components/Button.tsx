@@ -16,7 +16,7 @@ const ButtonInternals = ({
   Icon?: React.FC<IconProps>;
 }) => (
   <button className={className} type={type} onClick={onClick}>
-    {Icon && <Icon />}
+    {Icon && <Icon size={24} />}
     {text}
   </button>
 );
@@ -25,6 +25,7 @@ const BaseButton = styled(ButtonInternals)`
   display: flex;
   flex-direction: row;
   justify-content: center;
+  align-items: center;
   gap: 8px;
   flex: 1;
   min-width: 200px;
@@ -54,7 +55,6 @@ const Button = {
   `,
   Secondary: styled(BaseButton)`
     background: var(--neutral-100);
-    border-color: var(--neutral-100);
     color: var(--neutral-700);
     &:hover {
       background: var(--neutral-200);
@@ -66,14 +66,13 @@ const Button = {
     }
   `,
   Primary: styled(BaseButton)`
-    background: var(--neutral-300);
-    border-color: var(--neutral-300);
+    background: var(--neutral-400);
     color: var(--neutral-900);
     &:hover {
-      background: var(--neutral-400);
+      background: var(--neutral-500);
     }
     &:active {
-      background: var(--neutral-500);
+      background: var(--neutral-600);
     }
   `,
 };

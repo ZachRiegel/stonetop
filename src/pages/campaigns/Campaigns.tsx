@@ -43,7 +43,7 @@ const Card = styled.div`
 `;
 
 const CardHeader = styled.div`
-  padding: 12px 20px;
+  padding: 12px 20px 4px;
 `;
 
 const ScrollArea = styled.div`
@@ -71,7 +71,7 @@ const EmptyState = styled.div`
   text-align: center;
 
   img {
-    width: min(200px, 60%);
+    height: 300px;
     mix-blend-mode: screen;
   }
 `;
@@ -130,7 +130,7 @@ const Campaigns = () => {
         </ScrollArea>
         <CardBottom>
           <Button.Primary
-            icon={Icon.Plus}
+            Icon={Icon.Plus}
             text="Create campaign"
             onClick={() => setCreating(true)}
           />

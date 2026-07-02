@@ -5,7 +5,7 @@ import RootLayout from "RootLayout.tsx";
 import Login from "pages/landing/Login.tsx";
 import Campaigns from "pages/campaigns/Campaigns.tsx";
 import { Amplify } from "aws-amplify";
-import outputs from "./amplify_outputs.json";
+import outputs from "../amplify_outputs.json";
 import AuthenticatedLayout from "./AuthenticatedLayout.tsx";
 
 const configureAmplify = (() => {
