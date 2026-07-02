@@ -1,23 +1,31 @@
 import styled from "@emotion/styled";
 import { FontCSS } from "./Font.tsx";
+import { type IconProps } from "./Icon.tsx";
 
 const ButtonInternals = ({
   text,
   onClick,
   type = "button",
   className,
+  Icon,
 }: {
   text: string;
   onClick?: () => void;
   type?: "button" | "submit" | "reset";
   className?: string;
+  Icon?: React.FC<IconProps>;
 }) => (
   <button className={className} type={type} onClick={onClick}>
+    {Icon && <Icon />}
     {text}
   </button>
 );
 
 const BaseButton = styled(ButtonInternals)`
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
   flex: 1;
   min-width: 200px;
   max-height: 54px;
@@ -25,15 +33,12 @@ const BaseButton = styled(ButtonInternals)`
   border: 2px solid transparent;
   border-radius: 16px;
   cursor: pointer;
-  transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+  ${FontCSS.Bold20}
+
   &:focus-visible {
     outline: 2px solid var(--neutral-700);
     outline-offset: 2px;
   }
-  ${FontCSS.Bold20}
 `;
 
 const Button = {
@@ -65,10 +70,10 @@ const Button = {
     border-color: var(--neutral-300);
     color: var(--neutral-900);
     &:hover {
-      background: var(--neutral-700);
+      background: var(--neutral-400);
     }
     &:active {
-      background: var(--neutral-800);
+      background: var(--neutral-500);
     }
   `,
 };

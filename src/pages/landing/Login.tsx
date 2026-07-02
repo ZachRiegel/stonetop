@@ -5,9 +5,9 @@ import Font from "components/Font.tsx";
 import Input from "components/Input.tsx";
 import Button from "components/Button.tsx";
 
-import { fetchAuthSession, getCurrentUser, signInWithRedirect } from "aws-amplify/auth";
+import { signInWithRedirect } from "aws-amplify/auth";
 
-import background from "assets/background.png";
+import background from "assets/background.svg";
 import footer from "./footer.png";
 import { useNavigate } from "react-router";
 
@@ -15,8 +15,9 @@ const Page = styled.div`
   display: flow-root;
   min-width: 100vw;
   min-height: 100vh;
-  background-image: url(${background});
-  background-size: auto;
+  background-image: url("${background}");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 `;
 
 const Content = styled.div`
@@ -33,16 +34,15 @@ const Footer = styled.img`
   bottom: 0;
   left: 0;
   right: 0;
-  max-height: 400px;
+  max-height: 600px;
   min-width: 100vw;
   object-position: top;
+  object-fit: cover;
   mix-blend-mode: screen;
   opacity: 0.6;
 `;
 
 const Login = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async () => {

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aws-cdk/cli-plugin-contract": "2.182.2",
+    "@aws-sdk/util-dynamodb": "^3.996.5",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "aws-amplify": "^6.18.0",
@@ -26,6 +27,8 @@
     "@aws-amplify/backend-cli": "^1.8.3",
     "@aws-sdk/types": "^3.973.14",
     "@emotion/babel-plugin": "^11.13.5",
+    "@types/aws-lambda": "^8.10.162",
+    "@types/node": "^26.1.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.0.0",

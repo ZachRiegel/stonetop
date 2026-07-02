@@ -5,11 +5,13 @@ import { generateClient } from "aws-amplify/data";
 import type { Schema } from "../../../amplify/data/resource";
 
 import Button from "components/Button.tsx";
-import Font, { FontCSS } from "components/Font.tsx";
+import Font from "components/Font.tsx";
 
 import CreateCampaignDialog from "pages/campaigns/CreateCampaignForm.tsx";
 
-import background from "assets/background.png";
+import background from "assets/background.svg";
+import misc from "pages/campaigns/misc.png";
+import Icon from "components/Icon.tsx";
 
 const client = generateClient<Schema>();
 
@@ -19,11 +21,12 @@ const Page = styled.div`
   min-width: 100vw;
   min-height: 100vh;
 
-  background-image: url(${background});
-  background-size: auto;
+  background-image: url("${background}");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 
   display: grid;
-  grid-template-rows: 1fr max-content 2fr;
+  grid-template-rows: 1fr max-content 1fr;
   justify-content: center;
 `;
 
@@ -34,7 +37,7 @@ const Card = styled.div`
   width: min(360px, calc(100vw - 32px));
   max-height: 70vh;
   border-radius: 16px;
-  background-color: var(--neutral-25);
+  background-color: var(--neutral-75);
   overflow: hidden;
   box-shadow: 8px 8px 12px 12px rgba(0 0 0 / 0.3);
 `;
@@ -52,17 +55,30 @@ const ScrollArea = styled.div`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 12px 20px;
-  background-color: var(--neutral-25);
   scrollbar-color: var(--neutral-300) transparent;
   scrollbar-width: thin;
   border-top: 1px solid var(--neutral-100);
   border-bottom: 1px solid var(--neutral-100);
 `;
 
+const EmptyState = styled.div`
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+
+  img {
+    width: min(200px, 60%);
+    mix-blend-mode: screen;
+  }
+`;
+
 const CardBottom = styled.div`
   display: flex;
   padding: 16px 24px;
-  background: var(--neutral-25);
 `;
 
 const Campaigns = () => {
@@ -94,21 +110,30 @@ const Campaigns = () => {
     <Page>
       <Card>
         <CardHeader>
-          <h1>
-            <Font.Title40 text="My Campaigns" />
-          </h1>
+          <Font.Bold32 element="h1" text="Campaigns" />
         </CardHeader>
         <ScrollArea>
-          {campaigns.map((campaign) => (
-            <Button.Secondary
-              key={campaign.id}
-              text={campaign.name}
-              onClick={() => {}} // TODO: navigate to campaign page
-            />
-          ))}
+          {campaigns.length === 0 ? (
+            <EmptyState>
+              <img src={misc} alt="" />
+              <Font.Italic16 text="Would you like to start a new adventure?" />
+            </EmptyState>
+          ) : (
+            campaigns.map((campaign) => (
+              <Button.Secondary
+                key={campaign.id}
+                text={campaign.name}
+                onClick={() => {}} // TODO: navigate to campaign page
+              />
+            ))
+          )}
         </ScrollArea>
         <CardBottom>
-          <Button.Primary text="Create campaign" onClick={() => setCreating(true)} />
+          <Button.Primary
+            icon={Icon.Plus}
+            text="Create campaign"
+            onClick={() => setCreating(true)}
+          />
         </CardBottom>
       </Card>
       <CreateCampaignDialog

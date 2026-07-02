@@ -22,7 +22,7 @@ const Header = styled.div`
   padding: 8px 12px;
   cursor: pointer;
   border-radius: 8px;
-  //min-width: 200px;
+  min-width: 200px;
   max-width: 200px;
 
   &:hover {
