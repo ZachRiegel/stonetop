@@ -73,7 +73,7 @@ const Modal = styled(ModalInternals)<{ isOpen: boolean }>`
 
   & section {
     isolation: isolate;
-    animation: ${(props) => (props.isOpen ? FadeIn : FadeOut)} 3000ms linear;
+    animation: ${(props) => (props.isOpen ? FadeIn : FadeOut)} 300ms linear;
     animation-fill-mode: both;
   }
 

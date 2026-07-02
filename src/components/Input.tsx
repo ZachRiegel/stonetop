@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import * as React from "react";
 import type { HTMLInputTypeAttribute } from "react";
-import { TextCSS } from "./Font.tsx";
+import { FontCSS } from "./Font.tsx";
 
 const InputInternals = ({
   value,
@@ -31,7 +31,7 @@ const Input = styled(InputInternals)`
   border: 1px solid var(--neutral-600);
   border-radius: 12px;
   background: transparent;
-  ${TextCSS.Normal16}
+  ${FontCSS.Normal16}
 `;
 
 export default Input;

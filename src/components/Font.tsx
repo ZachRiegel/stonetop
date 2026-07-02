@@ -22,7 +22,7 @@ const BaseText = styled(TextInternals)`
   color: var(--neutral-700);
 `;
 
-export const TextCSS = {
+export const FontCSS = {
   Normal14: css`
     font-weight: 400;
     font-style: normal;
@@ -132,29 +132,29 @@ export const TextCSS = {
 };
 
 const Font = {
-  Normal14: styled(BaseText)(TextCSS.Normal14),
-  Semibold14: styled(BaseText)(TextCSS.Semibold14),
+  Normal14: styled(BaseText)(FontCSS.Normal14),
+  Semibold14: styled(BaseText)(FontCSS.Semibold14),
 
-  Normal16: styled(BaseText)(TextCSS.Normal16),
-  Italic16: styled(BaseText)(TextCSS.Italic16),
-  Semibold16: styled(BaseText)(TextCSS.Semibold16),
-  SemiboldItalic16: styled(BaseText)(TextCSS.SemiboldItalic16),
-  Bold16: styled(BaseText)(TextCSS.Bold16),
-  BoldItalic16: styled(BaseText)(TextCSS.BoldItalic16),
+  Normal16: styled(BaseText)(FontCSS.Normal16),
+  Italic16: styled(BaseText)(FontCSS.Italic16),
+  Semibold16: styled(BaseText)(FontCSS.Semibold16),
+  SemiboldItalic16: styled(BaseText)(FontCSS.SemiboldItalic16),
+  Bold16: styled(BaseText)(FontCSS.Bold16),
+  BoldItalic16: styled(BaseText)(FontCSS.BoldItalic16),
 
-  Semibold20: styled(BaseText)(TextCSS.Semibold20),
-  Bold20: styled(BaseText)(TextCSS.Bold20),
+  Semibold20: styled(BaseText)(FontCSS.Semibold20),
+  Bold20: styled(BaseText)(FontCSS.Bold20),
 
-  Bold24: styled(BaseText)(TextCSS.Bold24),
-  Bold32: styled(BaseText)(TextCSS.Bold32),
+  Bold24: styled(BaseText)(FontCSS.Bold24),
+  Bold32: styled(BaseText)(FontCSS.Bold32),
 
-  Title20: styled(BaseText)(TextCSS.Title20),
-  Title24: styled(BaseText)(TextCSS.Title24),
-  Title32: styled(BaseText)(TextCSS.Title32),
-  Title40: styled(BaseText)(TextCSS.Title40),
-  Title48: styled(BaseText)(TextCSS.Title48),
-  Title64: styled(BaseText)(TextCSS.Title64),
-  Title80: styled(BaseText)(TextCSS.Title80),
+  Title20: styled(BaseText)(FontCSS.Title20),
+  Title24: styled(BaseText)(FontCSS.Title24),
+  Title32: styled(BaseText)(FontCSS.Title32),
+  Title40: styled(BaseText)(FontCSS.Title40),
+  Title48: styled(BaseText)(FontCSS.Title48),
+  Title64: styled(BaseText)(FontCSS.Title64),
+  Title80: styled(BaseText)(FontCSS.Title80),
 };
 
 export default Font;

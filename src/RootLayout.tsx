@@ -10,14 +10,25 @@ const RootLayout = () => (
         :root,
         dialog {
           --neutral-0: #000000;
+          --neutral-25: #070707;
+          --neutral-50: #0e0e0e;
+          --neutral-75: #151515;
           --neutral-100: #1c1c1c;
+          --neutral-150: #2b2b2b;
           --neutral-200: #393939;
+          --neutral-250: #474747;
           --neutral-300: #555555;
+          --neutral-350: #636363;
           --neutral-400: #717171;
+          --neutral-450: #808080;
           --neutral-500: #8e8e8e;
+          --neutral-550: #9c9c9c;
           --neutral-600: #aaaaaa;
+          --neutral-650: #b8b8b8;
           --neutral-700: #c6c6c6;
+          --neutral-750: #d5d5d5;
           --neutral-800: #e3e3e3;
+          --neutral-850: #f1f1f1;
           --neutral-900: #ffffff;
         }
         /* 1. Use a more-intuitive box-sizing model */

@@ -37,8 +37,8 @@ const CreateCampaignForm = ({
     <Font.Bold24 element="h2" text="Create campaign" />
     <Input value={name} onChange={(value) => onNameChange(value)} placeholder="Campaign name" />
     <Actions>
-      <Button text="Create" onClick={onCreate} />
-      <Button text="Cancel" onClick={close} />
+      <Button.Primary text="Create" onClick={onCreate} />
+      <Button.Secondary text="Cancel" onClick={close} />
     </Actions>
   </Card>
 );

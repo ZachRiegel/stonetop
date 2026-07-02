@@ -58,7 +58,7 @@ const Login = () => {
         <h1>
           <Font.Title80 text="Stonetop" />
         </h1>
-        <Button type="submit" text="Log In" onClick={handleLogin} />
+        <Button.Default type="submit" text="Log In" onClick={handleLogin} />
       </Content>
       <Footer src={footer} alt="" />
     </Page>
