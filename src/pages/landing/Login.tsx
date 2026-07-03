@@ -1,15 +1,25 @@
-import { use, useState } from "react";
+import { css, Global } from "@emotion/react";
 import styled from "@emotion/styled";
 
 import Font from "components/Font.tsx";
-import Input from "components/Input.tsx";
 import Button from "components/Button.tsx";
+import Icon from "components/Icon.tsx";
 
 import { signInWithRedirect } from "aws-amplify/auth";
 
 import background from "assets/background.svg";
 import footer from "./footer.png";
+import gintoWoff from "./ABCGintoDiscord-Medium.woff";
 import { useNavigate } from "react-router";
+
+const discordFont = css`
+  @font-face {
+    font-family: "ABC Ginto Discord";
+    src: url("${gintoWoff}") format("woff");
+    font-weight: 500;
+    font-style: normal;
+  }
+`;
 
 const Page = styled.div`
   display: grid;
@@ -43,6 +53,23 @@ const Footer = styled.img`
   aspect-ratio: 3309 / 1127;
 `;
 
+const DiscordButton = styled(Button.Primary)`
+  font-family: "ABC Ginto Discord", "gg sans", "Helvetica Neue", sans-serif;
+  font-weight: 500;
+  color: #e0e3ff;
+  background: #5865f2;
+  --icon-size: 32px;
+  & > span:first-child {
+    gap: 12px;
+  }
+  &:where(:hover:not(:disabled)) {
+    background: #4752c4;
+  }
+  &:where(:active:not(:disabled)) {
+    background: #3c45a5;
+  }
+`;
+
 const Login = () => {
   const navigate = useNavigate();
 
@@ -55,11 +82,17 @@ const Login = () => {
 
   return (
     <Page>
+      <Global styles={discordFont} />
       <Content>
         <h1>
           <Font.Title80 text="Stonetop" />
         </h1>
-        <Button.Primary type="submit" text="Log In" onClick={handleLogin} />
+        <DiscordButton
+          type="submit"
+          text="Sign in with Discord"
+          onClick={handleLogin}
+          Icon={Icon.Discord}
+        />
       </Content>
       <Footer src={footer} alt="" />
     </Page>

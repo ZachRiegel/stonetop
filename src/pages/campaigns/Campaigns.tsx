@@ -2,7 +2,16 @@ import { useState } from "react";
 import styled from "@emotion/styled";
 import { Link } from "react-router";
 
-import { client, useObserveQuery, useCurrentUser, type CurrentUser } from "amplify.ts";
+import {
+  client,
+  useObserveQuery,
+  useCurrentUser,
+  type CurrentUser,
+  type Selected,
+  type Query,
+  defineQuery,
+  type QueryResult,
+} from "amplify.ts";
 
 import Button from "components/Button.tsx";
 import Font, { FontCSS } from "components/Font.tsx";
@@ -13,13 +22,7 @@ import background from "assets/background.svg";
 import misc from "pages/campaigns/misc.png";
 import footer from "pages/campaigns/footer.png";
 import Icon from "components/Icon.tsx";
-
-// The implicit owner field holds the sub, the username, or "<sub>::<username>"
-// (with federated sign-in ours stores the username, e.g. "auth0_oauth2|discord|...")
-const isOwnedBy = (owner: string | null | undefined, user: CurrentUser | undefined) =>
-  !!user &&
-  !!owner &&
-  owner.split("::").some((part) => part === user.userId || part === user.username);
+import _ from "lodash";
 
 const Page = styled.div`
   min-width: 100vw;
@@ -142,42 +145,37 @@ const CampaignLink = styled(Link)`
   }
 `;
 
+const query = defineQuery("Campaign", [
+  "id",
+  "name",
+  "owner",
+  "members",
+  "characters.*",
+  "characters.user.picture",
+  "characters.user.id",
+]);
+type CampaignResult = QueryResult<typeof query>;
+
 const Campaigns = () => {
-  const campaigns = useObserveQuery("Campaign", [
-    "id",
-    "name",
-    "owner",
-    "members",
-    "characters.*",
-    "characters.owner",
-  ]);
-  const profiles = useObserveQuery("UserProfile", ["id", "name", "picture"]);
+  const campaigns = useObserveQuery(query);
   const user = useCurrentUser();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
 
-  const characterLine = (campaign: (typeof campaigns)[number]) =>
-    isOwnedBy(campaign.owner, user)
-      ? "Game Master"
-      : (campaign.characters.find((character) => isOwnedBy(character.owner, user))?.name ??
-        "No character yet");
-
-  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
-
-  // Profiles of the campaign's members (owner + members, deduped), photo-first
-  const memberProfiles = (campaign: (typeof campaigns)[number]) => [
-    ...new Map(
-      [...(campaign.owner?.split("::") ?? []), ...(campaign.members ?? [])]
-        .flatMap((username) => (username && profileById.get(username)) || [])
-        .filter((profile) => profile.picture)
-        .map((profile) => [profile.id, profile] as const),
-    ).values(),
-  ];
+  const characterLine = (campaign: CampaignResult) => {
+    return !user
+      ? "Loading..."
+      : user.username === campaign.owner
+        ? "Game Master"
+        : (campaign.characters.find((character) => character.owner === user.username)?.name ??
+          "No character yet");
+  };
 
   const createCampaign = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    await client.models.Campaign.create({ name: trimmed });
+    if (!user) return;
+    await client.models.Campaign.create({ name: trimmed, members: [user?.userId] });
     setName("");
     setCreating(false);
   };
@@ -195,7 +193,9 @@ const Campaigns = () => {
           <Font.Bold32 element="h1" text="Campaigns" />
         </CardHeader>
         <ScrollArea>
-          {campaigns.length === 0 ? (
+          {!campaigns ? (
+            "nothng loaded"
+          ) : campaigns.length === 0 ? (
             <EmptyState>
               <img src={misc} alt="" />
               <Font.Italic16
@@ -209,15 +209,15 @@ Ask your Game Master to invite you or create one.`}
               <CampaignLabel key={campaign.id} href={`/campaigns/${campaign.id}`}>
                 <Font.Bold20 text={campaign.name} />
                 <Font.Italic16 element="div" text={characterLine(campaign)} />
-                {memberProfiles(campaign).length > 0 && (
+
+                {!!campaign.characters.length && (
                   <AvatarRow>
-                    {memberProfiles(campaign).map((profile) => (
-                      <Avatar
-                        key={profile.id}
-                        src={profile.picture ?? undefined}
-                        alt={profile.name ?? ""}
-                      />
-                    ))}
+                    {_.chain(campaign.characters)
+                      .map((character) => character.user)
+                      .uniqBy((user) => user.id)
+                      .filter((user) => !!user.picture)
+                      .map((user) => <Avatar key={user.id} src={user.picture!} alt={""} />)
+                      .value()}
                   </AvatarRow>
                 )}
               </CampaignLabel>

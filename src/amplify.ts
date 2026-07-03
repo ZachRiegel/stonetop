@@ -12,40 +12,48 @@ export type CurrentUser = GetCurrentUserOutput;
 type ModelName = keyof Schema & keyof typeof client.models;
 type FlatModel<M extends ModelName> = Schema[M]["__meta"]["flatModel"];
 
-// The result type of selecting the paths S from model M. Note: SelectionSet's
-// default third type parameter silently resolves to `any` for a generic M, so
-// FlatModel<M> must be passed explicitly.
-export type Selected<
-  M extends ModelName,
-  S extends ReadonlyArray<ModelPath<FlatModel<M>>>,
-> = SelectionSet<Schema[M], S, FlatModel<M>>;
+export const defineQuery = <T extends ModelName, U extends ReadonlyArray<ModelPath<FlatModel<T>>>>(
+  model: T,
+  selections: U,
+): Query<T, U> => ({
+  model,
+  selections,
+});
+
+export type Query<T extends ModelName, U extends ReadonlyArray<ModelPath<FlatModel<T>>>> = {
+  model: T;
+  selections: U;
+};
+
+export type QueryResult<Q extends Query<any, any>> =
+  Q extends Query<infer T, infer U> ? SelectionSet<Schema[T], U, FlatModel<T>> : never;
 
 // Live-updating list of a model's records. Relationship paths like
 // "characters.*" are returned as inline arrays instead of lazy loaders.
 export const useObserveQuery = <
-  M extends ModelName,
-  const S extends ReadonlyArray<ModelPath<FlatModel<M>>>,
+  T extends ModelName,
+  U extends ReadonlyArray<ModelPath<FlatModel<T>>>,
 >(
-  model: M,
-  selectionSet: S,
-): Selected<M, S>[] => {
-  const [items, setItems] = useState<Selected<M, S>[]>([]);
+  query: Query<T, U>,
+): QueryResult<Query<T, U>>[] | undefined => {
+  const [items, setItems] = useState<QueryResult<Query<T, U>>[] | undefined>();
 
   useEffect(() => {
     // client.models can't be indexed by a generic key, and observeQuery
     // rejects readonly tuples at runtime; both casts stay contained here
-    const { observeQuery } = client.models[model] as {
+    console.log("use effect?");
+    const { observeQuery } = client.models[query.model] as {
       observeQuery: (options: { selectionSet: string[] }) => {
         subscribe: (handlers: { next: (snapshot: { items: unknown[] }) => void }) => {
           unsubscribe: () => void;
         };
       };
     };
-    const subscription = observeQuery({ selectionSet: [...selectionSet] }).subscribe({
-      next: ({ items }) => setItems([...items] as Selected<M, S>[]),
+    const subscription = observeQuery({ selectionSet: [...query.selections] }).subscribe({
+      next: ({ items }) => setItems([...items] as any),
     });
     return () => subscription.unsubscribe();
-  }, [model, JSON.stringify(selectionSet)]);
+  }, [query]);
 
   return items;
 };

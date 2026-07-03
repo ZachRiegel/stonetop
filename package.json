@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "generate-prod-outputs": "npx ampx generate outputs --app-id d1la70nuzhil4m --branch main",
     "dev": "yarn vite",
     "build": "yarn vite build",
     "preview": "yarn vite preview",
@@ -18,6 +19,7 @@
     "aws-amplify": "^6.18.0",
     "aws-cdk-lib": "^2.260.0",
     "esbuild": "^0.28.1",
+    "lodash": "^4.18.1",
     "react": "^19",
     "react-dom": "^19",
     "react-router": "8"
@@ -28,6 +30,7 @@
     "@aws-sdk/types": "^3.973.14",
     "@emotion/babel-plugin": "^11.13.5",
     "@types/aws-lambda": "^8.10.162",
+    "@types/lodash": "^4.17.24",
     "@types/node": "^26.1.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

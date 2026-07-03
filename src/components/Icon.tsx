@@ -1,8 +1,10 @@
 import plusSvg from "icons/plus.svg?raw";
+import discordSvg from "icons/discordLogo.svg?raw";
 import styled from "@emotion/styled";
 
 const IconSvgs = {
   Plus: plusSvg,
+  Discord: discordSvg,
 };
 
 type IconName = keyof typeof IconSvgs;
@@ -18,9 +20,8 @@ const StyledIcon = styled(IconInternal)<{ size: number }>`
   display: inline-flex;
 
   & svg {
-    --size: ${(props) => props.size}px;
-    width: var(--size);
-    height: var(--size);
+    width: var(--icon-size, 24px);
+    height: var(--icon-size, 24px);
     fill: currentColor;
     stroke: currentColor;
   }

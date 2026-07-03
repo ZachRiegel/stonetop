@@ -101,11 +101,11 @@ const BaseButton = styled(ButtonInternals)`
   cursor: pointer;
   ${FontCSS.Bold20}
 
-  &:disabled {
+  &:where(:disabled) {
     cursor: default;
   }
 
-  &:focus-visible {
+  &:where(:focus-visible) {
     outline: 2px solid var(--neutral-700);
     outline-offset: 2px;
   }
@@ -115,31 +115,31 @@ const Button = {
   Default: styled(BaseButton)`
     background: var(--neutral-0);
     color: var(--neutral-900);
-    &:hover:not(:disabled) {
+    &:where(:hover:not(:disabled)) {
       background: var(--neutral-100);
     }
-    &:active:not(:disabled) {
+    &:where(:active:not(:disabled)) {
       background: var(--neutral-200);
     }
   `,
   Secondary: styled(BaseButton)`
     background: var(--neutral-200);
     color: var(--neutral-700);
-    &:hover:not(:disabled) {
+    &:where(:hover:not(:disabled)) {
       background: var(--neutral-300);
       color: var(--neutral-800);
     }
-    &:active:not(:disabled) {
+    &:where(:active:not(:disabled)) {
       background: var(--neutral-300);
     }
   `,
   Primary: styled(BaseButton)`
     background: var(--neutral-400);
     color: var(--neutral-900);
-    &:hover:not(:disabled) {
+    &:where(:hover:not(:disabled)) {
       background: var(--neutral-500);
     }
-    &:active:not(:disabled) {
+    &:where(:active:not(:disabled)) {
       background: var(--neutral-600);
     }
   `,
