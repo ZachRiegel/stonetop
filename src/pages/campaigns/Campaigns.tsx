@@ -1,21 +1,24 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styled from "@emotion/styled";
-import { generateClient } from "aws-amplify/data";
+import { Link } from "react-router";
 
-import type { Schema } from "../../../amplify/data/resource";
+import { client, useObserveQuery, useCurrentUser, type CurrentUser } from "amplify.ts";
 
 import Button from "components/Button.tsx";
-import Font from "components/Font.tsx";
+import Font, { FontCSS } from "components/Font.tsx";
 
-import CreateCampaignDialog from "pages/campaigns/CreateCampaignForm.tsx";
+import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 
 import background from "assets/background.svg";
 import misc from "pages/campaigns/misc.png";
 import Icon from "components/Icon.tsx";
 
-const client = generateClient<Schema>();
-
-type Campaign = Schema["Campaign"]["type"];
+// The implicit owner field holds the sub, the username, or "<sub>::<username>"
+// (with federated sign-in ours stores the username, e.g. "auth0_oauth2|discord|...")
+const isOwnedBy = (owner: string | null | undefined, user: CurrentUser | undefined) =>
+  !!user &&
+  !!owner &&
+  owner.split("::").some((part) => part === user.userId || part === user.username);
 
 const Page = styled.div`
   min-width: 100vw;
@@ -35,7 +38,6 @@ const Card = styled.div`
   display: flex;
   flex-direction: column;
   width: min(360px, calc(100vw - 32px));
-  max-height: 70vh;
   border-radius: 16px;
   background-color: var(--neutral-75);
   overflow: hidden;
@@ -43,22 +45,22 @@ const Card = styled.div`
 `;
 
 const CardHeader = styled.div`
-  padding: 12px 20px 4px;
+  padding: 12px 20px;
 `;
 
 const ScrollArea = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1 1 auto;
-  min-height: 300px;
+  height: 340px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 20px;
-  scrollbar-color: var(--neutral-300) transparent;
-  scrollbar-width: thin;
-  border-top: 1px solid var(--neutral-100);
-  border-bottom: 1px solid var(--neutral-100);
+  /* 8px scrollbar gutter (styled globally in RootLayout) + 12px right
+     padding = 20px, matching CardBottom */
+  padding: 12px 12px 12px 20px;
+  scrollbar-gutter: stable;
+  border-top: 2px solid var(--neutral-100);
+  border-bottom: 2px solid var(--neutral-100);
 `;
 
 const EmptyState = styled.div`
@@ -71,27 +73,53 @@ const EmptyState = styled.div`
   text-align: center;
 
   img {
-    height: 300px;
+    height: 276px;
+    aspect-ratio: 648 / 828;
     mix-blend-mode: screen;
   }
 `;
 
 const CardBottom = styled.div`
   display: flex;
-  padding: 16px 24px;
+  padding: 16px 20px;
+`;
+
+const CampaignLabel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border: 2px solid var(--neutral-200);
+  border-radius: 16px;
+`;
+
+const CampaignLink = styled(Link)`
+  ${FontCSS.Bold20}
+  align-self: start;
+  color: var(--neutral-700);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--neutral-700);
+    outline-offset: 2px;
+  }
 `;
 
 const Campaigns = () => {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const campaigns = useObserveQuery("Campaign", ["id", "name", "owner", "characters.*"]);
+  const user = useCurrentUser();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
 
-  useEffect(() => {
-    const subscription = client.models.Campaign.observeQuery().subscribe({
-      next: ({ items }) => setCampaigns([...items]),
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+  const characterLine = (campaign: (typeof campaigns)[number]) =>
+    isOwnedBy(campaign.owner, user)
+      ? "Game Master"
+      : (campaign.characters.find((character) => isOwnedBy(character.owner, user))?.name ??
+        "No character yet");
 
   const createCampaign = async () => {
     const trimmed = name.trim();
@@ -116,15 +144,15 @@ const Campaigns = () => {
           {campaigns.length === 0 ? (
             <EmptyState>
               <img src={misc} alt="" />
-              <Font.Italic16 text="Would you like to start a new adventure?" />
+              <Font.Italic16 element="div" text="Would you like to start a new adventure?" />
             </EmptyState>
           ) : (
             campaigns.map((campaign) => (
-              <Button.Secondary
-                key={campaign.id}
-                text={campaign.name}
-                onClick={() => {}} // TODO: navigate to campaign page
-              />
+              <CampaignLabel key={campaign.id}>
+                {/* TODO: add the campaign page route */}
+                <CampaignLink to={`/campaigns/${campaign.id}`}>{campaign.name}</CampaignLink>
+                <Font.Normal14 element="div" text={characterLine(campaign)} />
+              </CampaignLabel>
             ))
           )}
         </ScrollArea>

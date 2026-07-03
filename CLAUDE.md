@@ -12,6 +12,8 @@ Note: there should be no more than one React component per file, adding a new co
 
 When making round borders use border-radius: 999px instead of 50%.
 
+Wehn applicable use grid layouts over flex for aligning sets of items.
+
 ## Frontend
 
 The frontend is a React SPA bundled with **Vite** (config in `vite.config.ts`). Yarn is the package manager — run Vite through it (`yarn dev`, `yarn build`, `yarn preview`).

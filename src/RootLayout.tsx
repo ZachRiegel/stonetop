@@ -6,6 +6,13 @@ const RootLayout = () => (
   <>
     <Global
       styles={css`
+        /* Registered as a real <length> so Input's mask notch can
+           interpolate instead of snapping discretely */
+        @property --label-width {
+          syntax: "<length>";
+          inherits: true;
+          initial-value: 0px;
+        }
         /* Grayscale palette: 0 = black (dark), 900 = white (light) */
         :root,
         dialog {
@@ -40,6 +47,7 @@ const RootLayout = () => (
         /* 2. Remove default margin */
         * {
           margin: 0;
+          user-select: none;
         }
         /* 3. Enable keyword animations */
         @media (prefers-reduced-motion: no-preference) {
@@ -112,9 +120,35 @@ const RootLayout = () => (
           border: none;
           max-width: unset;
           max-height: unset;
+          user-select: none;
         }
         body {
           margin: 0;
+        }
+        /* Firefox: no way to pin an exact width; thin renders at 8px */
+        * {
+          scrollbar-width: thin;
+          scrollbar-color: var(--neutral-300) transparent;
+        }
+        /* Chromium/Safari: pin scrollbars (and thus scrollbar gutters) to
+           exactly 8px. The standard properties must be reset to auto or
+           Chrome ignores ::-webkit-scrollbar styling entirely. */
+        @supports selector(::-webkit-scrollbar) {
+          * {
+            scrollbar-width: auto;
+            scrollbar-color: auto;
+          }
+          ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: var(--neutral-300);
+            border-radius: 999px;
+          }
+          ::-webkit-scrollbar-track {
+            background: transparent;
+          }
         }
       `}
     />

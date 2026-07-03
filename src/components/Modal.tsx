@@ -22,19 +22,19 @@ const FadeOut = keyframes`
 
 const BackdropIn = keyframes`
   from {
-    background-color: rgb(0 0 0 / 0);
+    background-color: rgb(0 0 20 / 0);
   }
   to {
-    background-color: rgb(0 0 0 / 0.5);
+    background-color: rgb(0 0 20 / 0.2);
   }
 `;
 
 const BackdropOut = keyframes`
   from {
-    background-color: rgb(0 0 0 / 0.5);
+    background-color: rgb(0 0 20 / 0.2);
   }
   to {
-    background-color: rgb(0 0 0 / 0);
+    background-color: rgb(0 0 20 / 0);
   }
 `;
 

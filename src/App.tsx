@@ -28,7 +28,6 @@ const router = createBrowserRouter([
           async ({ context }) => {
             try {
               await getCurrentUser();
-              console.log("this?");
             } catch {
               return redirect("/login");
             }
@@ -42,9 +41,7 @@ const router = createBrowserRouter([
         element: <Login />,
         loader: async () => {
           try {
-            console.log("?");
             await getCurrentUser();
-            console.log("that?");
             return redirect("/");
           } catch {}
         },
