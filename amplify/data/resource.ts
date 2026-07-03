@@ -47,6 +47,7 @@ const schema = a
       .model({
         name: a.string(),
         picture: a.string(),
+        characters: a.hasMany("Character", "characterId"),
       })
       .authorization((allow) => [allow.owner(), allow.authenticated().to(["read"])]),
   })
