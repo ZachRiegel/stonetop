@@ -30,7 +30,7 @@ const schema = a
         level: a.integer().required(),
         campaignId: a.id().required(),
         campaign: a.belongsTo("Campaign", "campaignId"),
-        user: a.belongsTo("UserProfile", "userProfileId"),
+        user: a.belongsTo("UserProfile", "userprofileId"),
         // copied from the campaign at creation time; must be re-synced if they change
         campaignOwner: a.string(),
         members: a.string().array(),

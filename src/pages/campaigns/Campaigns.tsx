@@ -2,16 +2,7 @@ import { useState } from "react";
 import styled from "@emotion/styled";
 import { Link } from "react-router";
 
-import {
-  client,
-  useObserveQuery,
-  useCurrentUser,
-  type CurrentUser,
-  type Selected,
-  type Query,
-  defineQuery,
-  type QueryResult,
-} from "amplify.ts";
+import { client, useObserveQuery, useCurrentUser, defineQuery, type QueryResult } from "amplify.ts";
 
 import Button from "components/Button.tsx";
 import Font, { FontCSS } from "components/Font.tsx";
@@ -127,22 +118,6 @@ const Avatar = styled.img`
   height: 24px;
   border-radius: 999px;
   object-fit: cover;
-`;
-
-const CampaignLink = styled(Link)`
-  ${FontCSS.Bold20}
-  align-self: start;
-  color: var(--neutral-700);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--neutral-700);
-    outline-offset: 2px;
-  }
 `;
 
 const query = defineQuery("Campaign", [
