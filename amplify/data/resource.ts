@@ -41,6 +41,15 @@ const schema = a.schema({
       allow.ownerDefinedIn("campaignOwner"),
       allow.ownersDefinedIn("members").to(["read"]),
     ]),
+  // Cognito attributes (e.g. the IdP profile photo) are only readable by the
+  // signed-in user, so each user mirrors theirs here on login; the record id
+  // is the Cognito username, matching Campaign.owner / Campaign.members.
+  UserProfile: a
+    .model({
+      name: a.string(),
+      picture: a.string(),
+    })
+    .authorization((allow) => [allow.owner(), allow.authenticated().to(["read"])]),
 }).authorization((allow) => [allow.resource(syncCampaignMembers)]);
 
 export type Schema = ClientSchema<typeof schema>;

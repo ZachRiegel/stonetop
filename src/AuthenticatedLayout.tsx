@@ -1,8 +1,10 @@
-import { fetchUserAttributes } from "aws-amplify/auth";
+import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
 import styled from "@emotion/styled";
 import { use } from "react";
 import Font from "./components/Font.tsx";
 import { Outlet } from "react-router";
+
+import { client } from "amplify.ts";
 
 const cachePromise = <T,>(fn: () => Promise<T>) => {
   let promise: Promise<T> | undefined;
@@ -10,6 +12,24 @@ const cachePromise = <T,>(fn: () => Promise<T>) => {
 };
 
 const cachedFetchUserAttributes = cachePromise(fetchUserAttributes);
+
+// Mirror the Cognito attributes into the shared UserProfile record (keyed by
+// username) so other campaign members can see them; write only on change.
+const cachedSyncProfile = cachePromise(async () => {
+  const [attributes, { username }] = await Promise.all([
+    cachedFetchUserAttributes(),
+    getCurrentUser(),
+  ]);
+  const profile = {
+    id: username,
+    name: attributes.name ?? null,
+    picture: attributes.picture ?? null,
+  };
+  const { data: existing } = await client.models.UserProfile.get({ id: username });
+  if (!existing) await client.models.UserProfile.create(profile);
+  else if (existing.name !== profile.name || existing.picture !== profile.picture)
+    await client.models.UserProfile.update(profile);
+});
 
 const Header = styled.div`
   position: fixed;
@@ -47,6 +67,7 @@ const Placeholder = styled.div`
 
 const PageHeader = () => {
   const user = use(cachedFetchUserAttributes());
+  void cachedSyncProfile();
 
   return (
     <Header>

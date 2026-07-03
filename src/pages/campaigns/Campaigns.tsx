@@ -111,6 +111,21 @@ const CampaignLabel = styled.a`
   cursor: pointer;
 `;
 
+const AvatarRow = styled.div`
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: 4px;
+  margin-top: 4px;
+`;
+
+const Avatar = styled.img`
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  object-fit: cover;
+`;
+
 const CampaignLink = styled(Link)`
   ${FontCSS.Bold20}
   align-self: start;
@@ -132,9 +147,11 @@ const Campaigns = () => {
     "id",
     "name",
     "owner",
+    "members",
     "characters.*",
     "characters.owner",
   ]);
+  const profiles = useObserveQuery("UserProfile", ["id", "name", "picture"]);
   const user = useCurrentUser();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
@@ -144,6 +161,18 @@ const Campaigns = () => {
       ? "Game Master"
       : (campaign.characters.find((character) => isOwnedBy(character.owner, user))?.name ??
         "No character yet");
+
+  const profileById = new Map(profiles.map((profile) => [profile.id, profile]));
+
+  // Profiles of the campaign's members (owner + members, deduped), photo-first
+  const memberProfiles = (campaign: (typeof campaigns)[number]) => [
+    ...new Map(
+      [...(campaign.owner?.split("::") ?? []), ...(campaign.members ?? [])]
+        .flatMap((username) => (username && profileById.get(username)) || [])
+        .filter((profile) => profile.picture)
+        .map((profile) => [profile.id, profile] as const),
+    ).values(),
+  ];
 
   const createCampaign = async () => {
     const trimmed = name.trim();
@@ -180,6 +209,17 @@ Ask your Game Master to invite you or create one.`}
               <CampaignLabel key={campaign.id} href={`/campaigns/${campaign.id}`}>
                 <Font.Bold20 text={campaign.name} />
                 <Font.Italic16 element="div" text={characterLine(campaign)} />
+                {memberProfiles(campaign).length > 0 && (
+                  <AvatarRow>
+                    {memberProfiles(campaign).map((profile) => (
+                      <Avatar
+                        key={profile.id}
+                        src={profile.picture ?? undefined}
+                        alt={profile.name ?? ""}
+                      />
+                    ))}
+                  </AvatarRow>
+                )}
               </CampaignLabel>
             ))
           )}
