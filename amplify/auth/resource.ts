@@ -18,11 +18,9 @@ export const auth = defineAuth({
           issuerUrl: "https://dev-upwpy2prgrn2zopf.us.auth0.com",
           scopes: ["openid", "profile", "email", "name"],
           attributeMapping: {
-            custom: {
-              name: "name",
-              picture: "picture",
-            },
-          },
+            name: "name",
+            picture: "picture",
+          } as any,
         },
       ],
       logoutUrls: [
