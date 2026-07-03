@@ -12,7 +12,8 @@ Note: there should be no more than one React component per file, adding a new co
 
 When making round borders use border-radius: 999px instead of 50%.
 
-Wehn applicable use grid layouts over flex for aligning sets of items.
+When applicable, use grid layouts over flex for aligning sets of items.
+If testing, first check if a build is already running at http://localhost:5173
 
 ## Frontend
 
