@@ -35,12 +35,6 @@ const Card = styled.div`
   }
 `;
 
-const Actions = styled.div`
-  display: flex;
-  height: max-content;
-  gap: 8px;
-`;
-
 const CreateCampaignModal = ({
   name,
   onNameChange,

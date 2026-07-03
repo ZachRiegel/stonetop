@@ -37,6 +37,9 @@ const RootLayout = () => (
           --neutral-800: #e3e3e3;
           --neutral-850: #f1f1f1;
           --neutral-900: #ffffff;
+          --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.24);
+          --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.28);
+          --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.36);
         }
         /* 1. Use a more-intuitive box-sizing model */
         *,
@@ -105,6 +108,11 @@ const RootLayout = () => (
         #root,
         #__next {
           isolation: isolate;
+        }
+        /* 11. Remove default anchor styling */
+        a {
+          color: inherit;
+          text-decoration: none;
         }
 
         * {

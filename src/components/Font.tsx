@@ -20,6 +20,7 @@ const BaseText = styled(TextInternals)`
     `}
   font-family: "adobe-caslon-pro", serif;
   color: var(--neutral-700);
+  white-space: pre-line;
 `;
 
 export const FontCSS = {
@@ -31,6 +32,11 @@ export const FontCSS = {
   Semibold14: css`
     font-weight: 600;
     font-style: normal;
+    font-size: 14px;
+  `,
+  Italic14: css`
+    font-weight: 400;
+    font-style: italic;
     font-size: 14px;
   `,
 
@@ -134,6 +140,7 @@ export const FontCSS = {
 const Font = {
   Normal14: styled(BaseText)(FontCSS.Normal14),
   Semibold14: styled(BaseText)(FontCSS.Semibold14),
+  Italic14: styled(BaseText)(FontCSS.Italic14),
 
   Normal16: styled(BaseText)(FontCSS.Normal16),
   Italic16: styled(BaseText)(FontCSS.Italic16),

@@ -39,7 +39,7 @@ const Footer = styled.img`
   object-position: top;
   object-fit: cover;
   mix-blend-mode: screen;
-  opacity: 0.6;
+  opacity: 0.7;
   aspect-ratio: 3309 / 1127;
 `;
 

@@ -22,7 +22,6 @@ const Header = styled.div`
   padding: 8px 12px;
   cursor: pointer;
   border-radius: 8px;
-  min-width: 200px;
   max-width: 200px;
 
   &:hover {
@@ -37,13 +36,28 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
+const Placeholder = styled.div`
+  width: 30px;
+  height: 30px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+`;
+
 const PageHeader = () => {
   const user = use(cachedFetchUserAttributes());
 
   return (
     <Header>
-      {user.picture && <Avatar src={user.picture} alt={user.name ?? ""} />}
-      <Font.Semibold20 element="div" text={user.name ?? ""} />
+      {user.picture ? (
+        <Avatar src={user.picture} alt={user.name ?? ""} />
+      ) : (
+        <Placeholder>
+          <Font.Bold20 element="div" text="?" />
+        </Placeholder>
+      )}
+      <Font.Semibold20 element="div" text={user.name ?? "Unknown"} />
     </Header>
   );
 };
