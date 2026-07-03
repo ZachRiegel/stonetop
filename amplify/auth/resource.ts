@@ -21,10 +21,12 @@ export const auth = defineAuth({
       ],
       logoutUrls: [
         "http://localhost:5173",
+        "https://main.d1la70nuzhil4m.amplifyapp.com/",
         // your staging / production domain later
       ],
       callbackUrls: [
         "http://localhost:5173",
+        "https://main.d1la70nuzhil4m.amplifyapp.com/",
         // your staging / production domain later
       ],
     },
