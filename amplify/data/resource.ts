@@ -30,7 +30,8 @@ const schema = a
         level: a.integer().required(),
         campaignId: a.id().required(),
         campaign: a.belongsTo("Campaign", "campaignId"),
-        user: a.belongsTo("UserProfile", "userprofileId"),
+        userProfileId: a.id(),
+        user: a.belongsTo("UserProfile", "userProfileId"),
         // copied from the campaign at creation time; must be re-synced if they change
         campaignOwner: a.string(),
         members: a.string().array(),
@@ -47,7 +48,7 @@ const schema = a
       .model({
         name: a.string(),
         picture: a.string(),
-        characters: a.hasMany("Character", "characterId"),
+        characters: a.hasMany("Character", "userProfileId"),
       })
       .authorization((allow) => [allow.owner(), allow.authenticated().to(["read"])]),
   })

@@ -14,6 +14,7 @@ import misc from "pages/campaigns/misc.png";
 import footer from "pages/campaigns/footer.png";
 import Icon from "components/Icon.tsx";
 import _ from "lodash";
+import Loading from "../../components/Loading.tsx";
 
 const Page = styled.div`
   min-width: 100vw;
@@ -169,7 +170,7 @@ const Campaigns = () => {
         </CardHeader>
         <ScrollArea>
           {!campaigns ? (
-            "nothng loaded"
+            <Loading.Medium />
           ) : campaigns.length === 0 ? (
             <EmptyState>
               <img src={misc} alt="" />
