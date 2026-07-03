@@ -17,6 +17,12 @@ export const auth = defineAuth({
           clientSecret: secret("authSecret"),
           issuerUrl: "https://dev-upwpy2prgrn2zopf.us.auth0.com",
           scopes: ["openid", "profile", "email", "name"],
+          attributeMapping: {
+            custom: {
+              name: "name",
+              picture: "picture",
+            },
+          },
         },
       ],
       logoutUrls: [
