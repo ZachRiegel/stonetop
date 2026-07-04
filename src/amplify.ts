@@ -1,15 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { generateClient, type SelectionSet } from "aws-amplify/data";
 import { getCurrentUser, type GetCurrentUserOutput } from "aws-amplify/auth";
 import type { ModelPath } from "@aws-amplify/data-schema/runtime";
 
 import type { Schema } from "../amplify/data/resource";
 
-export const client = generateClient<Schema>();
+type Client = ReturnType<typeof generateClient<Schema>>;
+
+let memoizedClient: Client | undefined;
+
+// Deferred so the client is created after Amplify.configure() runs, and
+// shared so every caller talks to the same instance.
+export const getClient = (): Client => (memoizedClient ??= generateClient<Schema>());
+
+export const useClient = (): Client => useMemo(getClient, []);
 
 export type CurrentUser = GetCurrentUserOutput;
 
-type ModelName = keyof Schema & keyof typeof client.models;
+type ModelName = keyof Schema & keyof Client["models"];
 type FlatModel<M extends ModelName> = Schema[M]["__meta"]["flatModel"];
 
 export const defineQuery = <T extends ModelName, U extends ReadonlyArray<ModelPath<FlatModel<T>>>>(
@@ -36,6 +44,7 @@ export const useObserveQuery = <
 >(
   query: Query<T, U>,
 ): QueryResult<Query<T, U>>[] | undefined => {
+  const client = useClient();
   const [items, setItems] = useState<QueryResult<Query<T, U>>[] | undefined>();
 
   useEffect(() => {
@@ -52,7 +61,7 @@ export const useObserveQuery = <
       next: ({ items }) => setItems([...items] as any),
     });
     return () => subscription.unsubscribe();
-  }, [query]);
+  }, [client, query]);
 
   return items;
 };

@@ -2,6 +2,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 import { syncCampaignMembers } from "../functions/sync-campaign-members/resource";
+import { syncCampaignProfiles } from "../functions/sync-campaign-profiles/resource";
 
 const schema = a
   .schema({
@@ -10,6 +11,7 @@ const schema = a
         name: a.string().required(),
         members: a.string().array(),
         characters: a.hasMany("Character", "campaignId"),
+        profiles: a.hasMany("CampaignMember", "campaignId"),
       })
       .authorization((allow) => [allow.owner(), allow.ownersDefinedIn("members").to(["read"])]),
 
@@ -49,10 +51,31 @@ const schema = a
         name: a.string(),
         picture: a.string(),
         characters: a.hasMany("Character", "userProfileId"),
+        campaigns: a.hasMany("CampaignMember", "userProfileId"),
       })
       .authorization((allow) => [allow.owner(), allow.authenticated().to(["read"])]),
+
+    // Campaign <-> UserProfile join rows, managed exclusively by
+    // sync-campaign-profiles; auth fields are copied from the campaign each
+    // time the lambda rewrites the rows.
+    CampaignMember: a
+      .model({
+        campaignId: a.id().required(),
+        campaign: a.belongsTo("Campaign", "campaignId"),
+        userProfileId: a.id().required(),
+        userProfile: a.belongsTo("UserProfile", "userProfileId"),
+        campaignOwner: a.string(),
+        members: a.string().array(),
+      })
+      .authorization((allow) => [
+        allow.ownerDefinedIn("campaignOwner").to(["read"]),
+        allow.ownersDefinedIn("members").to(["read"]),
+      ]),
   })
-  .authorization((allow) => [allow.resource(syncCampaignMembers)]);
+  .authorization((allow) => [
+    allow.resource(syncCampaignMembers),
+    allow.resource(syncCampaignProfiles),
+  ]);
 
 export type Schema = ClientSchema<typeof schema>;
 

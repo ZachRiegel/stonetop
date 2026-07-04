@@ -2,7 +2,7 @@ import { useState } from "react";
 import styled from "@emotion/styled";
 import { Link } from "react-router";
 
-import { client, useObserveQuery, useCurrentUser, defineQuery, type QueryResult } from "amplify.ts";
+import { useClient, useObserveQuery, useCurrentUser, defineQuery, type QueryResult } from "amplify.ts";
 
 import Button from "components/Button.tsx";
 import Font, { FontCSS } from "components/Font.tsx";
@@ -132,6 +132,7 @@ const query = defineQuery("Campaign", [
 type CampaignResult = QueryResult<typeof query>;
 
 const Campaigns = () => {
+  const client = useClient();
   const campaigns = useObserveQuery(query);
   const user = useCurrentUser();
   const [creating, setCreating] = useState(false);

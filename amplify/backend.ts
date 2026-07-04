@@ -5,17 +5,21 @@ import { DynamoEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
 import { syncCampaignMembers } from "./functions/sync-campaign-members/resource";
+import { syncCampaignProfiles } from "./functions/sync-campaign-profiles/resource";
 
 const backend = defineBackend({
   auth,
   data,
   syncCampaignMembers,
+  syncCampaignProfiles,
 });
 
-backend.syncCampaignMembers.resources.lambda.addEventSource(
-  new DynamoEventSource(backend.data.resources.tables["Campaign"]!, {
-    startingPosition: StartingPosition.LATEST,
-    batchSize: 10,
-    retryAttempts: 2,
-  }),
+[backend.syncCampaignMembers, backend.syncCampaignProfiles].map(({ resources }) =>
+  resources.lambda.addEventSource(
+    new DynamoEventSource(backend.data.resources.tables["Campaign"]!, {
+      startingPosition: StartingPosition.LATEST,
+      batchSize: 10,
+      retryAttempts: 2,
+    }),
+  ),
 );

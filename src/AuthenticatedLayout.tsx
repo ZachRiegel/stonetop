@@ -4,7 +4,7 @@ import { use, useState } from "react";
 import Font from "./components/Font.tsx";
 import { Outlet } from "react-router";
 
-import { client } from "amplify.ts";
+import { getClient } from "amplify.ts";
 import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
 
 import background from "assets/background.svg";
@@ -28,10 +28,11 @@ const cachedSyncProfile = cachePromise(async () => {
     name: attributes.name ?? null,
     picture: attributes.picture ?? null,
   };
-  const { data: existing } = await client.models.UserProfile.get({ id: username });
-  if (!existing) await client.models.UserProfile.create(profile);
+  const { models } = getClient();
+  const { data: existing } = await models.UserProfile.get({ id: username });
+  if (!existing) await models.UserProfile.create(profile);
   else if (existing.name !== profile.name || existing.picture !== profile.picture)
-    await client.models.UserProfile.update(profile);
+    await models.UserProfile.update(profile);
 });
 
 const Layout = styled.div`
