@@ -41,7 +41,6 @@ export const useObserveQuery = <
   useEffect(() => {
     // client.models can't be indexed by a generic key, and observeQuery
     // rejects readonly tuples at runtime; both casts stay contained here
-    console.log("use effect?");
     const { observeQuery } = client.models[query.model] as {
       observeQuery: (options: { selectionSet: string[] }) => {
         subscribe: (handlers: { next: (snapshot: { items: unknown[] }) => void }) => {

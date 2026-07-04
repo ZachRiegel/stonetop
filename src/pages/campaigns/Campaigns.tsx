@@ -9,7 +9,6 @@ import Font, { FontCSS } from "components/Font.tsx";
 
 import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 
-import background from "assets/background.svg";
 import misc from "pages/campaigns/misc.png";
 import footer from "pages/campaigns/footer.png";
 import Icon from "components/Icon.tsx";
@@ -17,12 +16,11 @@ import _ from "lodash";
 import Loading from "../../components/Loading.tsx";
 
 const Page = styled.div`
-  min-width: 100vw;
-  min-height: 100vh;
-
-  background-image: url("${background}");
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
 
   display: grid;
   grid-template-rows: 1fr max-content 1fr;
@@ -30,10 +28,10 @@ const Page = styled.div`
 `;
 
 const Footer = styled.img`
-  position: fixed;
+  position: absolute;
   left: 0;
   right: 0;
-  bottom: -20px;
+  bottom: -32px;
   width: 100vw;
   object-fit: cover;
   object-position: top;
@@ -129,6 +127,7 @@ const query = defineQuery("Campaign", [
   "characters.*",
   "characters.user.picture",
   "characters.user.id",
+  "characters.user.name",
 ]);
 type CampaignResult = QueryResult<typeof query>;
 
@@ -191,7 +190,7 @@ Ask your Game Master to invite you or create one.`}
                     {_.chain(campaign.characters)
                       .map((character) => character.user)
                       .uniqBy((user) => user.id)
-                      .filter((user) => !!user.picture)
+                      .filter((thisUser) => !!thisUser.picture && thisUser.name !== user?.username)
                       .map((user) => <Avatar key={user.id} src={user.picture!} alt={""} />)
                       .value()}
                   </AvatarRow>

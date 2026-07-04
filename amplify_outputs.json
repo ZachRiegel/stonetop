@@ -212,6 +212,28 @@
                 ]
               }
             },
+            "userProfileId": {
+              "name": "userProfileId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": false,
+              "attributes": []
+            },
+            "user": {
+              "name": "user",
+              "isArray": false,
+              "type": {
+                "model": "UserProfile"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "userProfileId"
+                ]
+              }
+            },
             "campaignOwner": {
               "name": "campaignOwner",
               "isArray": false,
@@ -321,6 +343,22 @@
               "type": "String",
               "isRequired": false,
               "attributes": []
+            },
+            "characters": {
+              "name": "characters",
+              "isArray": true,
+              "type": {
+                "model": "Character"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "userProfileId"
+                ]
+              }
             },
             "createdAt": {
               "name": "createdAt",
