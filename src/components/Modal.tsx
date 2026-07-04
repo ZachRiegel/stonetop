@@ -70,6 +70,7 @@ const Modal = styled(ModalInternals)<{ isOpen: boolean }>`
   display: grid;
   justify-content: center;
   align-content: center;
+  padding-left: 64px;
 
   & section {
     isolation: isolate;

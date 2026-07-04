@@ -1,11 +1,16 @@
 import { useState } from "react";
 import styled from "@emotion/styled";
-import { Link } from "react-router";
 
-import { useClient, useObserveQuery, useCurrentUser, defineQuery, type QueryResult } from "amplify.ts";
+import {
+  useClient,
+  useObserveQuery,
+  useCurrentUser,
+  defineQuery,
+  type QueryResult,
+} from "amplify.ts";
 
 import Button from "components/Button.tsx";
-import Font, { FontCSS } from "components/Font.tsx";
+import Font from "components/Font.tsx";
 
 import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 
@@ -124,10 +129,8 @@ const query = defineQuery("Campaign", [
   "name",
   "owner",
   "members",
+  "profiles.userProfile.*",
   "characters.*",
-  "characters.user.picture",
-  "characters.user.id",
-  "characters.user.name",
 ]);
 type CampaignResult = QueryResult<typeof query>;
 
@@ -151,7 +154,8 @@ const Campaigns = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (!user) return;
-    await client.models.Campaign.create({ name: trimmed, members: [user?.userId] });
+    // members must hold usernames — UserProfile ids are usernames, not subs
+    await client.models.Campaign.create({ name: trimmed, members: [user.username] });
     setName("");
     setCreating(false);
   };
@@ -186,13 +190,16 @@ Ask your Game Master to invite you or create one.`}
                 <Font.Bold20 text={campaign.name} />
                 <Font.Italic16 element="div" text={characterLine(campaign)} />
 
-                {!!campaign.characters.length && (
+                {!!campaign.profiles?.length && (
                   <AvatarRow>
-                    {_.chain(campaign.characters)
-                      .map((character) => character.user)
-                      .uniqBy((user) => user.id)
-                      .filter((thisUser) => !!thisUser.picture && thisUser.name !== user?.username)
-                      .map((user) => <Avatar key={user.id} src={user.picture!} alt={""} />)
+                    {_.chain(campaign.profiles)
+                      .map((profile) => profile.userProfile)
+                      .compact() // members without a UserProfile yet resolve to null
+                      .uniqBy((profile) => profile.id)
+                      .filter((profile) => !!profile.picture && profile.id !== user?.username)
+                      .map((profile) => (
+                        <Avatar key={profile.id} src={profile.picture!} alt={profile.name ?? ""} />
+                      ))
                       .value()}
                   </AvatarRow>
                 )}

@@ -24,9 +24,15 @@ type CampaignImage = {
 const toCampaign = (image: unknown) =>
   unmarshall(image as Parameters<typeof unmarshall>[0]) as CampaignImage;
 
-// owner + members, deduped; entries are Cognito usernames, i.e. UserProfile ids
+// raw stream images store owner as "<sub>::<username>" (GraphQL strips the
+// prefix on read); UserProfile ids are plain usernames
+const toProfileId = (value: string) => value.split("::").pop() as string;
+
+// owner + members, deduped; entries resolve to Cognito usernames, i.e. UserProfile ids
 const memberIds = ({ owner, members }: CampaignImage) => [
-  ...new Set([owner, ...(members ?? [])].filter((id): id is string => Boolean(id))),
+  ...new Set(
+    [owner, ...(members ?? [])].filter((id): id is string => Boolean(id)).map(toProfileId),
+  ),
 ];
 
 const membersChanged = (before: CampaignImage, after: CampaignImage) =>
