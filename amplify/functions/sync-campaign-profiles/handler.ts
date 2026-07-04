@@ -64,7 +64,9 @@ const listMemberRows = async (
 const reconcile = async (campaign: CampaignImage, desired: string[]) => {
   const existing = await listMemberRows(campaign.id);
   const byProfile = new Map(existing.map((row) => [row.userProfileId, row]));
-  const authFields = { campaignOwner: campaign.owner ?? null, members: campaign.members ?? [] };
+  // desired is the deduped [owner, ...members] username list, so the owner is
+  // always covered by the single members auth rule
+  const authFields = { members: desired };
 
   await Promise.all([
     ...desired

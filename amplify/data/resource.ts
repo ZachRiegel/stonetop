@@ -56,21 +56,17 @@ const schema = a
       .authorization((allow) => [allow.owner(), allow.authenticated().to(["read"])]),
 
     // Campaign <-> UserProfile join rows, managed exclusively by
-    // sync-campaign-profiles; auth fields are copied from the campaign each
-    // time the lambda rewrites the rows.
+    // sync-campaign-profiles; members (campaign owner included) is copied from
+    // the campaign each time the lambda rewrites the rows.
     CampaignMember: a
       .model({
         campaignId: a.id().required(),
         campaign: a.belongsTo("Campaign", "campaignId"),
         userProfileId: a.id().required(),
         userProfile: a.belongsTo("UserProfile", "userProfileId"),
-        campaignOwner: a.string(),
         members: a.string().array(),
       })
-      .authorization((allow) => [
-        allow.ownerDefinedIn("campaignOwner").to(["read"]),
-        allow.ownersDefinedIn("members").to(["read"]),
-      ]),
+      .authorization((allow) => [allow.ownersDefinedIn("members").to(["read"])]),
   })
   .authorization((allow) => [
     allow.resource(syncCampaignMembers),
