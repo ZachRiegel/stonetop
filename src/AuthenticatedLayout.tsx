@@ -5,10 +5,11 @@ import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
 import { use, useState } from "react";
 import { Outlet } from "react-router";
 
-import Font from "./components/Font.tsx";
+import Font from "components/Font.tsx";
 import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
 import Button from "components/Button.tsx";
 import Icon from "components/Icon.tsx";
+import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
 const cachePromise = <T,>(fn: () => Promise<T>) => {
   let promise: Promise<T> | undefined;
