@@ -15,6 +15,17 @@ When making round borders use border-radius: 999px instead of 50%.
 When applicable, use grid layouts over flex for aligning sets of items.
 If testing, first check if a build is already running at http://localhost:5173
 
+
+Single use variables should be consumed at their one use and not lifted to a named var.
+```
+//correct
+func(30 * 60)
+
+//incorrect
+const thirtyMinutesInSeconds = 30 * 60
+func(thirtyMinutesInSeconds)
+```
+
 ## Frontend
 
 The frontend is a React SPA bundled with **Vite** (config in `vite.config.ts`). Yarn is the package manager — run Vite through it (`yarn dev`, `yarn build`, `yarn preview`).
