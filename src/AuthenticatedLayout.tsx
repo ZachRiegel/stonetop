@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import { getClient } from "amplify.ts";
+import { defineQuery, getClient, useCurrentUser, useObserveQuery } from "amplify.ts";
 import background from "assets/background.svg";
 import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
-import { use, useState } from "react";
+import { useMemo, useState } from "react";
 import { Outlet } from "react-router";
 
 import Font from "components/Font.tsx";
@@ -163,8 +163,17 @@ const Placeholder = styled.div`
 `;
 
 const AuthenticatedLayout = () => {
-  const user = use(cachedFetchUserAttributes());
   void cachedSyncProfile();
+  const user = useCurrentUser();
+  const query = useMemo(
+    () =>
+      defineQuery("UserProfile", ["id", "picture", "name"], {
+        id: { eq: user?.username },
+      }),
+    [user?.username],
+  );
+
+  const currentUser = useObserveQuery(query)?.[0];
   const [navItems, setNavItems] = useState<HTMLElement | null>(null);
 
   return (
@@ -172,16 +181,13 @@ const AuthenticatedLayout = () => {
       <NavContainer>
         <Nav>
           <NavItems ref={setNavItems} />
-          {user && (
+          {currentUser && (
             <Profile>
-              {user.picture ? (
-                <Avatar src={discordProfilePictureForUser(user)} alt={user.name ?? ""} />
-              ) : (
-                <Placeholder>
-                  <Font.Bold20 element="div" text="?" />
-                </Placeholder>
-              )}
-              <Font.Bold16 element="div" text={user.name ?? "Unknown"} />
+              <Avatar
+                src={discordProfilePictureForUser(currentUser)}
+                alt={currentUser.name ?? ""}
+              />
+              <Font.Bold16 element="div" text={currentUser.name ?? "Unknown"} />
               <Button.Transparent Icon={Icon.Cog} />
             </Profile>
           )}

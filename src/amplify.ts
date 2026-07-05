@@ -19,18 +19,26 @@ export type CurrentUser = GetCurrentUserOutput;
 
 type ModelName = keyof Schema & keyof Client["models"];
 type FlatModel<M extends ModelName> = Schema[M]["__meta"]["flatModel"];
+type ModelFilter<M extends ModelName> = Client["models"][M] extends {
+  list: (options?: { filter?: infer F }) => unknown;
+}
+  ? F
+  : never;
 
 export const defineQuery = <T extends ModelName, U extends ReadonlyArray<ModelPath<FlatModel<T>>>>(
   model: T,
   selections: U,
+  filter?: ModelFilter<T>,
 ): Query<T, U> => ({
   model,
   selections,
+  filter,
 });
 
 export type Query<T extends ModelName, U extends ReadonlyArray<ModelPath<FlatModel<T>>>> = {
   model: T;
   selections: U;
+  filter?: ModelFilter<T>;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- any is the only valid wildcard for these constrained type params
@@ -52,13 +60,16 @@ export const useObserveQuery = <
     // client.models can't be indexed by a generic key, and observeQuery
     // rejects readonly tuples at runtime; both casts stay contained here
     const { observeQuery } = client.models[query.model] as {
-      observeQuery: (options: { selectionSet: string[] }) => {
+      observeQuery: (options: { selectionSet: string[]; filter?: ModelFilter<T> }) => {
         subscribe: (handlers: { next: (snapshot: { items: unknown[] }) => void }) => {
           unsubscribe: () => void;
         };
       };
     };
-    const subscription = observeQuery({ selectionSet: [...query.selections] }).subscribe({
+    const subscription = observeQuery({
+      selectionSet: [...query.selections],
+      filter: query.filter,
+    }).subscribe({
       next: ({ items }) => setItems([...items] as QueryResult<Query<T, U>>[]),
     });
     return () => subscription.unsubscribe();
