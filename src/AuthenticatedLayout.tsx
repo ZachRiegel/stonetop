@@ -172,17 +172,19 @@ const AuthenticatedLayout = () => {
       <NavContainer>
         <Nav>
           <NavItems ref={setNavItems} />
-          <Profile>
-            {user.picture ? (
-              <Avatar src={discordProfilePictureForUser(user)} alt={user.name ?? ""} />
-            ) : (
-              <Placeholder>
-                <Font.Bold20 element="div" text="?" />
-              </Placeholder>
-            )}
-            <Font.Bold16 element="div" text={user.name ?? "Unknown"} />
-            <Button.Transparent Icon={Icon.Cog} />
-          </Profile>
+          {user && (
+            <Profile>
+              {user.picture ? (
+                <Avatar src={discordProfilePictureForUser(user)} alt={user.name ?? ""} />
+              ) : (
+                <Placeholder>
+                  <Font.Bold20 element="div" text="?" />
+                </Placeholder>
+              )}
+              <Font.Bold16 element="div" text={user.name ?? "Unknown"} />
+              <Button.Transparent Icon={Icon.Cog} />
+            </Profile>
+          )}
         </Nav>
       </NavContainer>
       <NavigationItemPortalContext value={navItems}>
