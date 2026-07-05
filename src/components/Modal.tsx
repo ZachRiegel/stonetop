@@ -1,6 +1,6 @@
-import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
-import type { AnimationEventHandler, ReactNode, RefObject } from "react";
+import styled from "@emotion/styled";
+import type { ReactNode, RefObject } from "react";
 
 const FadeIn = keyframes`
   from {
@@ -38,14 +38,14 @@ const BackdropOut = keyframes`
   }
 `;
 
-const ModalInternals = ({
-  close,
+export const ModalInternals = ({
+  requestClose,
   className,
   children,
   dialogRef,
 }: {
   isOpen: boolean;
-  close: () => void;
+  requestClose: () => void;
   className?: string;
   children: ReactNode;
   dialogRef: RefObject<HTMLDialogElement | null>;
@@ -56,8 +56,14 @@ const ModalInternals = ({
     onCancel={(event) => {
       // Esc must close through app state so the exit animation plays
       event.preventDefault();
-      close();
+      requestClose();
     }}
+    onClick={(event) => {
+      event.stopPropagation();
+      // The dialog spans the viewport; only clicks outside <section> hit it directly
+      if (event.target === event.currentTarget) requestClose();
+    }}
+    onKeyDown={(event) => event.stopPropagation()}
   >
     <span tabIndex={0} />
     <section>{children}</section>

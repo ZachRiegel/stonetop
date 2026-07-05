@@ -1,11 +1,10 @@
-import { useEffect, useRef } from "react";
-import type { ComponentType, ReactNode, RefObject } from "react";
-
 import AnimateInOut from "hoc/AnimateInOut.tsx";
+import type { ComponentType, FunctionComponent, ReactNode, RefObject } from "react";
+import { useEffect, useRef } from "react";
 
 type DialogComponent = ComponentType<{
   isOpen: boolean;
-  close: () => void;
+  requestClose: () => void;
   children: ReactNode;
   dialogRef: RefObject<HTMLDialogElement | null>;
 }>;
@@ -22,14 +21,17 @@ type DialogComponent = ComponentType<{
 //
 // export default MakeDialog("isOpen", SomeDialogContent, Modal);
 
-const MakeDialog = <K extends string, P extends Record<K, boolean>>(
+const MakeDialog = <
+  K extends string,
+  P extends { requestClose: () => void } & { [Key in K]?: unknown },
+>(
   key: K,
-  Content: ComponentType<P>,
+  Content: (props: P) => ReactNode,
   Dialog: DialogComponent,
 ) => {
   const AnimatedDialog = AnimateInOut("isOpen", Dialog);
 
-  return (props: P & { close: () => void }) => {
+  return (props: P) => {
     const isOpen = Boolean(props[key]);
     const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -39,12 +41,9 @@ const MakeDialog = <K extends string, P extends Record<K, boolean>>(
       if (isOpen && dialog && !dialog.open) dialog.showModal();
     }, [isOpen]);
 
-    // TS cannot relate spreads of the generic P through JSX.LibraryManagedAttributes
-    const RenderableContent = Content as ComponentType<object>;
-
     return (
-      <AnimatedDialog isOpen={isOpen} close={props.close} dialogRef={dialogRef}>
-        <RenderableContent {...props} />
+      <AnimatedDialog isOpen={isOpen} requestClose={props.requestClose} dialogRef={dialogRef}>
+        {Content(props)}
       </AnimatedDialog>
     );
   };

@@ -18,119 +18,131 @@ const BaseText = styled(TextInternals)`
     css`
       display: contents;
     `}
-  font-family: "adobe-caslon-pro", serif;
   color: var(--neutral-700);
   white-space: pre-line;
 `;
 
 export const FontCSS = {
   Normal14: css`
+    font-family: "faustina", serif;
     font-weight: 400;
     font-style: normal;
     font-size: 14px;
   `,
   Semibold14: css`
+    font-family: "faustina", serif;
     font-weight: 600;
     font-style: normal;
     font-size: 14px;
   `,
   Italic14: css`
+    font-family: "faustina", serif;
     font-weight: 400;
     font-style: italic;
     font-size: 14px;
   `,
 
   Normal16: css`
+    font-family: "faustina", serif;
     font-weight: 400;
     font-style: normal;
     font-size: 16px;
   `,
   Italic16: css`
+    font-family: "faustina", serif;
     font-weight: 400;
     font-style: italic;
     font-size: 16px;
   `,
   Semibold16: css`
+    font-family: "faustina", serif;
     font-weight: 600;
     font-style: normal;
     font-size: 16px;
   `,
   SemiboldItalic16: css`
+    font-family: "faustina", serif;
     font-weight: 600;
     font-style: italic;
     font-size: 16px;
   `,
   Bold16: css`
+    font-family: "faustina", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 16px;
   `,
   BoldItalic16: css`
+    font-family: "faustina", serif;
     font-weight: 700;
     font-style: italic;
     font-size: 16px;
   `,
 
   Semibold20: css`
+    font-family: "faustina", serif;
     font-weight: 600;
     font-style: normal;
     font-size: 20px;
   `,
   Bold20: css`
+    font-family: "faustina", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 20px;
   `,
 
   Bold24: css`
+    font-family: "faustina", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 24px;
   `,
   Bold32: css`
+    font-family: "faustina", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 32px;
   `,
 
   Title20: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 20px;
   `,
   Title24: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 24px;
   `,
   Title32: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 32px;
   `,
   Title40: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 40px;
   `,
   Title48: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 48px;
   `,
   Title64: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 64px;
   `,
   Title80: css`
-    font-family: "shrub", sans-serif;
+    font-family: "clarendon-wide-sketch", serif;
     font-weight: 700;
     font-style: normal;
     font-size: 80px;

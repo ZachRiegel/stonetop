@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { generateClient, type SelectionSet } from "aws-amplify/data";
-import { getCurrentUser, type GetCurrentUserOutput } from "aws-amplify/auth";
 import type { ModelPath } from "@aws-amplify/data-schema/runtime";
+import { getCurrentUser, type GetCurrentUserOutput } from "aws-amplify/auth";
+import { generateClient, type SelectionSet } from "aws-amplify/data";
+import { useEffect, useMemo, useState } from "react";
 
 import type { Schema } from "../amplify/data/resource";
 
@@ -13,7 +13,7 @@ let memoizedClient: Client | undefined;
 // shared so every caller talks to the same instance.
 export const getClient = (): Client => (memoizedClient ??= generateClient<Schema>());
 
-export const useClient = (): Client => useMemo(getClient, []);
+export const useClient = (): Client => useMemo(() => getClient(), []);
 
 export type CurrentUser = GetCurrentUserOutput;
 
@@ -33,6 +33,7 @@ export type Query<T extends ModelName, U extends ReadonlyArray<ModelPath<FlatMod
   selections: U;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- any is the only valid wildcard for these constrained type params
 export type QueryResult<Q extends Query<any, any>> =
   Q extends Query<infer T, infer U> ? SelectionSet<Schema[T], U, FlatModel<T>> : never;
 
@@ -58,7 +59,7 @@ export const useObserveQuery = <
       };
     };
     const subscription = observeQuery({ selectionSet: [...query.selections] }).subscribe({
-      next: ({ items }) => setItems([...items] as any),
+      next: ({ items }) => setItems([...items] as QueryResult<Query<T, U>>[]),
     });
     return () => subscription.unsubscribe();
   }, [client, query]);

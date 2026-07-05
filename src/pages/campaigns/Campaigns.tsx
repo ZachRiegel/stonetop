@@ -1,24 +1,18 @@
-import { useState } from "react";
 import styled from "@emotion/styled";
-
-import {
-  useClient,
-  useObserveQuery,
-  useCurrentUser,
-  defineQuery,
-  type QueryResult,
-} from "amplify.ts";
-
+import { defineQuery, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
 import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
-
-import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
-
-import misc from "pages/campaigns/misc.png";
-import footer from "pages/campaigns/footer.png";
 import Icon from "components/Icon.tsx";
+import Loading from "components/Loading.tsx";
+import useMinimumLoading from "hooks/useMinimumLoading.ts";
+import useModal from "hooks/useModal.ts";
 import _ from "lodash";
-import Loading from "../../components/Loading.tsx";
+import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
+import footer from "pages/campaigns/footer.png";
+import misc from "pages/campaigns/misc.png";
+import { useCallback, useMemo } from "react";
+
+import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
 const Page = styled.div`
   position: relative;
@@ -99,10 +93,13 @@ const CardBottom = styled.div`
 `;
 
 const CampaignLabel = styled.a`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 16px;
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  grid-auto-rows: max-content;
+  column-gap: 16px;
+  align-items: center;
+  row-gap: 2px;
+  padding: 12px 12px 12px 16px;
   border-radius: 16px;
   background-color: var(--neutral-25);
   box-shadow: var(--shadow-medium);
@@ -113,13 +110,21 @@ const AvatarRow = styled.div`
   display: grid;
   grid-auto-flow: column;
   justify-content: start;
-  gap: 4px;
   margin-top: 4px;
 `;
 
+const AvatarContainer = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  overflow: visible;
+  width: 15px;
+  height: 30px;
+`;
+
 const Avatar = styled.img`
-  width: 24px;
-  height: 24px;
+  min-width: 30px;
+  min-height: 30px;
+  border: 2px solid var(--neutral-0);
   border-radius: 999px;
   object-fit: cover;
 `;
@@ -135,35 +140,54 @@ const query = defineQuery("Campaign", [
 type CampaignResult = QueryResult<typeof query>;
 
 const Campaigns = () => {
-  const client = useClient();
   const campaigns = useObserveQuery(query);
   const user = useCurrentUser();
-  const [creating, setCreating] = useState(false);
-  const [name, setName] = useState("");
+  const createModal = useModal();
 
-  const characterLine = (campaign: CampaignResult) => {
-    return !user
-      ? "Loading..."
-      : user.username === campaign.owner
-        ? "Game Master"
-        : (campaign.characters.find((character) => character.owner === user.username)?.name ??
-          "No character yet");
-  };
+  const characterLine = useCallback(
+    (campaign: CampaignResult) => {
+      return !user
+        ? "Loading..."
+        : user.username === campaign.owner
+          ? "Game Master"
+          : (campaign.characters.find((character) => character.owner === user.username)?.name ??
+            "No character yet");
+    },
+    [user],
+  );
 
-  const createCampaign = async () => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (!user) return;
-    // members must hold usernames — UserProfile ids are usernames, not subs
-    await client.models.Campaign.create({ name: trimmed, members: [user.username] });
-    setName("");
-    setCreating(false);
-  };
+  const isLoading = useMinimumLoading(!campaigns);
 
-  const cancelCreate = () => {
-    setName("");
-    setCreating(false);
-  };
+  const campaignEntries = useMemo(
+    () =>
+      campaigns?.map((campaign) => (
+        <CampaignLabel key={campaign.id} href={`/campaigns/${campaign.id}`}>
+          <Font.Bold20 text={campaign.name} />
+          {campaign.profiles?.length ? (
+            <AvatarRow>
+              {_.chain(campaign.profiles)
+                .map((profile) => profile.userProfile)
+                .compact() // members without a UserProfile yet resolve to null
+                .uniqBy((profile) => profile.id)
+                .flatMap((entry) => [entry, entry])
+                .map((profile, index) => (
+                  <AvatarContainer key={profile.id + index}>
+                    <Avatar
+                      src={discordProfilePictureForUser(profile)}
+                      alt={profile.name ?? "Unknown user"}
+                    />
+                  </AvatarContainer>
+                ))
+                .value()}
+            </AvatarRow>
+          ) : (
+            <div />
+          )}
+          <Font.Italic16 element="div" text={characterLine(campaign)} />
+        </CampaignLabel>
+      )),
+    [campaigns, characterLine],
+  );
 
   return (
     <Page>
@@ -173,7 +197,7 @@ const Campaigns = () => {
           <Font.Bold32 element="h1" text="Campaigns" />
         </CardHeader>
         <ScrollArea>
-          {!campaigns ? (
+          {isLoading || !campaigns ? (
             <Loading.Medium />
           ) : campaigns.length === 0 ? (
             <EmptyState>
@@ -185,43 +209,14 @@ Ask your Game Master to invite you or create one.`}
               />
             </EmptyState>
           ) : (
-            campaigns.map((campaign) => (
-              <CampaignLabel key={campaign.id} href={`/campaigns/${campaign.id}`}>
-                <Font.Bold20 text={campaign.name} />
-                <Font.Italic16 element="div" text={characterLine(campaign)} />
-
-                {!!campaign.profiles?.length && (
-                  <AvatarRow>
-                    {_.chain(campaign.profiles)
-                      .map((profile) => profile.userProfile)
-                      .compact() // members without a UserProfile yet resolve to null
-                      .uniqBy((profile) => profile.id)
-                      .filter((profile) => !!profile.picture && profile.id !== user?.username)
-                      .map((profile) => (
-                        <Avatar key={profile.id} src={profile.picture!} alt={profile.name ?? ""} />
-                      ))
-                      .value()}
-                  </AvatarRow>
-                )}
-              </CampaignLabel>
-            ))
+            campaignEntries
           )}
         </ScrollArea>
         <CardBottom>
-          <Button.Primary
-            Icon={Icon.Plus}
-            text="Create campaign"
-            onClick={() => setCreating(true)}
-          />
+          <Button.Primary Icon={Icon.Plus} text="Create campaign" onClick={createModal.open} />
         </CardBottom>
       </Card>
-      <CreateCampaignDialog
-        isOpen={creating}
-        name={name}
-        onNameChange={setName}
-        onCreate={createCampaign}
-        close={cancelCreate}
-      />
+      <CreateCampaignDialog isOpen={createModal.isOpen} requestClose={createModal.close} />
     </Page>
   );
 };

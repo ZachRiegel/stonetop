@@ -1,5 +1,5 @@
 // ./amplify/data/resource.ts
-import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { a, type ClientSchema, defineData } from "@aws-amplify/backend";
 
 import { syncCampaignMembers } from "../functions/sync-campaign-members/resource";
 import { syncCampaignProfiles } from "../functions/sync-campaign-profiles/resource";

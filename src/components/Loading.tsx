@@ -1,7 +1,6 @@
-import styled from "@emotion/styled";
-
-import hourglass from "assets/hourglass.png";
 import { keyframes } from "@emotion/react";
+import styled from "@emotion/styled";
+import hourglass from "assets/hourglass.png";
 
 const LoadingInternal = ({ className }: { className?: string }) => (
   <img className={className} src={hourglass} alt="Loading" />

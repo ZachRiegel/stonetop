@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import * as React from "react";
 import type { HTMLInputTypeAttribute } from "react";
+import * as React from "react";
+
 import { FontCSS } from "./Font.tsx";
-import { css } from "@emotion/react";
 
 const InputInternals = ({
   value,

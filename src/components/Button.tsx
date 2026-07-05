@@ -1,6 +1,7 @@
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useTransition } from "react";
+
 import { FontCSS } from "./Font.tsx";
 import { type IconProps } from "./Icon.tsx";
 
@@ -46,7 +47,7 @@ const ButtonInternals = ({
   className,
   Icon,
 }: {
-  text: string;
+  text?: string;
   onClick?: () => void | Promise<unknown>;
   type?: "button" | "submit" | "reset";
   className?: string;
@@ -95,9 +96,9 @@ const BaseButton = styled(ButtonInternals)`
   gap: 8px;
   flex: 1;
   max-height: 54px;
-  padding: 10px 14px;
+  padding: 6px ${(props) => (props.text ? 10 : 6)}px;
   border: 2px solid transparent;
-  border-radius: 16px;
+  border-radius: ${(props) => (props.text ? 16 : 999)}px;
   cursor: pointer;
   ${FontCSS.Bold20}
 
@@ -141,6 +142,16 @@ const Button = {
     }
     &:where(:active:not(:disabled)) {
       background: var(--neutral-600);
+    }
+  `,
+  Transparent: styled(BaseButton)`
+    background-color: transparent;
+    color: var(--neutral-500);
+    &:where(:hover:not(:disabled)) {
+      background: var(--neutral-200);
+    }
+    &:where(:active:not(:disabled)) {
+      background: var(--neutral-300);
     }
   `,
 };

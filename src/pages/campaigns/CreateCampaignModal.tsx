@@ -1,10 +1,12 @@
 import styled from "@emotion/styled";
-
-import MakeDialog from "hoc/MakeDialog.tsx";
-import Modal from "components/Modal.tsx";
+import { useClient, useCurrentUser } from "amplify.ts";
 import Button from "components/Button.tsx";
-import Input from "components/Input.tsx";
 import Font from "components/Font.tsx";
+import Input from "components/Input.tsx";
+import Modal from "components/Modal.tsx";
+import MakeDialog from "hoc/MakeDialog.tsx";
+import { useState } from "react";
+
 import ButtonRow from "../../components/ButtonRow.tsx";
 
 const CardHeader = styled.div`
@@ -35,32 +37,36 @@ const Card = styled.div`
   }
 `;
 
-const CreateCampaignModal = ({
-  name,
-  onNameChange,
-  onCreate,
-  close,
-}: {
-  isOpen: boolean;
-  name: string;
-  onNameChange: (name: string) => void;
-  onCreate: () => void;
-  close: () => void;
-}) => (
-  <Card>
-    <CardHeader>
-      <Font.Bold32 element="h2" text="New Campaign" />
-    </CardHeader>
-    <CardBody>
-      <Input value={name} onChange={(value) => onNameChange(value)} label="Campaign name" />
-    </CardBody>
-    <CardFooter>
-      <ButtonRow>
-        <Button.Secondary text="Cancel" onClick={close} />
-        <Button.Primary text="Create" onClick={onCreate} />
-      </ButtonRow>
-    </CardFooter>
-  </Card>
-);
+const CreateCampaignModal = ({ requestClose }: { isOpen: boolean; requestClose: () => void }) => {
+  const client = useClient();
+  const user = useCurrentUser();
+  const [name, setName] = useState("");
+
+  const createCampaign = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (!user) return;
+    await client.models.Campaign.create({ name: trimmed });
+    setName("");
+    requestClose();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <Font.Bold32 element="h2" text="New Campaign" />
+      </CardHeader>
+      <CardBody>
+        <Input value={name} onChange={setName} label="Campaign name" />
+      </CardBody>
+      <CardFooter>
+        <ButtonRow>
+          <Button.Secondary text="Cancel" onClick={requestClose} />
+          <Button.Primary text="Create" onClick={createCampaign} />
+        </ButtonRow>
+      </CardFooter>
+    </Card>
+  );
+};
 
 export default MakeDialog("isOpen", CreateCampaignModal, Modal);

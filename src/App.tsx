@@ -1,10 +1,10 @@
-import { createBrowserRouter, Outlet, redirect, RouterProvider } from "react-router";
-import { getCurrentUser } from "aws-amplify/auth";
-
-import RootLayout from "RootLayout.tsx";
-import Login from "pages/landing/Login.tsx";
-import Campaigns from "pages/campaigns/Campaigns.tsx";
 import { Amplify } from "aws-amplify";
+import { getCurrentUser } from "aws-amplify/auth";
+import Campaigns from "pages/campaigns/Campaigns.tsx";
+import Login from "pages/landing/Login.tsx";
+import { createBrowserRouter, redirect, RouterProvider } from "react-router";
+import RootLayout from "RootLayout.tsx";
+
 import outputs from "../amplify_outputs.json";
 import AuthenticatedLayout from "./AuthenticatedLayout.tsx";
 
@@ -25,7 +25,7 @@ const router = createBrowserRouter([
     children: [
       {
         middleware: [
-          async ({ context }) => {
+          async () => {
             try {
               await getCurrentUser();
             } catch {
@@ -43,7 +43,9 @@ const router = createBrowserRouter([
           try {
             await getCurrentUser();
             return redirect("/");
-          } catch {}
+          } catch {
+            // not signed in — stay on the login page
+          }
         },
       },
       { path: "*", loader: () => redirect("/") },

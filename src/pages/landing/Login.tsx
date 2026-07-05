@@ -1,16 +1,14 @@
 import { css, Global } from "@emotion/react";
 import styled from "@emotion/styled";
-
-import Font from "components/Font.tsx";
-import Button from "components/Button.tsx";
-import Icon from "components/Icon.tsx";
-
-import { signInWithRedirect } from "aws-amplify/auth";
-
 import background from "assets/background.svg";
-import footer from "./footer.png";
-import gintoWoff from "./ABCGintoDiscord-Medium.woff";
+import { signInWithRedirect } from "aws-amplify/auth";
+import Button from "components/Button.tsx";
+import Font from "components/Font.tsx";
+import Icon from "components/Icon.tsx";
 import { useNavigate } from "react-router";
+
+import gintoWoff from "./ABCGintoDiscord-Medium.woff";
+import footer from "./footer.png";
 
 const discordFont = css`
   @font-face {

@@ -1,13 +1,14 @@
-import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
 import styled from "@emotion/styled";
+import { getClient } from "amplify.ts";
+import background from "assets/background.svg";
+import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
 import { use, useState } from "react";
-import Font from "./components/Font.tsx";
 import { Outlet } from "react-router";
 
-import { getClient } from "amplify.ts";
+import Font from "./components/Font.tsx";
 import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
-
-import background from "assets/background.svg";
+import Button from "components/Button.tsx";
+import Icon from "components/Icon.tsx";
 
 const cachePromise = <T,>(fn: () => Promise<T>) => {
   let promise: Promise<T> | undefined;
@@ -45,13 +46,45 @@ const Layout = styled.div`
   background-repeat: no-repeat;
 `;
 
-const Nav = styled.nav`
+const NavContainer = styled.div`
+  width: 100%;
+  overflow: visible;
   isolation: isolate;
+  z-index: 2;
   height: 100vh;
+`;
+
+const Nav = styled.nav`
+  position: relative;
+  overflow: clip;
+  height: 100%;
+  width: 66px;
+  transition: width 300ms linear;
+  background-image: url("${background}");
+  background-size: 100vw 100vh;
+  background-repeat: no-repeat;
+  container-type: normal;
+  container-name: navigation;
+  --expanded-width: 320px;
+  --open: false;
+
+  &:focus-within {
+    width: var(--expanded-width);
+    --open: true;
+  }
+
+  &:hover {
+    --custom-transition-delay: 750ms;
+    transition-delay: var(--custom-transition-delay);
+    width: var(--expanded-width);
+    --open: true;
+  }
+
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 8px;
-  padding: 12px;
+  --navigation-horizontal-padding: 12px;
+  padding: 12px var(--navigation-horizontal-padding);
   border-right: 2px solid var(--neutral-200);
 `;
 
@@ -70,14 +103,42 @@ const NavItems = styled.div`
 `;
 
 const Profile = styled.div`
-  display: flex;
+  display: grid;
+  padding: 8px 12px;
+  min-width: calc(var(--expanded-width) - 2 * var(--navigation-horizontal-padding));
+  width: calc(var(--expanded-width) - 2 * var(--navigation-horizontal-padding) + 16);
+  grid-template-columns: max-content 1fr max-content;
+  grid-template-rows: max-content;
+  gap: 12px;
   align-items: center;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
+  translate: -8px 0;
+
+  transition:
+    background-color 300ms linear,
+    padding 300ms linear,
+    translate 300ms linear;
+  transition-delay: var(--custom-transition-delay);
+
+  & > *:not(:first-child) {
+    opacity: 0;
+    transition: opacity 300ms linear;
+  }
 
   &:hover {
+    background-color: var(--neutral-75);
+  }
+
+  @container navigation style(--open: true) {
+    translate: 0 0;
     background-color: var(--neutral-100);
+    box-shadow: var(--shadow-small);
+
+    & > *:not(:first-child) {
+      opacity: 1;
+    }
   }
 `;
 
@@ -107,18 +168,22 @@ const AuthenticatedLayout = () => {
 
   return (
     <Layout>
-      <Nav>
-        <NavItems ref={setNavItems} />
-        <Profile>
-          {user.picture ? (
-            <Avatar src={user.picture} alt={user.name ?? ""} />
-          ) : (
-            <Placeholder>
-              <Font.Bold20 element="div" text="?" />
-            </Placeholder>
-          )}
-        </Profile>
-      </Nav>
+      <NavContainer>
+        <Nav>
+          <NavItems ref={setNavItems} />
+          <Profile>
+            {user.picture ? (
+              <Avatar src={user.picture} alt={user.name ?? ""} />
+            ) : (
+              <Placeholder>
+                <Font.Bold20 element="div" text="?" />
+              </Placeholder>
+            )}
+            <Font.Bold16 element="div" text={user.name ?? "Unknown"} />
+            <Button.Transparent Icon={Icon.Cog} />
+          </Profile>
+        </Nav>
+      </NavContainer>
       <NavigationItemPortalContext value={navItems}>
         <Main>
           <Outlet />

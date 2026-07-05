@@ -1,10 +1,10 @@
 import process from "node:process";
 
-import type { DynamoDBRecord, DynamoDBStreamHandler } from "aws-lambda";
+import { getAmplifyDataClientConfig } from "@aws-amplify/backend/function/runtime";
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
-import { getAmplifyDataClientConfig } from "@aws-amplify/backend/function/runtime";
+import type { DynamoDBRecord, DynamoDBStreamHandler } from "aws-lambda";
 
 import type { Schema } from "../../data/resource";
 

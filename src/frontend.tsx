@@ -5,11 +5,12 @@
  * It is referenced from `index.html`.
  */
 
+import { Amplify } from "aws-amplify";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "./App.tsx";
-import { Amplify } from "aws-amplify";
+
 import outputs from "../amplify_outputs.json";
+import { App } from "./App.tsx";
 
 Amplify.configure(outputs);
 

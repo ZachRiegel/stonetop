@@ -1,19 +1,16 @@
-import { Outlet } from "react-router";
-import { Global, css } from "@emotion/react";
+import { css, Global } from "@emotion/react";
 import { Suspense } from "react";
+import { Outlet } from "react-router";
 
 const RootLayout = () => (
   <>
     <Global
       styles={css`
-        /* Registered as a real <length> so Input's mask notch can
-           interpolate instead of snapping discretely */
         @property --label-width {
-          syntax: "<length>";
           inherits: true;
+          syntax: "<length>";
           initial-value: 0px;
         }
-        /* Grayscale palette: 0 = black (dark), 900 = white (light) */
         :root,
         dialog {
           --neutral-0: #000000;
