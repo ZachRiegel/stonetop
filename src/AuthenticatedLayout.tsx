@@ -173,7 +173,7 @@ const AuthenticatedLayout = () => {
           <NavItems ref={setNavItems} />
           <Profile>
             {user.picture ? (
-              <Avatar src={user.picture} alt={user.name ?? ""} />
+              <Avatar src={discordProfilePictureForUser(user)} alt={user.name ?? ""} />
             ) : (
               <Placeholder>
                 <Font.Bold20 element="div" text="?" />
