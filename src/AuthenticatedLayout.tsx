@@ -114,7 +114,7 @@ const Profile = styled.div`
   cursor: pointer;
   border-radius: 12px;
   overflow: hidden;
-  translate: -8px 0;
+  translate: -12px 0;
 
   transition:
     background-color 300ms linear,
