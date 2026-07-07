@@ -4700,6 +4700,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@iconify-json/material-symbols@npm:^1.2.82":
+  version: 1.2.82
+  resolution: "@iconify-json/material-symbols@npm:1.2.82"
+  dependencies:
+    "@iconify/types": "npm:*"
+  checksum: 10c0/836a329b738edde81e5f76805a65973949908acf0e348e609f526c21b2fe169aafacb0fd28beeda7df4c8b91c752f04180075be453cc7834c6507270a1a6d1b9
+  languageName: node
+  linkType: hard
+
+"@iconify/types@npm:*":
+  version: 2.0.0
+  resolution: "@iconify/types@npm:2.0.0"
+  checksum: 10c0/65a3be43500c7ccacf360e136d00e1717f050b7b91da644e94370256ac66f582d59212bdb30d00788aab4fc078262e91c95b805d1808d654b72f6d2072a7e4b2
+  languageName: node
+  linkType: hard
+
 "@inquirer/ansi@npm:^1.0.2":
   version: 1.0.2
   resolution: "@inquirer/ansi@npm:1.0.2"
@@ -7331,6 +7347,7 @@ __metadata:
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.1"
     "@eslint/js": "npm:^10.0.1"
+    "@iconify-json/material-symbols": "npm:^1.2.82"
     "@types/aws-lambda": "npm:^8.10.162"
     "@types/lodash": "npm:^4.17.24"
     "@types/node": "npm:^26.1.0"

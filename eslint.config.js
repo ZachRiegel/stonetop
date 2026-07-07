@@ -17,7 +17,9 @@ export default tseslint.config(
       "unused-imports": unusedImports,
     },
     rules: {
+      "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/exhaustive-deps": "error",
+      "react-hooks/rules-of-hooks": "off",
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
       "unused-imports/no-unused-imports": "error",

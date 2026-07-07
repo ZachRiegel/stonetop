@@ -74,7 +74,7 @@ const ButtonInternals = ({
     <button className={className} type={type} onClick={handleClick} disabled={isLoading}>
       <Content isLoading={isLoading}>
         {Icon && <Icon size={24} />}
-        {text}
+        {text && <div>{text}</div>}
       </Content>
       {isLoading && (
         <Dots>
@@ -98,7 +98,7 @@ const BaseButton = styled(ButtonInternals)`
   max-height: 54px;
   padding: 6px ${(props) => (props.text ? 10 : 6)}px;
   border: 2px solid transparent;
-  border-radius: ${(props) => (props.text ? 16 : 999)}px;
+  border-radius: ${(props) => (props.text ? 12 : 999)}px;
   cursor: pointer;
   ${FontCSS.Bold20}
 
@@ -109,6 +109,17 @@ const BaseButton = styled(ButtonInternals)`
   &:where(:focus-visible) {
     outline: 2px solid var(--neutral-700);
     outline-offset: 2px;
+  }
+`;
+
+const Transparent = styled(BaseButton)`
+  background-color: transparent;
+  color: var(--neutral-500);
+  &:where(:hover:not(:disabled)) {
+    background: var(--neutral-200);
+  }
+  &:where(:active:not(:disabled)) {
+    background: var(--neutral-300);
   }
 `;
 
@@ -144,14 +155,12 @@ const Button = {
       background: var(--neutral-600);
     }
   `,
-  Transparent: styled(BaseButton)`
-    background-color: transparent;
-    color: var(--neutral-500);
-    &:where(:hover:not(:disabled)) {
-      background: var(--neutral-200);
-    }
-    &:where(:active:not(:disabled)) {
-      background: var(--neutral-300);
+  Transparent,
+  MenuItem: styled(Transparent)`
+    justify-content: flex-start;
+
+    ${Content} {
+      justify-content: flex-start;
     }
   `,
 };

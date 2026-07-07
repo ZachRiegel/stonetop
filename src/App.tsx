@@ -7,6 +7,8 @@ import RootLayout from "RootLayout.tsx";
 
 import outputs from "../amplify_outputs.json";
 import AuthenticatedLayout from "./AuthenticatedLayout.tsx";
+import loggedInUserNavigationLayout from "LoggedInUserNavigationLayout.tsx";
+import LoggedInUserNavigationLayout from "LoggedInUserNavigationLayout.tsx";
 
 const configureAmplify = (() => {
   let configured = false;
@@ -34,7 +36,16 @@ const router = createBrowserRouter([
           },
         ],
         element: <AuthenticatedLayout />,
-        children: [{ index: true, element: <Campaigns /> }],
+        children: [
+          {
+            element: <LoggedInUserNavigationLayout />,
+            children: [
+              { index: true, element: <Campaigns /> },
+              { path: "characters", element: null },
+              { path: "about", element: null },
+            ],
+          },
+        ],
       },
       {
         path: "/login",

@@ -1,13 +1,12 @@
 import styled from "@emotion/styled";
 import { useClient, useCurrentUser } from "amplify.ts";
 import Button from "components/Button.tsx";
+import ButtonRow from "components/ButtonRow.tsx";
 import Font from "components/Font.tsx";
 import Input from "components/Input.tsx";
 import Modal from "components/Modal.tsx";
 import MakeDialog from "hoc/MakeDialog.tsx";
 import { useState } from "react";
-
-import ButtonRow from "../../components/ButtonRow.tsx";
 
 const CardHeader = styled.div`
   padding: 12px 20px;

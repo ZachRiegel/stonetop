@@ -1,8 +1,8 @@
 import AnimateInOut from "hoc/AnimateInOut.tsx";
-import type { ComponentType, FunctionComponent, ReactNode, RefObject } from "react";
+import type { FC, ReactNode, RefObject } from "react";
 import { useEffect, useRef } from "react";
 
-type DialogComponent = ComponentType<{
+type DialogComponent = FC<{
   isOpen: boolean;
   requestClose: () => void;
   children: ReactNode;
@@ -34,15 +34,24 @@ const MakeDialog = <
   return (props: P) => {
     const isOpen = Boolean(props[key]);
     const dialogRef = useRef<HTMLDialogElement>(null);
+    const openerRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
       const dialog = dialogRef.current;
-      // the open guard handles re-opening while the exit animation is still playing
-      if (isOpen && dialog && !dialog.open) dialog.showModal();
+      if (isOpen && dialog && !dialog.open) {
+        openerRef.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        dialog.showModal();
+      }
     }, [isOpen]);
 
     return (
-      <AnimatedDialog isOpen={isOpen} requestClose={props.requestClose} dialogRef={dialogRef}>
+      <AnimatedDialog
+        isOpen={isOpen}
+        requestClose={props.requestClose}
+        dialogRef={dialogRef}
+        afterUnmount={() => openerRef.current?.focus()}
+      >
         {Content(props)}
       </AnimatedDialog>
     );

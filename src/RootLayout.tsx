@@ -1,166 +1,175 @@
 import { css, Global } from "@emotion/react";
+import useBlurOnEscape from "hooks/useBlurOnEscape.ts";
 import { Suspense } from "react";
 import { Outlet } from "react-router";
 
-const RootLayout = () => (
-  <>
-    <Global
-      styles={css`
-        @property --label-width {
-          inherits: true;
-          syntax: "<length>";
-          initial-value: 0px;
-        }
-        :root,
-        dialog {
-          --neutral-0: #000000;
-          --neutral-25: #070707;
-          --neutral-50: #0e0e0e;
-          --neutral-75: #151515;
-          --neutral-100: #1c1c1c;
-          --neutral-150: #2b2b2b;
-          --neutral-200: #393939;
-          --neutral-250: #474747;
-          --neutral-300: #555555;
-          --neutral-350: #636363;
-          --neutral-400: #717171;
-          --neutral-450: #808080;
-          --neutral-500: #8e8e8e;
-          --neutral-550: #9c9c9c;
-          --neutral-600: #aaaaaa;
-          --neutral-650: #b8b8b8;
-          --neutral-700: #c6c6c6;
-          --neutral-750: #d5d5d5;
-          --neutral-800: #e3e3e3;
-          --neutral-850: #f1f1f1;
-          --neutral-900: #ffffff;
-          --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.24);
-          --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.28);
-          --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.36);
-        }
-        /* 1. Use a more-intuitive box-sizing model */
-        *,
-        *::before,
-        *::after {
-          box-sizing: border-box;
-        }
-        /* 2. Remove default margin */
-        * {
-          margin: 0;
-          user-select: none;
-        }
-        /* 3. Enable keyword animations */
-        @media (prefers-reduced-motion: no-preference) {
-          html {
-            interpolate-size: allow-keywords;
+const RootLayout = () => {
+  useBlurOnEscape();
+  return (
+    <>
+      <Global
+        styles={css`
+          @property --label-width {
+            inherits: true;
+            syntax: "<length>";
+            initial-value: 0px;
           }
-        }
-        body {
-          /* 4. Increase line-height */
-          line-height: 1.5;
-          /* 5. Improve text rendering */
-          -webkit-font-smoothing: antialiased;
-        }
-        /* 6. Improve media defaults */
-        img,
-        picture,
-        video,
-        canvas,
-        svg {
-          display: block;
-          max-width: 100%;
-        }
-        /* 7. Inherit fonts for form controls */
-        input,
-        button,
-        textarea,
-        select {
-          font: inherit;
-        }
-        /* 8. Avoid text overflows */
-        p,
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-          overflow-wrap: break-word;
-        }
-        /* 9. Improve line wrapping */
-        p {
-          text-wrap: pretty;
-        }
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-          text-wrap: balance;
-        }
-        /*
+          @property --custom-background-color {
+            inherits: true;
+            syntax: "<color>";
+            initial-value: transparent;
+          }
+          :root,
+          dialog {
+            --neutral-0: #000000;
+            --neutral-25: #070707;
+            --neutral-50: #0e0e0e;
+            --neutral-75: #151515;
+            --neutral-100: #1c1c1c;
+            --neutral-150: #2b2b2b;
+            --neutral-200: #393939;
+            --neutral-250: #474747;
+            --neutral-300: #555555;
+            --neutral-350: #636363;
+            --neutral-400: #717171;
+            --neutral-450: #808080;
+            --neutral-500: #8e8e8e;
+            --neutral-550: #9c9c9c;
+            --neutral-600: #aaaaaa;
+            --neutral-650: #b8b8b8;
+            --neutral-700: #c6c6c6;
+            --neutral-750: #d5d5d5;
+            --neutral-800: #e3e3e3;
+            --neutral-850: #f1f1f1;
+            --neutral-900: #ffffff;
+            --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.24);
+            --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.28);
+            --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.36);
+          }
+          /* 1. Use a more-intuitive box-sizing model */
+          *,
+          *::before,
+          *::after {
+            box-sizing: border-box;
+          }
+          /* 2. Remove default margin */
+          * {
+            margin: 0;
+            user-select: none;
+          }
+          /* 3. Enable keyword animations */
+          @media (prefers-reduced-motion: no-preference) {
+            html {
+              interpolate-size: allow-keywords;
+            }
+          }
+          body {
+            /* 4. Increase line-height */
+            line-height: 1.5;
+            /* 5. Improve text rendering */
+            -webkit-font-smoothing: antialiased;
+          }
+          /* 6. Improve media defaults */
+          img,
+          picture,
+          video,
+          canvas,
+          svg {
+            display: block;
+            max-width: 100%;
+          }
+          /* 7. Inherit fonts for form controls */
+          input,
+          button,
+          textarea,
+          select {
+            font: inherit;
+          }
+          /* 8. Avoid text overflows */
+          p,
+          h1,
+          h2,
+          h3,
+          h4,
+          h5,
+          h6 {
+            overflow-wrap: break-word;
+          }
+          /* 9. Improve line wrapping */
+          p {
+            text-wrap: pretty;
+          }
+          h1,
+          h2,
+          h3,
+          h4,
+          h5,
+          h6 {
+            text-wrap: balance;
+          }
+          /*
           10. Create a root stacking context
         */
-        #root,
-        #__next {
-          isolation: isolate;
-        }
-        /* 11. Remove default anchor styling */
-        a {
-          color: inherit;
-          text-decoration: none;
-        }
+          #root,
+          #__next {
+            isolation: isolate;
+          }
+          /* 11. Remove default anchor styling */
+          a {
+            color: inherit;
+            text-decoration: none;
+          }
 
-        * {
-          box-sizing: border-box;
-        }
-        dialog {
-          width: 100vw;
-          height: 100vh;
-          background-color: transparent;
-          margin: 0;
-          padding: 0;
-          outline: none;
-          border: none;
-          max-width: unset;
-          max-height: unset;
-          user-select: none;
-        }
-        body {
-          margin: 0;
-        }
-        /* Firefox: no way to pin an exact width; thin renders at 8px */
-        * {
-          scrollbar-width: thin;
-          scrollbar-color: var(--neutral-300) transparent;
-        }
-        /* Chromium/Safari: pin scrollbars (and thus scrollbar gutters) to
+          * {
+            box-sizing: border-box;
+          }
+          dialog {
+            width: 100vw;
+            height: 100vh;
+            background-color: transparent;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            border: none;
+            max-width: unset;
+            max-height: unset;
+            user-select: none;
+          }
+          body {
+            margin: 0;
+          }
+          /* Firefox: no way to pin an exact width; thin renders at 8px */
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--neutral-300) transparent;
+          }
+          /* Chromium/Safari: pin scrollbars (and thus scrollbar gutters) to
            exactly 8px. The standard properties must be reset to auto or
            Chrome ignores ::-webkit-scrollbar styling entirely. */
-        @supports selector(::-webkit-scrollbar) {
-          * {
-            scrollbar-width: auto;
-            scrollbar-color: auto;
+          @supports selector(::-webkit-scrollbar) {
+            * {
+              scrollbar-width: auto;
+              scrollbar-color: auto;
+            }
+            ::-webkit-scrollbar {
+              width: 8px;
+              height: 8px;
+            }
+            ::-webkit-scrollbar-thumb {
+              background: var(--neutral-300);
+              border-radius: 999px;
+            }
+            ::-webkit-scrollbar-track {
+              background: transparent;
+            }
           }
-          ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: var(--neutral-300);
-            border-radius: 999px;
-          }
-          ::-webkit-scrollbar-track {
-            background: transparent;
-          }
-        }
-      `}
-    />
-    <Suspense>
-      <Outlet />
-    </Suspense>
-  </>
-);
+        `}
+      />
+      <Suspense>
+        <Outlet />
+      </Suspense>
+    </>
+  );
+};
 
 export default RootLayout;

@@ -32,6 +32,7 @@
     "@aws-sdk/types": "^3.973.14",
     "@emotion/babel-plugin": "^11.13.5",
     "@eslint/js": "^10.0.1",
+    "@iconify-json/material-symbols": "^1.2.82",
     "@types/aws-lambda": "^8.10.162",
     "@types/lodash": "^4.17.24",
     "@types/node": "^26.1.0",

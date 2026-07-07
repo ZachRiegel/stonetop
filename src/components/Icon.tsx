@@ -2,11 +2,15 @@ import styled from "@emotion/styled";
 import discordSvg from "icons/discordLogo.svg?raw";
 import plusSvg from "icons/plus.svg?raw";
 import cogSvg from "icons/cog.svg?raw";
+import book2Svg from "icons/book2.svg?raw";
+import libraryBooksSvg from "icons/libraryBooks.svg?raw";
 
 const IconSvgs = {
   Plus: plusSvg,
   Discord: discordSvg,
   Cog: cogSvg,
+  Book2: book2Svg,
+  LibraryBooks: libraryBooksSvg,
 };
 
 type IconName = keyof typeof IconSvgs;

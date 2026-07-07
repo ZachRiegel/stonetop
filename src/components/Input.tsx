@@ -107,7 +107,7 @@ const Input = styled(InputInternals)`
 
     & > input {
       width: 100%;
-      padding: 12px 16px;
+      padding: 12px;
       border: none;
       //border: 1px solid var(--neutral-600);
       outline: none;
@@ -125,9 +125,7 @@ const Input = styled(InputInternals)`
   & > label {
     position: absolute;
     left: 18px;
-    // centered in the frame (50% of the root sits 5px above that)
-    top: calc(50%);
-    transform: translateY(-50%);
+    top: -17px;
     pointer-events: none;
     white-space: nowrap;
     ${FontCSS.Semibold16}
@@ -135,23 +133,14 @@ const Input = styled(InputInternals)`
     transition: top var(--animation-duration) ease-in-out;
   }
 
-  // floated: focused, non-empty, or a real placeholder (not the " " fallback)
-  &:focus-within,
-  &:has(input:not(:placeholder-shown)),
-  &:has(input:not([placeholder=" "])) {
-    & > label {
-      top: -3px;
-    }
-
-    // Erase the border's top 2px behind the label (its 18px inset ± 4px).
-    // Gated on a label existing: --label-width's registered initial is 0px,
-    // so an ungated mask would cut an empty 14-22px hole in label-less inputs.
-    &:has(> label) > .frame::before {
-      mask:
-        linear-gradient(to right, #000 14px, transparent 0 calc(22px + var(--label-width)), #000 0)
-          0 0 / 100% 2px no-repeat,
-        linear-gradient(#000, #000) 0 2px / 100% calc(100%) no-repeat;
-    }
+  // Erase the border's top 2px behind the label (its 18px inset ± 4px).
+  // Gated on a label existing: --label-width's registered initial is 0px,
+  // so an ungated mask would cut an empty 14-22px hole in label-less inputs.
+  &:has(> label) > .frame::before {
+    mask:
+      linear-gradient(to right, #000 14px, transparent 0 calc(22px + var(--label-width)), #000 0) 0
+        0 / 100% 2px no-repeat,
+      linear-gradient(#000, #000) 0 2px / 100% calc(100%) no-repeat;
   }
 `;
 

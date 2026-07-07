@@ -2,15 +2,15 @@ import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import type { ElementType } from "react";
 
-const TextInternals = ({
-  text,
-  className,
-  element: Element = "span",
-}: {
+export type FontProps = {
   text: string;
   className?: string;
   element?: ElementType;
-}) => <Element className={className}>{text}</Element>;
+};
+
+const TextInternals = ({ text, className, element: Element = "span" }: FontProps) => (
+  <Element className={className}>{text}</Element>
+);
 
 const BaseText = styled(TextInternals)`
   ${({ element }) =>

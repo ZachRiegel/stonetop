@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import { defineQuery, getClient, useCurrentUser, useObserveQuery } from "amplify.ts";
 import background from "assets/background.svg";
-import { fetchUserAttributes, getCurrentUser } from "aws-amplify/auth";
+import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import { useMemo, useState } from "react";
 import { Outlet } from "react-router";
 
@@ -9,6 +9,9 @@ import Font from "components/Font.tsx";
 import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
 import Button from "components/Button.tsx";
 import Icon from "components/Icon.tsx";
+import NavigationItem from "components/NavigationItem.tsx";
+import Popover from "components/Popover.tsx";
+import useModal from "hooks/useModal.ts";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
 const cachePromise = <T,>(fn: () => Promise<T>) => {
@@ -81,6 +84,12 @@ const Nav = styled.nav`
     --open: true;
   }
 
+  /* modal dialogs make the rest of the page inert, dropping :hover/:focus-within */
+  &:has(dialog[open]) {
+    width: var(--expanded-width);
+    --open: true;
+  }
+
   display: grid;
   grid-template-rows: 1fr auto;
   gap: 8px;
@@ -103,46 +112,6 @@ const NavItems = styled.div`
   overflow-y: auto;
 `;
 
-const Profile = styled.div`
-  display: grid;
-  padding: 8px 12px;
-  min-width: calc(var(--expanded-width) - 2 * var(--navigation-horizontal-padding));
-  width: calc(var(--expanded-width) - 2 * var(--navigation-horizontal-padding) + 16);
-  grid-template-columns: max-content 1fr max-content;
-  grid-template-rows: max-content;
-  gap: 12px;
-  align-items: center;
-  cursor: pointer;
-  border-radius: 12px;
-  overflow: hidden;
-  translate: -12px 0;
-
-  transition:
-    background-color 300ms linear,
-    padding 300ms linear,
-    translate 300ms linear;
-  transition-delay: var(--custom-transition-delay);
-
-  & > *:not(:first-child) {
-    opacity: 0;
-    transition: opacity 300ms linear;
-  }
-
-  &:hover {
-    background-color: var(--neutral-75);
-  }
-
-  @container navigation style(--open: true) {
-    translate: 0 0;
-    background-color: var(--neutral-100);
-    box-shadow: var(--shadow-small);
-
-    & > *:not(:first-child) {
-      opacity: 1;
-    }
-  }
-`;
-
 const Avatar = styled.img`
   width: 40px;
   height: 40px;
@@ -151,15 +120,12 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
-const Placeholder = styled.div`
-  width: 40px;
-  height: 40px;
-  aspect-ratio: 1 / 1;
+const MenuCard = styled.div`
+  display: grid;
+  padding: 8px;
+  border-radius: 12px;
   background-color: var(--neutral-100);
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
+  box-shadow: var(--shadow-medium);
 `;
 
 const AuthenticatedLayout = () => {
@@ -175,6 +141,7 @@ const AuthenticatedLayout = () => {
 
   const currentUser = useObserveQuery(query)?.[0];
   const [navItems, setNavItems] = useState<HTMLElement | null>(null);
+  const settingsMenu = useModal();
 
   return (
     <Layout>
@@ -182,14 +149,26 @@ const AuthenticatedLayout = () => {
         <Nav>
           <NavItems ref={setNavItems} />
           {currentUser && (
-            <Profile>
-              <Avatar
-                src={discordProfilePictureForUser(currentUser)}
-                alt={currentUser.name ?? ""}
-              />
-              <Font.Bold16 element="div" text={currentUser.name ?? "Unknown"} />
-              <Button.Transparent Icon={Icon.Cog} />
-            </Profile>
+            <Popover
+              verticalAlignment="top"
+              horizontalAlignment="span-left"
+              isOpen={settingsMenu.isOpen}
+              requestClose={settingsMenu.close}
+              content={
+                <MenuCard>
+                  <Button.MenuItem text="Sign out" onClick={() => signOut()} />
+                </MenuCard>
+              }
+            >
+              <NavigationItem.Solid>
+                <Avatar
+                  src={discordProfilePictureForUser(currentUser)}
+                  alt={currentUser.name ?? ""}
+                />
+                <Font.Bold16 element="div" text={currentUser.name ?? "Unknown"} />
+                <Button.Transparent Icon={Icon.Cog} onClick={settingsMenu.open} />
+              </NavigationItem.Solid>
+            </Popover>
           )}
         </Nav>
       </NavContainer>

@@ -16,6 +16,9 @@ const discordFont = css`
     src: url("${gintoWoff}") format("woff");
     font-weight: 500;
     font-style: normal;
+    ascent-override: 85%;
+    descent-override: 15%;
+    line-gap-override: 20%;
   }
 `;
 
@@ -57,9 +60,6 @@ const DiscordButton = styled(Button.Primary)`
   color: #e0e3ff;
   background: #5865f2;
   --icon-size: 32px;
-  & > span:first-child {
-    gap: 12px;
-  }
   &:where(:hover:not(:disabled)) {
     background: #4752c4;
   }

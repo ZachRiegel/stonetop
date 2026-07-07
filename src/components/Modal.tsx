@@ -77,6 +77,7 @@ const Modal = styled(ModalInternals)<{ isOpen: boolean }>`
   justify-content: center;
   align-content: center;
   padding-left: 64px;
+  cursor: default;
 
   & section {
     isolation: isolate;
