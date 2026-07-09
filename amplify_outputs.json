@@ -502,13 +502,6 @@
                 ]
               }
             },
-            "campaignOwner": {
-              "name": "campaignOwner",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            },
             "members": {
               "name": "members",
               "isArray": true,
@@ -547,15 +540,6 @@
                 "rules": [
                   {
                     "provider": "userPools",
-                    "ownerField": "campaignOwner",
-                    "allow": "owner",
-                    "operations": [
-                      "read"
-                    ],
-                    "identityClaim": "cognito:username"
-                  },
-                  {
-                    "provider": "userPools",
                     "ownerField": "members",
                     "allow": "owner",
                     "operations": [
@@ -590,7 +574,66 @@
           ]
         }
       },
-      "nonModels": {}
+      "nonModels": {
+        "PlayerSearchResult": {
+          "name": "PlayerSearchResult",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "picture": {
+              "name": "picture",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "isMember": {
+              "name": "isMember",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        }
+      },
+      "queries": {
+        "searchPlayers": {
+          "name": "searchPlayers",
+          "isArray": true,
+          "type": {
+            "nonModel": "PlayerSearchResult"
+          },
+          "isRequired": false,
+          "isArrayNullable": true,
+          "arguments": {
+            "campaignId": {
+              "name": "campaignId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            },
+            "search": {
+              "name": "search",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true
+            }
+          }
+        }
+      }
     }
   },
   "version": "1.4"
