@@ -16,16 +16,6 @@ export const auth = defineAuth({
           clientId: secret("authClient"),
           clientSecret: secret("authSecret"),
           issuerUrl: "https://dev-upwpy2prgrn2zopf.us.auth0.com",
-          endpoints: {
-            // connection=discord makes Auth0 skip its Universal Login
-            // screen and redirect straight to Discord
-            authorization:
-              "https://dev-upwpy2prgrn2zopf.us.auth0.com/authorize?connection=discord",
-            token: "https://dev-upwpy2prgrn2zopf.us.auth0.com/oauth/token",
-            userInfo: "https://dev-upwpy2prgrn2zopf.us.auth0.com/userinfo",
-            jwksUri:
-              "https://dev-upwpy2prgrn2zopf.us.auth0.com/.well-known/jwks.json",
-          },
           scopes: ["openid", "profile", "email", "name"],
           attributeMapping: {
             custom: {
