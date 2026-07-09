@@ -11,7 +11,7 @@ import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import { useCallback, useMemo } from "react";
-
+import { Link as ReactRouterLink } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
 const Page = styled.div`
@@ -92,7 +92,9 @@ const CardBottom = styled.div`
   padding: 16px 20px;
 `;
 
-const CampaignLabel = styled.a`
+const CampaignLabel = styled(ReactRouterLink)`
+  color: inherit;
+  text-decoration: none;
   display: grid;
   grid-template-columns: 1fr max-content;
   grid-auto-rows: max-content;
@@ -161,7 +163,7 @@ const Campaigns = () => {
   const campaignEntries = useMemo(
     () =>
       campaigns?.map((campaign) => (
-        <CampaignLabel key={campaign.id} href={`/campaigns/${campaign.id}`}>
+        <CampaignLabel key={campaign.id} to={`/campaign/${campaign.id}`}>
           <Font.Bold20 text={campaign.name} />
           {campaign.profiles?.length ? (
             <AvatarRow>
@@ -169,7 +171,6 @@ const Campaigns = () => {
                 .map((profile) => profile.userProfile)
                 .compact() // members without a UserProfile yet resolve to null
                 .uniqBy((profile) => profile.id)
-                .flatMap((entry) => [entry, entry])
                 .map((profile, index) => (
                   <AvatarContainer key={profile.id + index}>
                     <Avatar
