@@ -1,12 +1,14 @@
 import styled from "@emotion/styled";
-import { defineQuery, type QueryResult, useObserveQuery } from "amplify.ts";
+import { defineQuery, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
+import DropdownField from "components/DropdownField.tsx";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
 import _ from "lodash";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
-import { useCallback, useMemo } from "react";
+import PlayerOption from "pages/players/PlayerOption.tsx";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
@@ -82,6 +84,12 @@ const EmptyState = styled.div`
   }
 `;
 
+const CardBottom = styled.div`
+  display: grid;
+  padding: 16px 20px;
+  border-top: 2px solid var(--neutral-100);
+`;
+
 const PlayerLabel = styled.div`
   display: grid;
   grid-template-columns: max-content 1fr;
@@ -114,9 +122,21 @@ const playersQuery = (campaignId: string | undefined) =>
   );
 type Player = NonNullable<QueryResult<ReturnType<typeof playersQuery>>["userProfile"]>;
 
+// UserProfile is authenticated-readable, so the dropdown can observe every
+// profile and let DropdownField's case-insensitive filter do the typeahead.
+const profilesQuery = defineQuery("UserProfile", ["id", "name", "picture"]);
+type ProfileOption = QueryResult<typeof profilesQuery> & { isMember: boolean };
+
+// module-level so its identity is stable across renders (DropdownField memoizes on it)
+const profileName = (profile: ProfileOption) => profile.name ?? "Unknown user";
+
 const Players = () => {
   const { campaignId } = useParams();
   const members = useObserveQuery(useMemo(() => playersQuery(campaignId), [campaignId]));
+  const user = useCurrentUser();
+  const profiles = useObserveQuery(profilesQuery);
+
+  const [selectedProfile, setSelectedProfile] = useState<ProfileOption | null>(null);
 
   const players = useMemo(
     () =>
@@ -139,6 +159,15 @@ const Players = () => {
   );
 
   const isLoading = useMinimumLoading(!members);
+
+  const profileOptions = useMemo(
+    () =>
+      (profiles ?? []).map((profile) => ({
+        ...profile,
+        isMember: players.some(({ id }) => id === profile.id),
+      })),
+    [profiles, players],
+  );
 
   const playerEntries = useMemo(
     () =>
@@ -171,6 +200,20 @@ const Players = () => {
             playerEntries
           )}
         </ScrollArea>
+        {user && user.username === members?.[0]?.campaign?.owner && (
+          <CardBottom>
+            <DropdownField
+              items={profileOptions}
+              selectedItem={selectedProfile}
+              itemToString={profileName}
+              ItemRenderer={PlayerOption}
+              onSelect={setSelectedProfile}
+              isLoading={!profiles}
+              placeholder="Add a player..."
+              emptyState={<Font.Italic16 element="div" text="No matching players found." />}
+            />
+          </CardBottom>
+        )}
       </Card>
     </Page>
   );

@@ -125,8 +125,9 @@ const DropdownFieldInternals = <T,>({
             emptyState
           ) : (
             filtered.map((item, index) => (
+              // index keys: itemToString values may collide, and rows hold no state
               <button
-                key={itemToString(item)}
+                key={index}
                 type="button"
                 onMouseDown={preventFocusSteal}
                 onClick={() => select(item)}
