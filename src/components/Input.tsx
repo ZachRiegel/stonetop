@@ -7,6 +7,7 @@ import { FontCSS } from "./Font.tsx";
 const InputInternals = ({
   value,
   onChange,
+  onKeyDown,
   label,
   placeholder,
   type = "text",
@@ -14,6 +15,7 @@ const InputInternals = ({
 }: {
   value: string;
   onChange: (value: string, event: React.ChangeEvent) => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
   label?: string;
   placeholder?: string;
   type?: HTMLInputTypeAttribute;
@@ -47,6 +49,7 @@ const InputInternals = ({
           // :placeholder-shown usable as the "input is empty" test.
           placeholder={placeholder || " "}
           onChange={(event) => onChange(event.target.value, event)}
+          onKeyDown={onKeyDown}
         />
       </div>
       {label && (
