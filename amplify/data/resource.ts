@@ -1,6 +1,7 @@
 // ./amplify/data/resource.ts
 import { a, type ClientSchema, defineData } from "@aws-amplify/backend";
 
+import { searchPlayers } from "../functions/search-players/resource";
 import { syncCampaignMembers } from "../functions/sync-campaign-members/resource";
 import { syncCampaignProfiles } from "../functions/sync-campaign-profiles/resource";
 
@@ -67,10 +68,27 @@ const schema = a
         members: a.string().array(),
       })
       .authorization((allow) => [allow.ownersDefinedIn("members").to(["read"])]),
+
+    PlayerSearchResult: a.customType({
+      id: a.id().required(),
+      name: a.string(),
+      picture: a.string(),
+      isMember: a.boolean().required(),
+    }),
+
+    // UserProfiles whose names contain `search` (case-insensitive), flagging
+    // those already in the campaign; callable only by the campaign's members.
+    searchPlayers: a
+      .query()
+      .arguments({ campaignId: a.id().required(), search: a.string().required() })
+      .returns(a.ref("PlayerSearchResult").array())
+      .authorization((allow) => [allow.authenticated()])
+      .handler(a.handler.function(searchPlayers)),
   })
   .authorization((allow) => [
     allow.resource(syncCampaignMembers),
     allow.resource(syncCampaignProfiles),
+    allow.resource(searchPlayers),
   ]);
 
 export type Schema = ClientSchema<typeof schema>;

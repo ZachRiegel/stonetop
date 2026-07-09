@@ -23,6 +23,7 @@ const DropdownFieldInternals = <T,>({
   itemToString,
   ItemRenderer,
   onSelect,
+  onQueryChange,
   isLoading,
   emptyState,
   label,
@@ -34,6 +35,9 @@ const DropdownFieldInternals = <T,>({
   itemToString: (item: T) => string;
   ItemRenderer: ComponentType<{ item: T; isHighlighted: boolean }>;
   onSelect: (item: T) => void;
+  // Fires only on user input — not on selection or selectedItem syncs — so
+  // parents can drive a server-backed search without redundant fetches.
+  onQueryChange?: (query: string) => void;
   isLoading: boolean;
   emptyState: ReactNode;
   label?: string;
@@ -102,11 +106,15 @@ const DropdownFieldInternals = <T,>({
     [filtered, highlighted, select],
   );
 
-  const onChange = useCallback((value: string) => {
-    setQuery(value);
-    setHighlightedIndex(null);
-    setIsDismissed(false);
-  }, []);
+  const onChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      setHighlightedIndex(null);
+      setIsDismissed(false);
+      onQueryChange?.(value);
+    },
+    [onQueryChange],
+  );
 
   return (
     <div className={className} {...focusProps}>

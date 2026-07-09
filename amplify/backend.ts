@@ -4,12 +4,14 @@ import { DynamoEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
+import { searchPlayers } from "./functions/search-players/resource";
 import { syncCampaignMembers } from "./functions/sync-campaign-members/resource";
 import { syncCampaignProfiles } from "./functions/sync-campaign-profiles/resource";
 
 const backend = defineBackend({
   auth,
   data,
+  searchPlayers,
   syncCampaignMembers,
   syncCampaignProfiles,
 });

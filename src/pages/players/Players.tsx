@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { defineQuery, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
+import { defineQuery, type QueryResult, useClient, useCurrentUser, useObserveQuery } from "amplify.ts";
 import DropdownField from "components/DropdownField.tsx";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
@@ -8,7 +8,7 @@ import _ from "lodash";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import PlayerOption from "pages/players/PlayerOption.tsx";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useParams } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
@@ -122,21 +122,48 @@ const playersQuery = (campaignId: string | undefined) =>
   );
 type Player = NonNullable<QueryResult<ReturnType<typeof playersQuery>>["userProfile"]>;
 
-// UserProfile is authenticated-readable, so the dropdown can observe every
-// profile and let DropdownField's case-insensitive filter do the typeahead.
-const profilesQuery = defineQuery("UserProfile", ["id", "name", "picture"]);
-type ProfileOption = QueryResult<typeof profilesQuery> & { isMember: boolean };
+// AppSync returns custom-type arrays as (T | null)[], hence the unwrapping
+type SearchProfile = NonNullable<
+  NonNullable<
+    Awaited<ReturnType<ReturnType<typeof useClient>["queries"]["searchPlayers"]>>["data"]
+  >[number]
+>;
 
 // module-level so its identity is stable across renders (DropdownField memoizes on it)
-const profileName = (profile: ProfileOption) => profile.name ?? "Unknown user";
+const profileName = (profile: SearchProfile) => profile.name ?? "Unknown user";
 
 const Players = () => {
   const { campaignId } = useParams();
   const members = useObserveQuery(useMemo(() => playersQuery(campaignId), [campaignId]));
   const user = useCurrentUser();
-  const profiles = useObserveQuery(profilesQuery);
+  const client = useClient();
 
-  const [selectedProfile, setSelectedProfile] = useState<ProfileOption | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<SearchProfile | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchProfile[]>([]);
+  const [lastQuery, setLastQuery] = useState("");
+  const [isSearching, startSearch] = useTransition();
+  const requestIdRef = useRef(0);
+
+  const onQueryChange = useCallback(
+    (query: string) => {
+      setLastQuery(query);
+      const requestId = ++requestIdRef.current; // supersedes any in-flight search
+      if (query.trim() === "" || !campaignId) {
+        setSearchResults([]);
+        return;
+      }
+      startSearch(async () => {
+        // debounce: newer keystrokes bump the counter, so stale runs bail after the wait
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        if (requestId !== requestIdRef.current) return;
+        const { data } = await client.queries.searchPlayers({ campaignId, search: query.trim() });
+        if (requestId !== requestIdRef.current) return;
+        // state set after await must be re-wrapped to stay part of the transition
+        startSearch(() => setSearchResults(_.compact(data ?? [])));
+      });
+    },
+    [client, campaignId],
+  );
 
   const players = useMemo(
     () =>
@@ -159,15 +186,6 @@ const Players = () => {
   );
 
   const isLoading = useMinimumLoading(!members);
-
-  const profileOptions = useMemo(
-    () =>
-      (profiles ?? []).map((profile) => ({
-        ...profile,
-        isMember: players.some(({ id }) => id === profile.id),
-      })),
-    [profiles, players],
-  );
 
   const playerEntries = useMemo(
     () =>
@@ -203,14 +221,22 @@ const Players = () => {
         {user && user.username === members?.[0]?.campaign?.owner && (
           <CardBottom>
             <DropdownField
-              items={profileOptions}
+              items={searchResults}
               selectedItem={selectedProfile}
               itemToString={profileName}
               ItemRenderer={PlayerOption}
               onSelect={setSelectedProfile}
-              isLoading={!profiles}
+              onQueryChange={onQueryChange}
+              isLoading={isSearching}
               placeholder="Add a player..."
-              emptyState={<Font.Italic16 element="div" text="No matching players found." />}
+              emptyState={
+                <Font.Italic16
+                  element="div"
+                  text={
+                    lastQuery.trim() === "" ? "Type a name to search." : "No matching players found."
+                  }
+                />
+              }
             />
           </CardBottom>
         )}
