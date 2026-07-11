@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-west-1_ddwxOQtiA",
+    "user_pool_id": "us-west-1_u85WBqxCz",
     "aws_region": "us-west-1",
-    "user_pool_client_id": "32fs96l0p5lrn5evejpe31a9tk",
-    "identity_pool_id": "us-west-1:75e757f0-c0b9-4604-a76a-4a5af4184d83",
+    "user_pool_client_id": "7tst47s8upc538untlkq3tnsl2",
+    "identity_pool_id": "us-west-1:7f9a95a3-c9cb-4e87-81b9-a23b954d65e4",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -41,14 +41,14 @@
         "profile",
         "aws.cognito.signin.user.admin"
       ],
-      "domain": "b8c636f028d7e5f87ed4.auth.us-west-1.amazoncognito.com"
+      "domain": "bde491391d325e5463a9.auth.us-west-1.amazoncognito.com"
     },
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://z4zhydfjwnb7xoynlcxbce4a3i.appsync-api.us-west-1.amazonaws.com/graphql",
+    "url": "https://ssw723e4znh2blwte5y5homhs4.appsync-api.us-west-1.amazonaws.com/graphql",
     "aws_region": "us-west-1",
-    "api_key": "da2-zedc42pc25el5j3q34gve32ela",
+    "api_key": "da2-377zp4mjqreedlxlxdvyxqpbay",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
       "API_KEY",
@@ -103,6 +103,22 @@
               "isArray": true,
               "type": {
                 "model": "CampaignMember"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "campaignId"
+                ]
+              }
+            },
+            "inviteLinks": {
+              "name": "inviteLinks",
+              "isArray": true,
+              "type": {
+                "model": "InviteLink"
               },
               "isRequired": false,
               "attributes": [],
@@ -353,6 +369,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "displayName": {
+              "name": "displayName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "picture": {
               "name": "picture",
               "isArray": false,
@@ -556,6 +579,92 @@
             "primaryKeyFieldName": "id",
             "sortKeyFieldNames": []
           }
+        },
+        "InviteLink": {
+          "name": "InviteLink",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "campaignId": {
+              "name": "campaignId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "campaign": {
+              "name": "campaign",
+              "isArray": false,
+              "type": {
+                "model": "Campaign"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "campaignId"
+                ]
+              }
+            },
+            "owner": {
+              "name": "owner",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "InviteLinks",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "operations": [
+                      "read"
+                    ],
+                    "identityClaim": "cognito:username"
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
         }
       },
       "enums": {
@@ -574,61 +683,40 @@
           ]
         }
       },
-      "nonModels": {
-        "PlayerSearchResult": {
-          "name": "PlayerSearchResult",
-          "fields": {
-            "id": {
-              "name": "id",
-              "isArray": false,
-              "type": "ID",
-              "isRequired": true,
-              "attributes": []
-            },
-            "name": {
-              "name": "name",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            },
-            "picture": {
-              "name": "picture",
-              "isArray": false,
-              "type": "String",
-              "isRequired": false,
-              "attributes": []
-            },
-            "isMember": {
-              "name": "isMember",
-              "isArray": false,
-              "type": "Boolean",
-              "isRequired": true,
-              "attributes": []
-            }
-          }
+      "nonModels": {},
+      "queries": {
+        "getDiscordProfile": {
+          "name": "getDiscordProfile",
+          "isArray": false,
+          "type": "String",
+          "isRequired": false
         }
       },
-      "queries": {
-        "searchPlayers": {
-          "name": "searchPlayers",
-          "isArray": true,
-          "type": {
-            "nonModel": "PlayerSearchResult"
-          },
+      "mutations": {
+        "redeemInviteLink": {
+          "name": "redeemInviteLink",
+          "isArray": false,
+          "type": "ID",
           "isRequired": false,
-          "isArrayNullable": true,
+          "arguments": {
+            "inviteLinkId": {
+              "name": "inviteLinkId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true
+            }
+          }
+        },
+        "regenerateInviteLink": {
+          "name": "regenerateInviteLink",
+          "isArray": false,
+          "type": "ID",
+          "isRequired": false,
           "arguments": {
             "campaignId": {
               "name": "campaignId",
               "isArray": false,
               "type": "ID",
-              "isRequired": true
-            },
-            "search": {
-              "name": "search",
-              "isArray": false,
-              "type": "String",
               "isRequired": true
             }
           }

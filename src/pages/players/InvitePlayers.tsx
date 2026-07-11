@@ -1,7 +1,7 @@
 import { defineQuery, useClient, useObserveQuery } from "amplify.ts";
 import Button from "components/Button.tsx";
-import { useMemo, useTransition } from "react";
 import ButtonRow from "components/ButtonRow.tsx";
+import { useMemo, useTransition } from "react";
 
 const inviteQuery = (campaignId: string) =>
   defineQuery("InviteLink", ["id"], { campaignId: { eq: campaignId } });

@@ -81,9 +81,13 @@ const reconcileInviteLinks = async (campaign: CampaignImage, desired: string[]) 
   if (desired.length === 0) {
     await Promise.all(existing.map(({ id }) => client.models.InviteLink.delete({ id })));
   } else if (existing.length === 0) {
-    // the raw "<sub>::<username>" owner passes through unchanged, matching
-    // what a client-side create stores, so the GM's owner-auth delete works
-    await client.models.InviteLink.create({ campaignId: campaign.id, owner: campaign.owner });
+    // the raw "<sub>::<username>" owner passes through unchanged so the GM's
+    // owner-auth read works
+    const { errors } = await client.models.InviteLink.create({
+      campaignId: campaign.id,
+      owner: campaign.owner,
+    });
+    errors?.forEach((error) => console.error("invite link create failed", JSON.stringify(error)));
   }
 };
 

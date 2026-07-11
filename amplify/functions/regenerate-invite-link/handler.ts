@@ -41,12 +41,19 @@ export const handler: Schema["regenerateInviteLink"]["functionHandler"] = async 
   // delete first so the old URL is dead before its replacement exists;
   // deleting all rows self-heals any accidental duplicates
   const existing = await listInviteLinks(campaign.id);
-  await Promise.all(existing.map(({ id }) => client.models.InviteLink.delete({ id })));
+  const deletions = await Promise.all(
+    existing.map(({ id }) => client.models.InviteLink.delete({ id })),
+  );
+  deletions
+    .flatMap(({ errors }) => errors ?? [])
+    .forEach((error) => console.error("delete failed", JSON.stringify(error)));
 
   const { data: link, errors } = await client.models.InviteLink.create({
     campaignId: campaign.id,
     owner: campaign.owner,
   });
-  if (!link || errors?.length) throw new Error("Could not create invite link");
+  if (!link || errors?.length) {
+    throw new Error("Could not create invite link");
+  }
   return link.id;
 };

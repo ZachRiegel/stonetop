@@ -82,6 +82,10 @@ const schema = a
       .model({
         campaignId: a.id().required(),
         campaign: a.belongsTo("Campaign", "campaignId"),
+        // declared explicitly because the read-only owner rule below would
+        // otherwise drop the implicit owner field from CreateInviteLinkInput,
+        // and the lambdas must set it so the GM can read their links
+        owner: a.string(),
       })
       .authorization((allow) => [allow.owner().to(["read"])]),
 
