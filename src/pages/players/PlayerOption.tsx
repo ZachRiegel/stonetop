@@ -20,7 +20,7 @@ const Row = styled.div<{ isHighlighted: boolean }>`
 `;
 
 const Avatar = styled.img`
-  grid-row: span 2;
+  grid-row: 1 / -1;
   width: 30px;
   height: 30px;
   border: 2px solid var(--neutral-0);
@@ -32,12 +32,21 @@ const PlayerOption = ({
   item,
   isHighlighted,
 }: {
-  item: { id: string; name?: string | null; picture?: string | null; isMember: boolean };
+  item: {
+    id: string;
+    name?: string | null;
+    displayName?: string | null;
+    picture?: string | null;
+    isMember: boolean;
+  };
   isHighlighted: boolean;
 }) => (
   <Row isHighlighted={isHighlighted}>
     <Avatar src={discordProfilePictureForUser(item)} alt="" />
-    <Font.Bold16 text={item.name ?? "Unknown user"} />
+    <Font.Bold16 text={item.displayName ?? item.name ?? "Unknown user"} />
+    {item.displayName && item.name && item.displayName !== item.name && (
+      <Font.Italic16 element="div" text={item.name} />
+    )}
     {item.isMember && <Font.Italic16 element="div" text="Already part of this campaign" />}
   </Row>
 );

@@ -46,8 +46,18 @@ export const handler: Schema["searchPlayers"]["functionHandler"] = async (event)
 
   // Matched in code rather than with a DB `contains` filter: the filter is
   // applied post-scan anyway and can't match case-insensitively
-  return (await listProfiles())
-    .filter(({ name }) => name?.toLowerCase().includes(term))
+  const matches = (value?: string | null) => value?.toLowerCase().includes(term) ?? false;
+  const profiles = await listProfiles();
+  return [
+    ...profiles.filter(({ displayName }) => matches(displayName)),
+    ...profiles.filter(({ displayName, name }) => !matches(displayName) && matches(name)),
+  ]
     .slice(0, 20)
-    .map(({ id, name, picture }) => ({ id, name, picture, isMember: memberIds.includes(id) }));
+    .map(({ id, name, displayName, picture }) => ({
+      id,
+      name,
+      displayName,
+      picture,
+      isMember: memberIds.includes(id),
+    }));
 };

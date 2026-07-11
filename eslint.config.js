@@ -17,6 +17,7 @@ export default tseslint.config(
       "unused-imports": unusedImports,
     },
     rules: {
+      "react-hooks/refs": "off",
       "react-hooks/set-state-in-effect": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "react-hooks/exhaustive-deps": "error",

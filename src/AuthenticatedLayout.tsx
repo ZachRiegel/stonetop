@@ -2,17 +2,17 @@ import styled from "@emotion/styled";
 import { defineQuery, getClient, useCurrentUser, useObserveQuery } from "amplify.ts";
 import background from "assets/background.svg";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
-import { useMemo, useState } from "react";
-import { Outlet } from "react-router";
-
-import Font from "components/Font.tsx";
-import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
 import Button from "components/Button.tsx";
+import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import NavigationItem from "components/NavigationItem.tsx";
 import Popover from "components/Popover.tsx";
 import useModal from "hooks/useModal.ts";
+import { useMemo, useState } from "react";
+import { Outlet } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
+
+import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
 
 const cachePromise = <T,>(fn: () => Promise<T>) => {
   let promise: Promise<T> | undefined;
@@ -21,22 +21,34 @@ const cachePromise = <T,>(fn: () => Promise<T>) => {
 
 const cachedFetchUserAttributes = cachePromise(fetchUserAttributes);
 
-// Mirror the Cognito attributes into the shared UserProfile record (keyed by
-// username) so other campaign members can see them; write only on change.
+// Mirror the Cognito attributes and Discord display name into the shared
+// UserProfile record (keyed by username) so other campaign members can see
+// them; write-only on change.
 const cachedSyncProfile = cachePromise(async () => {
-  const [attributes, { username }] = await Promise.all([
+  const { models, queries } = getClient();
+  const [attributes, { username }, displayName] = await Promise.all([
     cachedFetchUserAttributes(),
     getCurrentUser(),
+    // a lookup failure (unlike a legitimately unset name, which is null)
+    // must not clear the stored value
+    queries.getDiscordProfile().then(
+      ({ data }) => data ?? null,
+      () => undefined,
+    ),
   ]);
+  const { data: existing } = await models.UserProfile.get({ id: username });
   const profile = {
     id: username,
     name: attributes.name ?? null,
+    displayName: displayName === undefined ? (existing?.displayName ?? null) : displayName,
     picture: attributes.picture ?? null,
   };
-  const { models } = getClient();
-  const { data: existing } = await models.UserProfile.get({ id: username });
   if (!existing) await models.UserProfile.create(profile);
-  else if (existing.name !== profile.name || existing.picture !== profile.picture)
+  else if (
+    existing.name !== profile.name ||
+    existing.displayName !== profile.displayName ||
+    existing.picture !== profile.picture
+  )
     await models.UserProfile.update(profile);
 });
 
@@ -109,7 +121,6 @@ const NavItems = styled.div`
   grid-auto-rows: min-content;
   align-content: start;
   gap: 4px;
-  overflow-y: auto;
 `;
 
 const Avatar = styled.img`
@@ -133,7 +144,7 @@ const AuthenticatedLayout = () => {
   const user = useCurrentUser();
   const query = useMemo(
     () =>
-      defineQuery("UserProfile", ["id", "picture", "name"], {
+      defineQuery("UserProfile", ["id", "picture", "name", "displayName"], {
         id: { eq: user?.username },
       }),
     [user?.username],
@@ -163,9 +174,12 @@ const AuthenticatedLayout = () => {
               <NavigationItem.Solid>
                 <Avatar
                   src={discordProfilePictureForUser(currentUser)}
-                  alt={currentUser.name ?? ""}
+                  alt={currentUser.displayName ?? currentUser.name ?? ""}
                 />
-                <Font.Bold16 element="div" text={currentUser.name ?? "Unknown"} />
+                <Font.Bold16
+                  element="div"
+                  text={currentUser.displayName ?? currentUser.name ?? "Unknown"}
+                />
                 <Button.Transparent Icon={Icon.Cog} onClick={settingsMenu.open} />
               </NavigationItem.Solid>
             </Popover>

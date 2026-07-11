@@ -4,6 +4,7 @@ import { DynamoEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 
 import { auth } from "./auth/resource";
 import { data } from "./data/resource";
+import { getDiscordProfile } from "./functions/get-discord-profile/resource";
 import { searchPlayers } from "./functions/search-players/resource";
 import { syncCampaignMembers } from "./functions/sync-campaign-members/resource";
 import { syncCampaignProfiles } from "./functions/sync-campaign-profiles/resource";
@@ -11,6 +12,7 @@ import { syncCampaignProfiles } from "./functions/sync-campaign-profiles/resourc
 const backend = defineBackend({
   auth,
   data,
+  getDiscordProfile,
   searchPlayers,
   syncCampaignMembers,
   syncCampaignProfiles,

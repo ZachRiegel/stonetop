@@ -1,6 +1,7 @@
 // ./amplify/data/resource.ts
 import { a, type ClientSchema, defineData } from "@aws-amplify/backend";
 
+import { getDiscordProfile } from "../functions/get-discord-profile/resource";
 import { searchPlayers } from "../functions/search-players/resource";
 import { syncCampaignMembers } from "../functions/sync-campaign-members/resource";
 import { syncCampaignProfiles } from "../functions/sync-campaign-profiles/resource";
@@ -50,6 +51,7 @@ const schema = a
     UserProfile: a
       .model({
         name: a.string(),
+        displayName: a.string(),
         picture: a.string(),
         characters: a.hasMany("Character", "userProfileId"),
         campaigns: a.hasMany("CampaignMember", "userProfileId"),
@@ -72,11 +74,22 @@ const schema = a
     PlayerSearchResult: a.customType({
       id: a.id().required(),
       name: a.string(),
+      displayName: a.string(),
       picture: a.string(),
       isMember: a.boolean().required(),
     }),
 
-    // UserProfiles whose names contain `search` (case-insensitive), flagging
+    // The caller's Discord display name (global_name), looked up by the
+    // snowflake embedded in their Cognito username; null for email-login
+    // users and Discord users who never set one.
+    getDiscordProfile: a
+      .query()
+      .returns(a.string())
+      .authorization((allow) => [allow.authenticated()])
+      .handler(a.handler.function(getDiscordProfile)),
+
+    // UserProfiles whose display names or names contain `search`
+    // (case-insensitive, displayName matches ranked first), flagging
     // those already in the campaign; callable only by the campaign's members.
     searchPlayers: a
       .query()

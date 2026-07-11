@@ -1,5 +1,11 @@
 import styled from "@emotion/styled";
-import { defineQuery, type QueryResult, useClient, useCurrentUser, useObserveQuery } from "amplify.ts";
+import {
+  defineQuery,
+  type QueryResult,
+  useClient,
+  useCurrentUser,
+  useObserveQuery,
+} from "amplify.ts";
 import DropdownField from "components/DropdownField.tsx";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
@@ -129,8 +135,13 @@ type SearchProfile = NonNullable<
   >[number]
 >;
 
-// module-level so its identity is stable across renders (DropdownField memoizes on it)
-const profileName = (profile: SearchProfile) => profile.name ?? "Unknown user";
+// module-level so their identities are stable across renders (DropdownField memoizes on them)
+const profileName = (profile: SearchProfile) =>
+  profile.displayName ?? profile.name ?? "Unknown user";
+
+// the server matches on either field, so the dropdown's own filter must too
+const profileMatches = (profile: SearchProfile, query: string) =>
+  [profile.displayName, profile.name].some((value) => value?.toLowerCase().includes(query));
 
 const Players = () => {
   const { campaignId } = useParams();
@@ -138,15 +149,15 @@ const Players = () => {
   const user = useCurrentUser();
   const client = useClient();
 
-  const [selectedProfile, setSelectedProfile] = useState<SearchProfile | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchProfile[]>([]);
-  const [lastQuery, setLastQuery] = useState("");
+  const [query, _setQuery] = useState("");
   const [isSearching, startSearch] = useTransition();
   const requestIdRef = useRef(0);
 
-  const onQueryChange = useCallback(
+  const setQuery = useCallback(
     (query: string) => {
-      setLastQuery(query);
+      _setQuery(query);
       const requestId = ++requestIdRef.current; // supersedes any in-flight search
       if (query.trim() === "" || !campaignId) {
         setSearchResults([]);
@@ -191,8 +202,11 @@ const Players = () => {
     () =>
       players.map((player) => (
         <PlayerLabel key={player.id}>
-          <Avatar src={discordProfilePictureForUser(player)} alt={player.name ?? "Unknown user"} />
-          <Font.Bold20 text={player.name ?? "Unknown user"} />
+          <Avatar
+            src={discordProfilePictureForUser(player)}
+            alt={player.displayName ?? player.name ?? "Unknown user"}
+          />
+          <Font.Bold20 text={player.displayName ?? player.name ?? "Unknown user"} />
           <Font.Italic16 element="div" text={characterLine(player)} />
         </PlayerLabel>
       )),
@@ -222,18 +236,18 @@ const Players = () => {
           <CardBottom>
             <DropdownField
               items={searchResults}
-              selectedItem={selectedProfile}
-              itemToString={profileName}
-              ItemRenderer={PlayerOption}
-              onSelect={setSelectedProfile}
-              onQueryChange={onQueryChange}
+              selectedItem={selectedProfileId}
+              setSelectedItem={setSelectedProfileId}
+              query={query}
+              setQuery={setQuery}
+              itemToValue={(profile) => profile.id}
+              itemToLabel={profileName}
               isLoading={isSearching}
-              placeholder="Add a player..."
               emptyState={
                 <Font.Italic16
                   element="div"
                   text={
-                    lastQuery.trim() === "" ? "Type a name to search." : "No matching players found."
+                    query.trim() === "" ? "Type a name to search." : "No matching players found."
                   }
                 />
               }

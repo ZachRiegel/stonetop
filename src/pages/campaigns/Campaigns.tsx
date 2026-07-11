@@ -175,7 +175,7 @@ const Campaigns = () => {
                   <AvatarContainer key={profile.id + index}>
                     <Avatar
                       src={discordProfilePictureForUser(profile)}
-                      alt={profile.name ?? "Unknown user"}
+                      alt={profile.displayName ?? profile.name ?? "Unknown user"}
                     />
                   </AvatarContainer>
                 ))

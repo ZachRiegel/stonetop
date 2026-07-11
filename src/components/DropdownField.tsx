@@ -1,29 +1,22 @@
 import styled from "@emotion/styled";
+import DefaultItemRenderer from "components/internals/DefaultItemRenderer.tsx";
 import useFocusWithin from "hooks/useFocusWithin.ts";
+import useNonNullable from "hooks/useNonNullable.ts";
 import * as React from "react";
-import {
-  type ComponentType,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 
 import Input from "./Input.tsx";
 import Loading from "./Loading.tsx";
 
-// Keeps focus on the input through a click on an item; letting mousedown blur it
-// would unmount the card before the click lands.
-const preventFocusSteal = (event: React.MouseEvent) => event.preventDefault();
-
-const DropdownFieldInternals = <T,>({
+const DropdownFieldInternals = <T, U>({
   items,
   selectedItem,
-  itemToString,
-  ItemRenderer,
-  onSelect,
-  onQueryChange,
+  itemToValue: _itemToValue,
+  itemToLabel: _itemToLabel,
+  ItemRenderer = DefaultItemRenderer,
+  setSelectedItem,
+  query,
+  setQuery,
   isLoading,
   emptyState,
   label,
@@ -31,53 +24,64 @@ const DropdownFieldInternals = <T,>({
   className,
 }: {
   items: T[];
-  selectedItem: T | null;
-  itemToString: (item: T) => string;
-  ItemRenderer: ComponentType<{ item: T; isHighlighted: boolean }>;
-  onSelect: (item: T) => void;
-  // Fires only on user input — not on selection or selectedItem syncs — so
-  // parents can drive a server-backed search without redundant fetches.
-  onQueryChange?: (query: string) => void;
-  isLoading: boolean;
+  selectedItem: U | undefined;
+  setSelectedItem: (item: U) => void;
+  itemToLabel: (T extends string ? undefined : never) | ((item: T) => string);
+  itemToValue: (T extends U ? undefined : never) | ((item: T) => U);
+  ItemRenderer?: typeof DefaultItemRenderer<T, U>;
+  query: string;
+  setQuery: (query: string) => void;
+  isLoading?: boolean;
   emptyState: ReactNode;
   label?: string;
   placeholder?: string;
   className?: string;
 }) => {
-  const [query, setQuery] = useState("");
-  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  const itemToLabel = useCallback(
+    (item: T): string => _itemToLabel?.(item) ?? (item as string),
+    [_itemToLabel],
+  );
+  const itemToValue = useCallback(
+    (item: T): U => _itemToValue?.(item) ?? (item as unknown as U),
+    [_itemToValue],
+  );
+
   // Hide the card after a selection until the user types/arrows/refocuses.
   const [isDismissed, setIsDismissed] = useState(false);
   const { focusProps, isFocused } = useFocusWithin();
-
-  const filtered = useMemo(
-    () =>
-      items.filter((item) => itemToString(item).toLowerCase().includes(query.trim().toLowerCase())),
-    [items, itemToString, query],
-  );
-  // Derived rather than synced: an index stranded past the end of a shrunken filter is no highlight.
-  const highlighted =
-    highlightedIndex !== null && highlightedIndex < filtered.length ? highlightedIndex : null;
-
   useEffect(() => {
     if (!isFocused) setIsDismissed(false);
   }, [isFocused]);
 
+  const _matchingItem = useMemo(
+    () => items.find((item) => itemToValue(item) === selectedItem),
+    [itemToValue, items, selectedItem],
+  );
+  const matchingItem = useNonNullable(_matchingItem);
+
+  const filtered = useMemo(
+    () =>
+      items.filter((item) =>
+        itemToLabel(item).toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+      ),
+    [itemToLabel, items, query],
+  );
+
+  const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
+  useEffect(() => setHighlightedIndex(null), [query, filtered]);
+
   useEffect(() => {
-    setQuery(selectedItem === null ? "" : itemToString(selectedItem));
-    // itemToString omitted: only the selection changing should overwrite what the user typed
+    setQuery(matchingItem === undefined ? "" : (itemToLabel?.(matchingItem) ?? matchingItem));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItem]);
 
   const select = useCallback(
     (item: T) => {
-      // Fill the field optimistically; the selectedItem effect re-syncs once the parent commits.
-      setQuery(itemToString(item));
       setHighlightedIndex(null);
       setIsDismissed(true);
-      onSelect(item);
+      setSelectedItem(itemToValue(item));
     },
-    [itemToString, onSelect],
+    [itemToValue, setSelectedItem],
   );
 
   const onKeyDown = useCallback(
@@ -88,13 +92,13 @@ const DropdownFieldInternals = <T,>({
         if (filtered.length === 0) return;
         setHighlightedIndex(
           event.key === "ArrowDown"
-            ? ((highlighted ?? -1) + 1) % filtered.length
-            : ((highlighted ?? filtered.length) - 1 + filtered.length) % filtered.length,
+            ? ((highlightedIndex ?? -1) + 1) % filtered.length
+            : ((highlightedIndex ?? filtered.length) - 1 + filtered.length) % filtered.length,
         );
       } else if (event.key === "Enter") {
         const item =
-          highlighted !== null
-            ? filtered[highlighted]
+          highlightedIndex !== null
+            ? filtered[highlightedIndex]
             : filtered.length === 1
               ? filtered[0]
               : undefined;
@@ -103,7 +107,7 @@ const DropdownFieldInternals = <T,>({
         select(item);
       }
     },
-    [filtered, highlighted, select],
+    [filtered, highlightedIndex, select],
   );
 
   const onChange = useCallback(
@@ -111,9 +115,8 @@ const DropdownFieldInternals = <T,>({
       setQuery(value);
       setHighlightedIndex(null);
       setIsDismissed(false);
-      onQueryChange?.(value);
     },
-    [onQueryChange],
+    [setQuery],
   );
 
   return (
@@ -133,15 +136,16 @@ const DropdownFieldInternals = <T,>({
             emptyState
           ) : (
             filtered.map((item, index) => (
-              // index keys: itemToString values may collide, and rows hold no state
-              <button
+              <ItemRenderer
                 key={index}
-                type="button"
-                onMouseDown={preventFocusSteal}
-                onClick={() => select(item)}
-              >
-                <ItemRenderer item={item} isHighlighted={index === highlighted} />
-              </button>
+                item={item}
+                isHighlighted={index === highlightedIndex}
+                selectedItem={selectedItem}
+                query={query}
+                select={select}
+                itemToLabel={itemToLabel}
+                itemToValue={itemToValue}
+              />
             ))
           )}
         </div>
@@ -173,18 +177,6 @@ const DropdownField = styled(DropdownFieldInternals)`
     border-radius: 12px;
     background-color: var(--neutral-100);
     box-shadow: var(--shadow-medium);
-
-    & > button {
-      display: block;
-      width: 100%;
-      padding: 0;
-      border: none;
-      background: transparent;
-      color: inherit;
-      font: inherit;
-      text-align: left;
-      cursor: pointer;
-    }
   }
 ` as typeof DropdownFieldInternals;
 
