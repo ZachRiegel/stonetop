@@ -1,9 +1,9 @@
 import styled from "@emotion/styled";
-import discordSvg from "icons/discordLogo.svg?raw";
-import plusSvg from "icons/plus.svg?raw";
-import cogSvg from "icons/cog.svg?raw";
 import book2Svg from "icons/book2.svg?raw";
+import cogSvg from "icons/cog.svg?raw";
+import discordSvg from "icons/discordLogo.svg?raw";
 import libraryBooksSvg from "icons/libraryBooks.svg?raw";
+import plusSvg from "icons/plus.svg?raw";
 
 const IconSvgs = {
   Plus: plusSvg,
@@ -25,9 +25,13 @@ const IconInternal = ({ icon, className }: IconPropsInternal) => (
 const StyledIcon = styled(IconInternal)<{ size: number }>`
   display: inline-flex;
 
+  object-fit: contain;
+  width: var(--icon-size, 24px);
+  max-width: var(--icon-sze, 24px);
+  height: var(--icon-size, 24px);
+  max-height: var(--icon-size, 24px);
+
   & svg {
-    width: var(--icon-size, 24px);
-    height: var(--icon-size, 24px);
     fill: currentColor;
     stroke: currentColor;
   }
