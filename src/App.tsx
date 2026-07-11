@@ -1,3 +1,4 @@
+import { getClient } from "amplify.ts";
 import { Amplify } from "aws-amplify";
 import { getCurrentUser } from "aws-amplify/auth";
 import CampaignNavigationLayout from "CampaignNavigationLayout.tsx";
@@ -29,10 +30,14 @@ const router = createBrowserRouter([
     children: [
       {
         middleware: [
-          async () => {
+          async ({ request }) => {
             try {
               await getCurrentUser();
             } catch {
+              // stash the invite so it survives the login round-trip — the
+              // OAuth callback returns to "/" with the query string gone
+              const inviteLinkId = new URL(request.url).searchParams.get("inviteLinkId");
+              if (inviteLinkId) sessionStorage.setItem("inviteLinkId", inviteLinkId);
               return redirect("/login");
             }
           },
@@ -42,7 +47,25 @@ const router = createBrowserRouter([
           {
             element: <LoggedInUserNavigationLayout />,
             children: [
-              { index: true, element: <Campaigns /> },
+              {
+                index: true,
+                element: <Campaigns />,
+                // invite links land here; redeem and hand the new member to
+                // their campaign
+                loader: async ({ request }) => {
+                  const inviteLinkId =
+                    new URL(request.url).searchParams.get("inviteLinkId") ??
+                    sessionStorage.getItem("inviteLinkId");
+                  if (!inviteLinkId) return null;
+                  sessionStorage.removeItem("inviteLinkId"); // one shot, even on failure
+                  const { data: campaignId, errors } = await getClient().mutations.redeemInviteLink(
+                    { inviteLinkId },
+                  );
+                  return campaignId && !errors?.length
+                    ? redirect(`/campaign/${campaignId}`)
+                    : redirect("/?invite=invalid");
+                },
+              },
               { path: "characters", element: null },
               { path: "about", element: null },
             ],

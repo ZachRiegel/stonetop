@@ -11,7 +11,7 @@ import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import { useCallback, useMemo } from "react";
-import { Link as ReactRouterLink } from "react-router";
+import { Link as ReactRouterLink, useSearchParams } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
 const Page = styled.div`
@@ -145,6 +145,7 @@ const Campaigns = () => {
   const campaigns = useObserveQuery(query);
   const user = useCurrentUser();
   const createModal = useModal();
+  const [searchParams] = useSearchParams();
 
   const characterLine = useCallback(
     (campaign: CampaignResult) => {
@@ -196,6 +197,12 @@ const Campaigns = () => {
       <Card>
         <CardHeader>
           <Font.Bold32 element="h1" text="Campaigns" />
+          {searchParams.get("invite") === "invalid" && (
+            <Font.Italic16
+              element="div"
+              text="That invite link is no longer valid. Ask your Game Master for a new one."
+            />
+          )}
         </CardHeader>
         <ScrollArea>
           {isLoading || !campaigns ? (

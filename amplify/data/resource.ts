@@ -2,7 +2,8 @@
 import { a, type ClientSchema, defineData } from "@aws-amplify/backend";
 
 import { getDiscordProfile } from "../functions/get-discord-profile/resource";
-import { searchPlayers } from "../functions/search-players/resource";
+import { redeemInviteLink } from "../functions/redeem-invite-link/resource";
+import { regenerateInviteLink } from "../functions/regenerate-invite-link/resource";
 import { syncCampaignMembers } from "../functions/sync-campaign-members/resource";
 import { syncCampaignProfiles } from "../functions/sync-campaign-profiles/resource";
 
@@ -14,6 +15,7 @@ const schema = a
         members: a.string().array(),
         characters: a.hasMany("Character", "campaignId"),
         profiles: a.hasMany("CampaignMember", "campaignId"),
+        inviteLinks: a.hasMany("InviteLink", "campaignId"),
       })
       .authorization((allow) => [allow.owner(), allow.ownersDefinedIn("members").to(["read"])]),
 
@@ -71,13 +73,17 @@ const schema = a
       })
       .authorization((allow) => [allow.ownersDefinedIn("members").to(["read"])]),
 
-    PlayerSearchResult: a.customType({
-      id: a.id().required(),
-      name: a.string(),
-      displayName: a.string(),
-      picture: a.string(),
-      isMember: a.boolean().required(),
-    }),
+    // One active invite link per campaign; the id doubles as the URL token.
+    // Rows are written only by lambdas (sync-campaign-profiles creates,
+    // regenerate-invite-link rotates), so client failures can't strand a
+    // campaign without a link and forged rows can't be created; the GM
+    // (owner) can only read theirs.
+    InviteLink: a
+      .model({
+        campaignId: a.id().required(),
+        campaign: a.belongsTo("Campaign", "campaignId"),
+      })
+      .authorization((allow) => [allow.owner().to(["read"])]),
 
     // The caller's Discord display name (global_name), looked up by the
     // snowflake embedded in their Cognito username; null for email-login
@@ -88,20 +94,30 @@ const schema = a
       .authorization((allow) => [allow.authenticated()])
       .handler(a.handler.function(getDiscordProfile)),
 
-    // UserProfiles whose display names or names contain `search`
-    // (case-insensitive, displayName matches ranked first), flagging
-    // those already in the campaign; callable only by the campaign's members.
-    searchPlayers: a
-      .query()
-      .arguments({ campaignId: a.id().required(), search: a.string().required() })
-      .returns(a.ref("PlayerSearchResult").array())
+    // Adds the caller to the linked campaign (outside their normal auth
+    // perms) and returns the campaignId to redirect to.
+    redeemInviteLink: a
+      .mutation()
+      .arguments({ inviteLinkId: a.id().required() })
+      .returns(a.id())
       .authorization((allow) => [allow.authenticated()])
-      .handler(a.handler.function(searchPlayers)),
+      .handler(a.handler.function(redeemInviteLink)),
+
+    // Rotates the campaign's invite link (delete old + create new) server-side
+    // so a client failure can't leave the campaign linkless; GM-only. Returns
+    // the new link id.
+    regenerateInviteLink: a
+      .mutation()
+      .arguments({ campaignId: a.id().required() })
+      .returns(a.id())
+      .authorization((allow) => [allow.authenticated()])
+      .handler(a.handler.function(regenerateInviteLink)),
   })
   .authorization((allow) => [
     allow.resource(syncCampaignMembers),
     allow.resource(syncCampaignProfiles),
-    allow.resource(searchPlayers),
+    allow.resource(redeemInviteLink),
+    allow.resource(regenerateInviteLink),
   ]);
 
 export type Schema = ClientSchema<typeof schema>;

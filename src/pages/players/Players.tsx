@@ -1,20 +1,13 @@
 import styled from "@emotion/styled";
-import {
-  defineQuery,
-  type QueryResult,
-  useClient,
-  useCurrentUser,
-  useObserveQuery,
-} from "amplify.ts";
-import DropdownField from "components/DropdownField.tsx";
+import { defineQuery, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
 import _ from "lodash";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
-import PlayerOption from "pages/players/PlayerOption.tsx";
-import { useCallback, useMemo, useRef, useState, useTransition } from "react";
+import InvitePlayers from "pages/players/InvitePlayers.tsx";
+import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
@@ -128,53 +121,10 @@ const playersQuery = (campaignId: string | undefined) =>
   );
 type Player = NonNullable<QueryResult<ReturnType<typeof playersQuery>>["userProfile"]>;
 
-// AppSync returns custom-type arrays as (T | null)[], hence the unwrapping
-type SearchProfile = NonNullable<
-  NonNullable<
-    Awaited<ReturnType<ReturnType<typeof useClient>["queries"]["searchPlayers"]>>["data"]
-  >[number]
->;
-
-// module-level so their identities are stable across renders (DropdownField memoizes on them)
-const profileName = (profile: SearchProfile) =>
-  profile.displayName ?? profile.name ?? "Unknown user";
-
-// the server matches on either field, so the dropdown's own filter must too
-const profileMatches = (profile: SearchProfile, query: string) =>
-  [profile.displayName, profile.name].some((value) => value?.toLowerCase().includes(query));
-
 const Players = () => {
   const { campaignId } = useParams();
   const members = useObserveQuery(useMemo(() => playersQuery(campaignId), [campaignId]));
   const user = useCurrentUser();
-  const client = useClient();
-
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<SearchProfile[]>([]);
-  const [query, _setQuery] = useState("");
-  const [isSearching, startSearch] = useTransition();
-  const requestIdRef = useRef(0);
-
-  const setQuery = useCallback(
-    (query: string) => {
-      _setQuery(query);
-      const requestId = ++requestIdRef.current; // supersedes any in-flight search
-      if (query.trim() === "" || !campaignId) {
-        setSearchResults([]);
-        return;
-      }
-      startSearch(async () => {
-        // debounce: newer keystrokes bump the counter, so stale runs bail after the wait
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        if (requestId !== requestIdRef.current) return;
-        const { data } = await client.queries.searchPlayers({ campaignId, search: query.trim() });
-        if (requestId !== requestIdRef.current) return;
-        // state set after await must be re-wrapped to stay part of the transition
-        startSearch(() => setSearchResults(_.compact(data ?? [])));
-      });
-    },
-    [client, campaignId],
-  );
 
   const players = useMemo(
     () =>
@@ -232,26 +182,9 @@ const Players = () => {
             playerEntries
           )}
         </ScrollArea>
-        {user && user.username === members?.[0]?.campaign?.owner && (
+        {user && campaignId && user.username === members?.[0]?.campaign?.owner && (
           <CardBottom>
-            <DropdownField
-              items={searchResults}
-              selectedItem={selectedProfileId}
-              setSelectedItem={setSelectedProfileId}
-              query={query}
-              setQuery={setQuery}
-              itemToValue={(profile) => profile.id}
-              itemToLabel={profileName}
-              isLoading={isSearching}
-              emptyState={
-                <Font.Italic16
-                  element="div"
-                  text={
-                    query.trim() === "" ? "Type a name to search." : "No matching players found."
-                  }
-                />
-              }
-            />
+            <InvitePlayers campaignId={campaignId} />
           </CardBottom>
         )}
       </Card>

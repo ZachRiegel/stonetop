@@ -1,6 +1,6 @@
 import { defineFunction } from "@aws-amplify/backend";
 
-export const searchPlayers = defineFunction({
-  name: "search-players",
+export const redeemInviteLink = defineFunction({
+  name: "redeem-invite-link",
   resourceGroupName: "data",
 });

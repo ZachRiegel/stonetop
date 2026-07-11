@@ -61,6 +61,32 @@ const listMemberRows = async (
   return token ? [...data, ...(await listMemberRows(campaignId, token))] : data;
 };
 
+const listInviteLinks = async (
+  campaignId: string,
+  nextToken?: string | null,
+): Promise<Schema["InviteLink"]["type"][]> => {
+  const { data, nextToken: token } = await client.models.InviteLink.list({
+    filter: { campaignId: { eq: campaignId } },
+    nextToken,
+  });
+  return token ? [...data, ...(await listInviteLinks(campaignId, token))] : data;
+};
+
+// Every live campaign carries an invite link, created here rather than by the
+// frontend so a campaign can't exist without one; campaign removal cleans up
+// would-be orphans. Never recreates when links exist, so it can't fight the
+// frontend's regenerate (delete + create, which emits no Campaign event).
+const reconcileInviteLinks = async (campaign: CampaignImage, desired: string[]) => {
+  const existing = await listInviteLinks(campaign.id);
+  if (desired.length === 0) {
+    await Promise.all(existing.map(({ id }) => client.models.InviteLink.delete({ id })));
+  } else if (existing.length === 0) {
+    // the raw "<sub>::<username>" owner passes through unchanged, matching
+    // what a client-side create stores, so the GM's owner-auth delete works
+    await client.models.InviteLink.create({ campaignId: campaign.id, owner: campaign.owner });
+  }
+};
+
 const reconcile = async (campaign: CampaignImage, desired: string[]) => {
   const existing = await listMemberRows(campaign.id);
   const byProfile = new Map(existing.map((row) => [row.userProfileId, row]));
@@ -96,5 +122,10 @@ export const handler: DynamoDBStreamHandler = async (event) => {
     ).values(),
   ];
 
-  await Promise.all(latest.map(({ campaign, desired }) => reconcile(campaign, desired)));
+  await Promise.all(
+    latest.flatMap(({ campaign, desired }) => [
+      reconcile(campaign, desired),
+      reconcileInviteLinks(campaign, desired),
+    ]),
+  );
 };
