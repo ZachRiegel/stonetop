@@ -6,7 +6,6 @@
  */
 
 import { Amplify } from "aws-amplify";
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import outputs from "../amplify_outputs.json";
@@ -15,8 +14,4 @@ import { App } from "./App.tsx";
 Amplify.configure(outputs);
 
 const elem = document.getElementById("root")!;
-createRoot(elem).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+createRoot(elem).render(<App />);
