@@ -73,7 +73,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     await signInWithRedirect({
-      provider: { custom: "auth0" },
+      provider: { custom: "discord" },
     });
     navigate("/");
   };

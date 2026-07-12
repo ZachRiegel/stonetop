@@ -7,19 +7,20 @@ export const auth = defineAuth({
     externalProviders: {
       oidc: [
         {
-          name: "auth0",
+          name: "discord",
           /**
            * Since in Amplify, the TypeScript definition of
            * clientId and clientSecret is BackendSecret,
            * we need to store the values in Amplify's secret manager.
            */
-          clientId: secret("authClient"),
-          clientSecret: secret("authSecret"),
-          issuerUrl: "https://dev-upwpy2prgrn2zopf.us.auth0.com",
-          scopes: ["openid", "profile", "email", "name"],
+          clientId: secret("discordAuthClient"),
+          clientSecret: secret("discordAuthSecret"),
+          issuerUrl: "https://discord.com",
+          scopes: ["identify", "email", "openid"],
           attributeMapping: {
+            email: "email",
             custom: {
-              name: "name",
+              name: "preferred_username",
               picture: "picture",
             },
           },
