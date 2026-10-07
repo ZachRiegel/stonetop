@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { useClient, useCurrentUser } from "amplify.ts";
+import { getClient, useCurrentUser } from "amplify.ts";
 import Button from "components/Button.tsx";
 import ButtonRow from "components/ButtonRow.tsx";
 import Font from "components/Font.tsx";
@@ -37,7 +37,7 @@ const Card = styled.div`
 `;
 
 const CreateCampaignModal = ({ requestClose }: { isOpen: boolean; requestClose: () => void }) => {
-  const client = useClient();
+  const client = getClient();
   const user = useCurrentUser();
   const [name, setName] = useState("");
 

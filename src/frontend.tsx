@@ -11,7 +11,11 @@ import { createRoot } from "react-dom/client";
 import outputs from "../amplify_outputs.json";
 import { App } from "./App.tsx";
 
-Amplify.configure(outputs);
+// Omit the identity pool: nothing here uses IAM/guest credentials, and with it
+// configured every GraphQL op's fetchAuthSession eagerly round-trips to
+// cognito-identity for credentials that get thrown away.
+const { identity_pool_id: _, ...auth } = outputs.auth;
+Amplify.configure({ ...outputs, auth });
 
 const elem = document.getElementById("root")!;
 createRoot(elem).render(<App />);

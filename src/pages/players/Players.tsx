@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { defineQuery, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
+import { defineQuery, query, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
@@ -7,7 +7,7 @@ import _ from "lodash";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import InvitePlayers from "pages/players/InvitePlayers.tsx";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
@@ -111,62 +111,26 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
-// Standalone rather than inlined into playersQuery: nesting the defineQuery
-// calls makes TypeScript instantiate the joined selection-set types deeply
-// enough to hit its recursion limit (TS2589).
-const profilesQuery = (ids: string[]) =>
-  defineQuery(
-    "UserProfile",
-    ["id", "name", "displayName", "picture"],
-    { or: ids.map((id) => ({ id: { eq: id } })) },
-    {
-      characters: {
-        many: true,
-        from: (profile) => profile.id,
-        // userProfileId must stay in the selections for match to read
-        match: (character) => character.userProfileId,
-        // Only the campaign filter: AppSync subscriptions reject filters
-        // expanding past 10 combinations, so an or-per-profile breaks as soon
-        // as a campaign grows; match() already narrows to each profile.
-        query: (_ids, { root }) =>
-          defineQuery("Character", ["id", "name", "campaignId", "userProfileId"], {
-            or: _.uniq(root.map((member) => member.campaignId)).map((id) => ({
-              campaignId: { eq: id },
-            })),
-          }),
-      },
-    },
-  );
-
 // UserProfile can't be list-filtered by campaign (filters only cover a model's
-// own fields), so query the CampaignMember join rows and join the profiles on.
-// Joins instead of nested selection sets so profile/character edits live-update.
-const playersQuery = (campaignId: string | undefined) =>
-  defineQuery(
-    "CampaignMember",
-    ["id", "campaignId", "userProfileId"],
-    { campaignId: { eq: campaignId } },
-    {
-      campaign: {
-        from: (member) => member.campaignId,
-        query: (ids) =>
-          defineQuery("Campaign", ["id", "owner"], { or: ids.map((id) => ({ id: { eq: id } })) }),
-      },
-      userProfile: {
-        from: (member) => member.userProfileId,
-        query: profilesQuery,
-      },
+// own fields), so query the CampaignMember join rows and follow their
+// relationships. Characters are narrowed to this campaign: with more than 10
+// profiles the per-profile clause is dropped and the campaign filter alone
+// keeps the subscription small.
+const playersQuery = defineQuery((campaignId: string | undefined) =>
+  query({
+    CampaignMember: {
+      where: { campaignId },
+      campaign: true,
+      userProfile: { characters: { where: { campaignId } } },
     },
-  );
+  }),
+);
 type Player = NonNullable<QueryResult<ReturnType<typeof playersQuery>>["userProfile"]>;
 
 const Players = () => {
-  useEffect(() => console.log("mounted"), []);
   const { campaignId } = useParams();
-  const members = useObserveQuery(useMemo(() => playersQuery(campaignId), [campaignId]));
+  const members = useObserveQuery(playersQuery, campaignId);
   const user = useCurrentUser();
-
-  console.log(members);
 
   const players = useMemo(
     () =>

@@ -1,14 +1,15 @@
-import { defineQuery, useClient, useObserveQuery } from "amplify.ts";
+import { defineQuery, getClient, query, useObserveQuery } from "amplify.ts";
 import Button from "components/Button.tsx";
 import ButtonRow from "components/ButtonRow.tsx";
-import { useMemo, useTransition } from "react";
+import { useTransition } from "react";
 
-const inviteQuery = (campaignId: string) =>
-  defineQuery("InviteLink", ["id"], { campaignId: { eq: campaignId } });
+const inviteQuery = defineQuery((campaignId: string) =>
+  query({ InviteLink: { where: { campaignId } } }),
+);
 
 const InvitePlayers = ({ campaignId }: { campaignId: string }) => {
-  const client = useClient();
-  const links = useObserveQuery(useMemo(() => inviteQuery(campaignId), [campaignId]));
+  const client = getClient();
+  const links = useObserveQuery(inviteQuery, campaignId);
   const [copied, startCopy] = useTransition();
 
   const copyLink = async () => {

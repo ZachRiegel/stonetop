@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { defineQuery, useObserveQuery } from "amplify.ts";
+import { defineQuery, query, useObserveQuery } from "amplify.ts";
 import Font from "components/Font.tsx";
 import Link from "components/Link.tsx";
 import NavigationIcon from "components/NavigationIcon.tsx";
@@ -11,7 +11,6 @@ import targetPng from "icons/target.png";
 import treePng from "icons/tree.png";
 import wolfPng from "icons/wolf.png";
 import NavigationItemPortal from "NavigationItemPortalContext.tsx";
-import { useMemo } from "react";
 import { Outlet, useMatch, useParams } from "react-router";
 
 const CampaignTitle = styled.div`
@@ -19,13 +18,13 @@ const CampaignTitle = styled.div`
   row-gap: 2px;
 `;
 
+const campaignQuery = defineQuery((campaignId: string | undefined) =>
+  query({ Campaign: { where: { id: campaignId } } }),
+);
+
 const CampaignNavigationLayout = () => {
   const { campaignId } = useParams();
-  const query = useMemo(
-    () => defineQuery("Campaign", ["id", "name"], { id: { eq: campaignId } }),
-    [campaignId],
-  );
-  const campaign = useObserveQuery(query)?.[0];
+  const campaign = useObserveQuery(campaignQuery, campaignId)?.[0];
   const section = useMatch("/campaign/:campaignId/:section")?.params.section;
 
   return (

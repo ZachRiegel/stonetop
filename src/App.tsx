@@ -1,5 +1,4 @@
 import { getClient } from "amplify.ts";
-import { Amplify } from "aws-amplify";
 import { getCurrentUser } from "aws-amplify/auth";
 import CampaignNavigationLayout from "CampaignNavigationLayout.tsx";
 import LoggedInUserNavigationLayout from "LoggedInUserNavigationLayout.tsx";
@@ -10,23 +9,12 @@ import Players from "pages/players/Players.tsx";
 import { createBrowserRouter, redirect, RouterProvider } from "react-router";
 import RootLayout from "RootLayout.tsx";
 
-import outputs from "../amplify_outputs.json";
 import AuthenticatedLayout from "./AuthenticatedLayout.tsx";
-
-const configureAmplify = (() => {
-  let configured = false;
-  return () => {
-    if (configured) return;
-    Amplify.configure(outputs);
-    configured = true;
-  };
-})();
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <RootLayout />,
-    middleware: [configureAmplify],
     children: [
       {
         middleware: [

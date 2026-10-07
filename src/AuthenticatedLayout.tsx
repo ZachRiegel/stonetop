@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { defineQuery, getClient, useCurrentUser, useObserveQuery } from "amplify.ts";
+import { defineQuery, getClient, query, useCurrentUser, useObserveQuery } from "amplify.ts";
 import background from "assets/background.svg";
 import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import Button from "components/Button.tsx";
@@ -8,7 +8,7 @@ import Icon from "components/Icon.tsx";
 import NavigationItem from "components/NavigationItem.tsx";
 import Popover from "components/Popover.tsx";
 import useModal from "hooks/useModal.ts";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Outlet } from "react-router";
 import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
 
@@ -139,18 +139,14 @@ const MenuCard = styled.div`
   box-shadow: var(--shadow-medium);
 `;
 
+const profileQuery = defineQuery((username: string | undefined) =>
+  query({ UserProfile: { where: { id: username } } }),
+);
+
 const AuthenticatedLayout = () => {
   void cachedSyncProfile();
   const user = useCurrentUser();
-  const query = useMemo(
-    () =>
-      defineQuery("UserProfile", ["id", "picture", "name", "displayName"], {
-        id: { eq: user?.username },
-      }),
-    [user?.username],
-  );
-
-  const currentUser = useObserveQuery(query)?.[0];
+  const currentUser = useObserveQuery(profileQuery, user?.username)?.[0];
   const [navItems, setNavItems] = useState<HTMLElement | null>(null);
   const settingsMenu = useModal();
 

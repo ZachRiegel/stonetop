@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { defineQuery, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
+import { defineQuery, query, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
 import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
@@ -131,18 +131,15 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
-const query = defineQuery("Campaign", [
-  "id",
-  "name",
-  "owner",
-  "members",
-  "profiles.userProfile.*",
-  "characters.*",
-]);
-type CampaignResult = QueryResult<typeof query>;
+// Joins rather than nested selection paths so member and character edits
+// live-update.
+const campaignsQuery = defineQuery(() =>
+  query({ Campaign: { profiles: { userProfile: true }, characters: true } }),
+);
+type CampaignResult = QueryResult<ReturnType<typeof campaignsQuery>>;
 
 const Campaigns = () => {
-  const campaigns = useObserveQuery(query);
+  const campaigns = useObserveQuery(campaignsQuery);
   const user = useCurrentUser();
   const createModal = useModal();
   const [searchParams] = useSearchParams();
