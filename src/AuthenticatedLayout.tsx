@@ -1,56 +1,18 @@
 import styled from "@emotion/styled";
-import { defineQuery, getClient, query, useCurrentUser, useObserveQuery } from "amplify.ts";
 import background from "assets/background.svg";
-import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
 import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import NavigationItem from "components/NavigationItem.tsx";
 import Popover from "components/Popover.tsx";
+import { useQuery } from "convex/react";
 import useModal from "hooks/useModal.ts";
+import { authClient } from "lib/auth-client.ts";
 import { useState } from "react";
-import { Outlet } from "react-router";
-import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
+import { Outlet, useNavigate } from "react-router";
 
+import { api } from "../convex/_generated/api";
 import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
-
-const cachePromise = <T,>(fn: () => Promise<T>) => {
-  let promise: Promise<T> | undefined;
-  return () => (promise ??= fn());
-};
-
-const cachedFetchUserAttributes = cachePromise(fetchUserAttributes);
-
-// Mirror the Cognito attributes and Discord display name into the shared
-// UserProfile record (keyed by username) so other campaign members can see
-// them; write-only on change.
-const cachedSyncProfile = cachePromise(async () => {
-  const { models, queries } = getClient();
-  const [attributes, { username }, displayName] = await Promise.all([
-    cachedFetchUserAttributes(),
-    getCurrentUser(),
-    // a lookup failure (unlike a legitimately unset name, which is null)
-    // must not clear the stored value
-    queries.getDiscordProfile().then(
-      ({ data }) => data ?? null,
-      () => undefined,
-    ),
-  ]);
-  const { data: existing } = await models.UserProfile.get({ id: username });
-  const profile = {
-    id: username,
-    name: attributes.name ?? null,
-    displayName: displayName === undefined ? (existing?.displayName ?? null) : displayName,
-    picture: attributes.picture ?? null,
-  };
-  if (!existing) await models.UserProfile.create(profile);
-  else if (
-    existing.name !== profile.name ||
-    existing.displayName !== profile.displayName ||
-    existing.picture !== profile.picture
-  )
-    await models.UserProfile.update(profile);
-});
 
 const Layout = styled.div`
   display: grid;
@@ -139,14 +101,9 @@ const MenuCard = styled.div`
   box-shadow: var(--shadow-medium);
 `;
 
-const profileQuery = defineQuery((username: string | undefined) =>
-  query({ UserProfile: { where: { id: username } } }),
-);
-
 const AuthenticatedLayout = () => {
-  void cachedSyncProfile();
-  const user = useCurrentUser();
-  const currentUser = useObserveQuery(profileQuery, user?.username)?.[0];
+  const navigate = useNavigate();
+  const currentUser = useQuery(api.users.me);
   const [navItems, setNavItems] = useState<HTMLElement | null>(null);
   const settingsMenu = useModal();
 
@@ -163,19 +120,18 @@ const AuthenticatedLayout = () => {
               requestClose={settingsMenu.close}
               content={
                 <MenuCard>
-                  <Button.MenuItem text="Sign out" onClick={() => signOut()} />
+                  <Button.MenuItem
+                    text="Sign out"
+                    onClick={() =>
+                      authClient.signOut().then(() => navigate("/login", { replace: true }))
+                    }
+                  />
                 </MenuCard>
               }
             >
               <NavigationItem.Solid>
-                <Avatar
-                  src={discordProfilePictureForUser(currentUser)}
-                  alt={currentUser.displayName ?? currentUser.name ?? ""}
-                />
-                <Font.Bold16
-                  element="div"
-                  text={currentUser.displayName ?? currentUser.name ?? "Unknown"}
-                />
+                <Avatar src={currentUser.picture} alt={currentUser.displayName} />
+                <Font.Bold16 element="div" text={currentUser.displayName} />
                 <Button.Transparent Icon={Icon.Cog} onClick={settingsMenu.open} />
               </NavigationItem.Solid>
             </Popover>

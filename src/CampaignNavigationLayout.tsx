@@ -1,9 +1,9 @@
 import styled from "@emotion/styled";
-import { defineQuery, query, useObserveQuery } from "amplify.ts";
 import Font from "components/Font.tsx";
 import Link from "components/Link.tsx";
 import NavigationIcon from "components/NavigationIcon.tsx";
 import NavigationItem from "components/NavigationItem.tsx";
+import { useQuery } from "convex/react";
 import fistPng from "icons/fist.png";
 import flagPng from "icons/flag.png";
 import knotworkPng from "icons/knotwork.png";
@@ -13,18 +13,16 @@ import wolfPng from "icons/wolf.png";
 import NavigationItemPortal from "NavigationItemPortalContext.tsx";
 import { Outlet, useMatch, useParams } from "react-router";
 
+import { api } from "../convex/_generated/api";
+
 const CampaignTitle = styled.div`
   display: grid;
   row-gap: 2px;
 `;
 
-const campaignQuery = defineQuery((campaignId: string | undefined) =>
-  query({ Campaign: { where: { id: campaignId } } }),
-);
-
 const CampaignNavigationLayout = () => {
   const { campaignId } = useParams();
-  const campaign = useObserveQuery(campaignQuery, campaignId)?.[0];
+  const campaign = useQuery(api.campaigns.get, campaignId ? { campaignId } : "skip");
   const section = useMatch("/campaign/:campaignId/:section")?.params.section;
 
   return (

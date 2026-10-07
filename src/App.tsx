@@ -1,15 +1,111 @@
-import { getClient } from "amplify.ts";
-import { getCurrentUser } from "aws-amplify/auth";
+import styled from "@emotion/styled";
 import CampaignNavigationLayout from "CampaignNavigationLayout.tsx";
+import Loading from "components/Loading.tsx";
+import { useConvexAuth } from "convex/react";
+import { ConvexError } from "convex/values";
+import { authClient } from "lib/auth-client.ts";
 import LoggedInUserNavigationLayout from "LoggedInUserNavigationLayout.tsx";
 import CampaignSection from "pages/campaign/CampaignSection.tsx";
 import Campaigns from "pages/campaigns/Campaigns.tsx";
 import Login from "pages/landing/Login.tsx";
 import Players from "pages/players/Players.tsx";
-import { createBrowserRouter, redirect, RouterProvider } from "react-router";
+import { useEffect } from "react";
+import {
+  createBrowserRouter,
+  Navigate,
+  Outlet,
+  redirect,
+  RouterProvider,
+  useNavigate,
+  useRouteError,
+  useSearchParams,
+} from "react-router";
 import RootLayout from "RootLayout.tsx";
 
 import AuthenticatedLayout from "./AuthenticatedLayout.tsx";
+
+const FullPageLoading = styled.div`
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+`;
+
+// Queries throw UNAUTHENTICATED when the session has no account behind it,
+// e.g. a profile row deleted while the browser kept a valid token. The only
+// way forward is a fresh sign-in; any other error keeps bubbling to the
+// router's default error page.
+const SessionBoundary = () => {
+  const error = useRouteError();
+  const navigate = useNavigate();
+  const isStaleSession = error instanceof ConvexError && error.data.code === "UNAUTHENTICATED";
+
+  useEffect(() => {
+    if (isStaleSession) authClient.signOut().then(() => navigate("/login", { replace: true }));
+  }, [isStaleSession, navigate]);
+
+  if (!isStaleSession) throw error;
+  return (
+    <FullPageLoading>
+      <Loading.Medium />
+    </FullPageLoading>
+  );
+};
+
+const RequireAuth = () => {
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  // The OAuth return lands on "/?…&ott=…" and the provider exchanges that
+  // one-time token in an effect, during which the session still reads as
+  // signed out. The router never sees the provider's history.replaceState,
+  // so `ott` in the params marks the landing until the exchange finishes.
+  const isExchangingToken = searchParams.has("ott") && !isAuthenticated;
+  const inviteLinkId = searchParams.get("inviteLinkId");
+
+  // stash the invite so it survives the login round-trip
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isExchangingToken && inviteLinkId)
+      sessionStorage.setItem("inviteLinkId", inviteLinkId);
+  }, [isLoading, isAuthenticated, isExchangingToken, inviteLinkId]);
+
+  // the provider never reports a failed exchange (the token lives three
+  // minutes); after a grace period drop `ott` so the guard falls through to
+  // the normal signed-out path
+  useEffect(() => {
+    if (!isExchangingToken) return;
+    const timer = setTimeout(
+      () =>
+        setSearchParams(
+          (previous) => {
+            previous.delete("ott");
+            return previous;
+          },
+          { replace: true },
+        ),
+      10_000,
+    );
+    return () => clearTimeout(timer);
+  }, [isExchangingToken, setSearchParams]);
+
+  if (isLoading || isExchangingToken)
+    return (
+      <FullPageLoading>
+        <Loading.Medium />
+      </FullPageLoading>
+    );
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <Outlet />;
+};
+
+const LoginGate = () => {
+  const { isLoading, isAuthenticated } = useConvexAuth();
+  if (isLoading)
+    return (
+      <FullPageLoading>
+        <Loading.Medium />
+      </FullPageLoading>
+    );
+  return isAuthenticated ? <Navigate to="/" replace /> : <Login />;
+};
 
 const router = createBrowserRouter([
   {
@@ -17,77 +113,41 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       {
-        middleware: [
-          async ({ request }) => {
-            try {
-              await getCurrentUser();
-            } catch {
-              // stash the invite so it survives the login round-trip — the
-              // OAuth callback returns to "/" with the query string gone
-              const inviteLinkId = new URL(request.url).searchParams.get("inviteLinkId");
-              if (inviteLinkId) sessionStorage.setItem("inviteLinkId", inviteLinkId);
-              return redirect("/login");
-            }
-          },
-        ],
-        element: <AuthenticatedLayout />,
+        element: <RequireAuth />,
+        errorElement: <SessionBoundary />,
         children: [
           {
-            element: <LoggedInUserNavigationLayout />,
+            element: <AuthenticatedLayout />,
             children: [
               {
-                index: true,
-                element: <Campaigns />,
-                // invite links land here; redeem and hand the new member to
-                // their campaign
-                loader: async ({ request }) => {
-                  const inviteLinkId =
-                    new URL(request.url).searchParams.get("inviteLinkId") ??
-                    sessionStorage.getItem("inviteLinkId");
-                  if (!inviteLinkId) return null;
-                  sessionStorage.removeItem("inviteLinkId"); // one shot, even on failure
-                  const { data: campaignId, errors } = await getClient().mutations.redeemInviteLink(
-                    { inviteLinkId },
-                  );
-                  return campaignId && !errors?.length
-                    ? redirect(`/campaign/${campaignId}`)
-                    : redirect("/?invite=invalid");
-                },
+                element: <LoggedInUserNavigationLayout />,
+                children: [
+                  { index: true, element: <Campaigns /> },
+                  { path: "characters", element: null },
+                  { path: "about", element: null },
+                ],
               },
-              { path: "characters", element: null },
-              { path: "about", element: null },
-            ],
-          },
-          {
-            element: <CampaignNavigationLayout />,
-            path: "campaign/:campaignId",
-            children: [
               {
-                index: true,
-                loader: ({ params }) => redirect(`/campaign/${params.campaignId}/scenario`),
+                element: <CampaignNavigationLayout />,
+                path: "campaign/:campaignId",
+                children: [
+                  {
+                    index: true,
+                    loader: ({ params }) => redirect(`/campaign/${params.campaignId}/scenario`),
+                  },
+                  { path: "scenario", element: <CampaignSection title="Scenario" /> },
+                  { path: "characters", element: <CampaignSection title="Characters" /> },
+                  { path: "quests", element: <CampaignSection title="Quests" /> },
+                  { path: "npcs", element: <CampaignSection title="NPCs" /> },
+                  { path: "locations", element: <CampaignSection title="Locations" /> },
+                  { path: "players", element: <Players /> },
+                ],
               },
-              { path: "scenario", element: <CampaignSection title="Scenario" /> },
-              { path: "characters", element: <CampaignSection title="Characters" /> },
-              { path: "quests", element: <CampaignSection title="Quests" /> },
-              { path: "npcs", element: <CampaignSection title="NPCs" /> },
-              { path: "locations", element: <CampaignSection title="Locations" /> },
-              { path: "players", element: <Players /> },
             ],
           },
         ],
       },
-      {
-        path: "/login",
-        element: <Login />,
-        loader: async () => {
-          try {
-            await getCurrentUser();
-            return redirect("/");
-          } catch {
-            // not signed in — stay on the login page
-          }
-        },
-      },
+      { path: "/login", element: <LoginGate /> },
       { path: "*", loader: () => redirect("/") },
     ],
   },

@@ -1,40 +1,34 @@
-import { defineQuery, getClient, query, useObserveQuery } from "amplify.ts";
 import Button from "components/Button.tsx";
 import ButtonRow from "components/ButtonRow.tsx";
+import { useMutation } from "convex/react";
 import { useTransition } from "react";
 
-const inviteQuery = defineQuery((campaignId: string) =>
-  query({ InviteLink: { where: { campaignId } } }),
-);
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
-const InvitePlayers = ({ campaignId }: { campaignId: string }) => {
-  const client = getClient();
-  const links = useObserveQuery(inviteQuery, campaignId);
+// Rendered by the Players page for the Game Master, who is the only member
+// the server hands the token to
+const InvitePlayers = ({
+  campaignId,
+  inviteToken,
+}: {
+  campaignId: Id<"campaigns">;
+  inviteToken: string;
+}) => {
+  const regenerate = useMutation(api.campaigns.regenerateInvite);
   const [copied, startCopy] = useTransition();
 
   const copyLink = async () => {
-    // campaigns predating invite links have no row yet; the regenerate
-    // mutation creates one (all InviteLink writes happen in lambdas)
-    const id = links?.[0]?.id ?? (await client.mutations.regenerateInviteLink({ campaignId })).data;
-    if (!id) throw new Error("Could not create invite link");
-    await navigator.clipboard.writeText(`${window.location.origin}/?inviteLinkId=${id}`);
+    await navigator.clipboard.writeText(`${window.location.origin}/?inviteLinkId=${inviteToken}`);
     startCopy(async () => {
       await new Promise((res) => window.setTimeout(res, 2000));
     });
   };
 
-  const regenerate = async () => {
-    await client.mutations.regenerateInviteLink({ campaignId });
-  };
-
-  // rendering before the query resolves would let copyLink rotate a live
-  // link it just hasn't seen yet, killing URLs already in circulation
-  if (!links) return null;
-
   return (
     <ButtonRow>
       <Button.Primary text={copied ? "Copied!" : "Copy invite link"} onClick={copyLink} />
-      <Button.Secondary text="Regenerate" onClick={regenerate} />
+      <Button.Secondary text="Regenerate" onClick={() => regenerate({ campaignId })} />
     </ButtonRow>
   );
 };

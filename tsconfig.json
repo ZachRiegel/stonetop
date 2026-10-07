@@ -23,7 +23,7 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
 
-    // non-relative imports ("amplify.ts", "components/Font.tsx") resolve against src/
+    // non-relative imports ("components/Font.tsx") resolve against src/; convex/_generated is imported by relative path
     "paths": { "*": ["./src/*"] },
 
     // Some stricter flags (disabled by default)

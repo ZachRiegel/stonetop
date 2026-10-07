@@ -1,18 +1,18 @@
 import styled from "@emotion/styled";
-import { defineQuery, query, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
 import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import Loading from "components/Loading.tsx";
+import { useMutation, useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
 import useModal from "hooks/useModal.ts";
-import _ from "lodash";
 import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
-import { useCallback, useMemo } from "react";
-import { Link as ReactRouterLink, useSearchParams } from "react-router";
-import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
+import { useEffect, useMemo, useRef } from "react";
+import { Link as ReactRouterLink, useNavigate, useSearchParams } from "react-router";
+
+import { api } from "../../../convex/_generated/api";
 
 const Page = styled.div`
   position: relative;
@@ -131,61 +131,51 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
-// Joins rather than nested selection paths so member and character edits
-// live-update.
-const campaignsQuery = defineQuery(() =>
-  query({ Campaign: { profiles: { userProfile: true }, characters: true } }),
-);
-type CampaignResult = QueryResult<ReturnType<typeof campaignsQuery>>;
-
 const Campaigns = () => {
-  const campaigns = useObserveQuery(campaignsQuery);
-  const user = useCurrentUser();
+  const campaigns = useQuery(api.campaigns.list);
+  const join = useMutation(api.campaigns.join);
+  const navigate = useNavigate();
   const createModal = useModal();
   const [searchParams] = useSearchParams();
+  const joined = useRef(false);
 
-  const characterLine = useCallback(
-    (campaign: CampaignResult) => {
-      return !user
-        ? "Loading..."
-        : user.username === campaign.owner
-          ? "Game Master"
-          : (campaign.characters.find((character) => character.owner === user.username)?.name ??
-            "No character yet");
-    },
-    [user],
-  );
+  // Use a pending invite once, on mount. The token arrives in the URL, or in
+  // sessionStorage when the sign-in redirect dropped it from the URL.
+  useEffect(() => {
+    const inviteToken = searchParams.get("inviteLinkId") ?? sessionStorage.getItem("inviteLinkId");
+    sessionStorage.removeItem("inviteLinkId");
+    if (!inviteToken || joined.current) return;
+    joined.current = true;
+    join({ inviteToken }).then(
+      (campaignId) => navigate(`/campaign/${campaignId}`, { replace: true }),
+      () => navigate("/?invite=invalid", { replace: true }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot on mount; re-running on later renders would join/navigate again
+  }, []);
 
   const isLoading = useMinimumLoading(!campaigns);
 
   const campaignEntries = useMemo(
     () =>
       campaigns?.map((campaign) => (
-        <CampaignLabel key={campaign.id} to={`/campaign/${campaign.id}`}>
+        <CampaignLabel key={campaign._id} to={`/campaign/${campaign._id}`}>
           <Font.Bold20 text={campaign.name} />
-          {campaign.profiles?.length ? (
-            <AvatarRow>
-              {_.chain(campaign.profiles)
-                .map((profile) => profile.userProfile)
-                .compact() // members without a UserProfile yet resolve to null
-                .uniqBy((profile) => profile.id)
-                .map((profile, index) => (
-                  <AvatarContainer key={profile.id + index}>
-                    <Avatar
-                      src={discordProfilePictureForUser(profile)}
-                      alt={profile.displayName ?? profile.name ?? "Unknown user"}
-                    />
-                  </AvatarContainer>
-                ))
-                .value()}
-            </AvatarRow>
-          ) : (
-            <div />
-          )}
-          <Font.Italic16 element="div" text={characterLine(campaign)} />
+          <AvatarRow>
+            {campaign.members.map((member) => (
+              <AvatarContainer key={member._id}>
+                <Avatar src={member.picture} alt={member.displayName} />
+              </AvatarContainer>
+            ))}
+          </AvatarRow>
+          <Font.Italic16
+            element="div"
+            text={
+              campaign.isOwner ? "Game Master" : (campaign.myCharacter?.name ?? "No character yet")
+            }
+          />
         </CampaignLabel>
       )),
-    [campaigns, characterLine],
+    [campaigns],
   );
 
   return (

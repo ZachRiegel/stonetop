@@ -6,7 +6,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", ".amplify", ".yarn"] },
+  { ignores: ["dist", "node_modules", ".yarn", "convex/_generated"] },
   js.configs.recommended,
   tseslint.configs.recommended,
   {
@@ -38,7 +38,7 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
   },
   {
-    files: ["amplify/**", "*.config.{js,ts}"],
+    files: ["convex/**", "*.config.{js,ts}"],
     languageOptions: { globals: globals.node },
   },
 );

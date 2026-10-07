@@ -17,16 +17,18 @@ const NavigationIcon = ({
       display: grid;
       place-items: center;
 
-      ${inverted &&
-      css`
-        opacity: 0.8;
-        background-color: var(--neutral-900);
-        border-radius: 999px;
+      ${
+        inverted &&
+        css`
+          opacity: 0.8;
+          background-color: var(--neutral-900);
+          border-radius: 999px;
 
-        & > div {
-          background-color: var(--neutral-0);
-        }
-      `}
+          & > div {
+            background-color: var(--neutral-0);
+          }
+        `
+      }
     `}
   >
     <div

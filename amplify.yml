@@ -4,7 +4,8 @@ backend:
     build:
       commands:
         - 'yarn install --immutable'
-        - 'yarn ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID'
+        - 'export CONVEX_DEPLOY_KEY=$(aws ssm get-parameter --name "/amplify/shared/$AWS_APP_ID/convexToken" --with-decryption --query Parameter.Value --output text)'
+        - 'npx convex deploy'
 frontend:
   phases:
     preBuild:

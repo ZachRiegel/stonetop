@@ -5,17 +5,23 @@
  * It is referenced from `index.html`.
  */
 
-import { Amplify } from "aws-amplify";
+import { type AuthClient, ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { ConvexReactClient } from "convex/react";
 import { createRoot } from "react-dom/client";
 
-import outputs from "../amplify_outputs.json";
 import { App } from "./App.tsx";
+import { authClient } from "./lib/auth-client.ts";
 
-// Omit the identity pool: nothing here uses IAM/guest credentials, and with it
-// configured every GraphQL op's fetchAuthSession eagerly round-trips to
-// cognito-identity for credentials that get thrown away.
-const { identity_pool_id: _, ...auth } = outputs.auth;
-Amplify.configure({ ...outputs, auth });
+// expectAuth holds queries until the Better Auth token is attached, so nothing
+// fires as an anonymous request during the sign-in handshake.
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL, { expectAuth: true });
 
-const elem = document.getElementById("root")!;
-createRoot(elem).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  // @convex-dev/better-auth 0.12.5 declares AuthClient against better-auth 1.6
+  // such that useSession().data resolves to never, so no real client is
+  // assignable to it. The provider only needs the client's runtime shape,
+  // which this is; the cast is confined to this one boundary.
+  <ConvexBetterAuthProvider client={convex} authClient={authClient as unknown as AuthClient}>
+    <App />
+  </ConvexBetterAuthProvider>,
+);

@@ -1,12 +1,14 @@
 import styled from "@emotion/styled";
-import { getClient, useCurrentUser } from "amplify.ts";
 import Button from "components/Button.tsx";
 import ButtonRow from "components/ButtonRow.tsx";
 import Font from "components/Font.tsx";
 import Input from "components/Input.tsx";
 import Modal from "components/Modal.tsx";
+import { useMutation } from "convex/react";
 import MakeDialog from "hoc/MakeDialog.tsx";
 import { useState } from "react";
+
+import { api } from "../../../convex/_generated/api";
 
 const CardHeader = styled.div`
   padding: 12px 20px;
@@ -37,15 +39,13 @@ const Card = styled.div`
 `;
 
 const CreateCampaignModal = ({ requestClose }: { isOpen: boolean; requestClose: () => void }) => {
-  const client = getClient();
-  const user = useCurrentUser();
+  const createCampaign = useMutation(api.campaigns.create);
   const [name, setName] = useState("");
 
-  const createCampaign = async () => {
+  const submit = async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (!user) return;
-    await client.models.Campaign.create({ name: trimmed });
+    await createCampaign({ name: trimmed });
     setName("");
     requestClose();
   };
@@ -61,7 +61,7 @@ const CreateCampaignModal = ({ requestClose }: { isOpen: boolean; requestClose: 
       <CardFooter>
         <ButtonRow>
           <Button.Secondary text="Cancel" onClick={requestClose} />
-          <Button.Primary text="Create" onClick={createCampaign} />
+          <Button.Primary text="Create" onClick={submit} />
         </ButtonRow>
       </CardFooter>
     </Card>

@@ -1,15 +1,14 @@
 import styled from "@emotion/styled";
-import { defineQuery, query, type QueryResult, useCurrentUser, useObserveQuery } from "amplify.ts";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
+import { useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
-import _ from "lodash";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import InvitePlayers from "pages/players/InvitePlayers.tsx";
-import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
-import discordProfilePictureForUser from "utils/discordProfilePictureForUser.ts";
+
+import { api } from "../../../convex/_generated/api";
 
 const Page = styled.div`
   position: relative;
@@ -111,63 +110,11 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
-// UserProfile can't be list-filtered by campaign (filters only cover a model's
-// own fields), so query the CampaignMember join rows and follow their
-// relationships. Characters are narrowed to this campaign: with more than 10
-// profiles the per-profile clause is dropped and the campaign filter alone
-// keeps the subscription small.
-const playersQuery = defineQuery((campaignId: string | undefined) =>
-  query({
-    CampaignMember: {
-      where: { campaignId },
-      campaign: true,
-      userProfile: { characters: { where: { campaignId } } },
-    },
-  }),
-);
-type Player = NonNullable<QueryResult<ReturnType<typeof playersQuery>>["userProfile"]>;
-
 const Players = () => {
   const { campaignId } = useParams();
-  const members = useObserveQuery(playersQuery, campaignId);
-  const user = useCurrentUser();
-
-  const players = useMemo(
-    () =>
-      _.chain(members)
-        .map((member) => member.userProfile)
-        .compact() // members without a UserProfile yet resolve to null
-        .uniqBy((profile) => profile.id)
-        .value(),
-    [members],
-  );
-
-  const characterLine = useCallback(
-    (player: Player) =>
-      // UserProfile ids are Cognito usernames, matching Campaign.owner
-      player.id === members?.[0]?.campaign?.owner
-        ? "Game Master"
-        : (player.characters.find((character) => character.campaignId === campaignId)?.name ??
-          "No character yet"),
-    [members, campaignId],
-  );
-
-  const isLoading = useMinimumLoading(!members);
-
-  const playerEntries = useMemo(
-    () =>
-      players.map((player) => (
-        <PlayerLabel key={player.id}>
-          <Avatar
-            src={discordProfilePictureForUser(player)}
-            alt={player.displayName ?? player.name ?? "Unknown user"}
-          />
-          <Font.Bold20 text={player.displayName ?? player.name ?? "Unknown user"} />
-          <Font.Italic16 element="div" text={characterLine(player)} />
-        </PlayerLabel>
-      )),
-    [players, characterLine],
-  );
+  // null means the caller is not a member; the server lists the Game Master first
+  const campaign = useQuery(api.campaigns.get, campaignId ? { campaignId } : "skip");
+  const isLoading = useMinimumLoading(campaign === undefined);
 
   return (
     <Page>
@@ -177,20 +124,31 @@ const Players = () => {
           <Font.Bold32 element="h1" text="Players" />
         </CardHeader>
         <ScrollArea>
-          {isLoading || !members ? (
+          {isLoading || campaign === undefined ? (
             <Loading.Medium />
-          ) : players.length === 0 ? (
+          ) : campaign === null ? (
             <EmptyState>
               <img src={misc} alt="" />
-              <Font.Italic16 element="div" text="No players yet." />
+              <Font.Italic16 element="div" text="You are not a member of this campaign." />
             </EmptyState>
           ) : (
-            playerEntries
+            campaign.members.map((player) => (
+              <PlayerLabel key={player._id}>
+                <Avatar src={player.picture} alt={player.displayName} />
+                <Font.Bold20 text={player.displayName} />
+                <Font.Italic16
+                  element="div"
+                  text={
+                    player.isOwner ? "Game Master" : (player.character?.name ?? "No character yet")
+                  }
+                />
+              </PlayerLabel>
+            ))
           )}
         </ScrollArea>
-        {user && campaignId && user.username === members?.[0]?.campaign?.owner && (
+        {campaign?.inviteToken && (
           <CardBottom>
-            <InvitePlayers campaignId={campaignId} />
+            <InvitePlayers campaignId={campaign._id} inviteToken={campaign.inviteToken} />
           </CardBottom>
         )}
       </Card>

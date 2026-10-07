@@ -1,11 +1,10 @@
 import { css, Global } from "@emotion/react";
 import styled from "@emotion/styled";
 import background from "assets/background.svg";
-import { signInWithRedirect } from "aws-amplify/auth";
 import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
-import { useNavigate } from "react-router";
+import { authClient } from "lib/auth-client.ts";
 
 import gintoWoff from "./ABCGintoDiscord-Medium.woff";
 import footer from "./footer.png";
@@ -69,13 +68,14 @@ const DiscordButton = styled(Button.Primary)`
 `;
 
 const Login = () => {
-  const navigate = useNavigate();
-
-  const handleLogin = async () => {
-    await signInWithRedirect({
-      provider: { custom: "discord" },
+  // carry a pending invite through the OAuth round-trip; the Campaigns page
+  // redeems it once we land back on "/"
+  const handleLogin = () => {
+    const inviteLinkId = sessionStorage.getItem("inviteLinkId");
+    return authClient.signIn.social({
+      provider: "discord",
+      callbackURL: `${window.location.origin}/${inviteLinkId ? `?inviteLinkId=${inviteLinkId}` : ""}`,
     });
-    navigate("/");
   };
 
   return (

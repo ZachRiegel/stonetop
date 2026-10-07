@@ -12,7 +12,8 @@ export default defineConfig({
     tsconfigPaths(),
   ],
   test: {
-    environment: "happy-dom",
-    include: ["src/**/*.test.{ts,tsx}"],
+    environment: "edge-runtime",
+    include: ["convex/**/*.test.ts"],
+    server: { deps: { inline: ["convex-test"] } },
   },
 });

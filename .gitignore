@@ -1,12 +1,20 @@
-# dependencies (bun install)
+# dependencies (yarn install)
 node_modules
+
+# yarn berry: keep only the pinned release
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # output
 out
 dist
 holding
 *.tgz
-.amplify
 
 # code coverage
 coverage
