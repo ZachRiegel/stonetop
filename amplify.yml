@@ -4,7 +4,10 @@ backend:
     build:
       commands:
         - 'yarn install --immutable'
-        - 'export CONVEX_DEPLOY_KEY=$(aws ssm get-parameter --name "/amplify/shared/$AWS_APP_ID/convexToken" --with-decryption --query Parameter.Value --output text)'
+        # assign and export separately: `export X=$(cmd)` always exits 0, which
+        # would hide a failed SSM read behind a confusing Convex error
+        - 'CONVEX_DEPLOY_KEY=$(aws ssm get-parameter --name "/amplify/shared/$AWS_APP_ID/convexToken" --with-decryption --query Parameter.Value --output text)'
+        - 'export CONVEX_DEPLOY_KEY'
         - 'npx convex deploy'
 frontend:
   phases:
