@@ -1,6 +1,9 @@
 import styled from "@emotion/styled";
 import book2Svg from "icons/book2.svg?raw";
 import cogSvg from "icons/cog.svg?raw";
+import dieBlueSvg from "icons/dieBlue.svg?raw";
+import dieOrangeSvg from "icons/dieOrange.svg?raw";
+import dieVioletSvg from "icons/dieViolet.svg?raw";
 import discordSvg from "icons/discordLogo.svg?raw";
 import libraryBooksSvg from "icons/libraryBooks.svg?raw";
 import plusSvg from "icons/plus.svg?raw";
@@ -11,6 +14,9 @@ const IconSvgs = {
   Cog: cogSvg,
   Book2: book2Svg,
   LibraryBooks: libraryBooksSvg,
+  DieBlue: dieBlueSvg,
+  DieViolet: dieVioletSvg,
+  DieOrange: dieOrangeSvg,
 };
 
 type IconName = keyof typeof IconSvgs;
@@ -27,7 +33,7 @@ const StyledIcon = styled(IconInternal)<{ size: number }>`
 
   object-fit: contain;
   width: var(--icon-size, 24px);
-  max-width: var(--icon-sze, 24px);
+  max-width: var(--icon-size, 24px);
   height: var(--icon-size, 24px);
   max-height: var(--icon-size, 24px);
 

@@ -31,6 +31,12 @@ export const membershipOf = (ctx: Ctx, campaignId: Id<"campaigns">, userId: Id<"
     )
     .unique();
 
+export const requireMember = async (ctx: Ctx, campaignId: Id<"campaigns">) => {
+  const membership = await membershipOf(ctx, campaignId, (await requireUser(ctx))._id);
+  if (!membership) throw new Error("You are not in this campaign");
+  return membership;
+};
+
 export const requireGameMaster = async (ctx: Ctx, campaignId: Id<"campaigns">) => {
   const membership = await membershipOf(ctx, campaignId, (await requireUser(ctx))._id);
   if (!membership?.isOwner) throw new Error("Only the Game Master may do that");

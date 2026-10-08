@@ -197,6 +197,7 @@ describe("campaigns.get", () => {
       _id: campaignId,
       _creationTime: expect.any(Number),
       name: "Stonetop",
+      rollSeed: expect.any(Number),
       isOwner: true,
       inviteToken,
       members: [

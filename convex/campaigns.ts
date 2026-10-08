@@ -1,17 +1,21 @@
 import { v } from "convex/values";
 
+import { newSeed } from "../src/pages/dice/dice";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { membershipOf, requireGameMaster, requireUser } from "./lib/access";
+import { seedOf } from "./rolls";
 import schema from "./schema";
 
 // Every campaign read returns this: the campaign as the caller sees it. Other
-// members appear without their internal authId, and the invite token is only
-// present for the Game Master, since it is the secret in the invite URL.
+// members appear without their internal authId, the invite token is only
+// present for the Game Master, since it is the secret in the invite URL, and
+// rollSeed is always the seed of the next dice roll (see rolls.ts).
 const card = schema
   .doc("campaigns")
-  .omit("inviteToken")
+  .omit("inviteToken", "rollSeed")
   .extend({
+    rollSeed: v.number(),
     isOwner: v.boolean(),
     inviteToken: v.optional(v.string()),
     members: v.array(
@@ -55,9 +59,10 @@ const cardOf = async (ctx: QueryCtx, membership: Doc<"campaignMembers">) => {
       }),
     )
   ).filter((member) => member !== null);
-  const { inviteToken, ...visible } = campaign;
+  const { inviteToken, rollSeed: _rollSeed, ...visible } = campaign;
   return {
     ...visible,
+    rollSeed: seedOf(campaign),
     ...(membership.isOwner ? { inviteToken } : {}),
     isOwner: membership.isOwner,
     members,
@@ -104,6 +109,7 @@ export const create = mutation({
     const campaignId = await ctx.db.insert("campaigns", {
       name: trimmed,
       inviteToken: crypto.randomUUID(),
+      rollSeed: newSeed(),
     });
     await ctx.db.insert("campaignMembers", { campaignId, userId: user._id, isOwner: true });
     return campaignId;

@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import { ModalInternals } from "components/Modal.tsx";
 import MakeDialog from "hoc/MakeDialog.tsx";
 import type { ReactNode } from "react";
+import { ALLOW_CHILD_SELECTORS } from "utils/emotion.ts";
 
 const RenderChild = ({
   children,
@@ -46,7 +47,7 @@ const Popover = styled(PopoverInternals)<{
     display: contents;
 
     /* anchor-name needs a real box; display: contents generates none */
-    & > *:first-child {
+    ${ALLOW_CHILD_SELECTORS} & > *:first-child {
       anchor-name: --this-anchor;
     }
   }

@@ -5,7 +5,6 @@ import { useConvexAuth } from "convex/react";
 import { ConvexError } from "convex/values";
 import { authClient } from "lib/auth-client.ts";
 import LoggedInUserNavigationLayout from "LoggedInUserNavigationLayout.tsx";
-import CampaignSection from "pages/campaign/CampaignSection.tsx";
 import Campaigns from "pages/campaigns/Campaigns.tsx";
 import Login from "pages/landing/Login.tsx";
 import Players from "pages/players/Players.tsx";
@@ -115,6 +114,13 @@ const router = createBrowserRouter([
       {
         element: <RequireAuth />,
         errorElement: <SessionBoundary />,
+        // a direct load of the lazy dice route renders nothing until its chunk arrives;
+        // sitting below RootLayout keeps its global styles around the spinner
+        hydrateFallbackElement: (
+          <FullPageLoading>
+            <Loading.Medium />
+          </FullPageLoading>
+        ),
         children: [
           {
             element: <AuthenticatedLayout />,
@@ -133,13 +139,16 @@ const router = createBrowserRouter([
                 children: [
                   {
                     index: true,
-                    loader: ({ params }) => redirect(`/campaign/${params.campaignId}/scenario`),
+                    loader: ({ params }) => redirect(`/campaign/${params.campaignId}/dice`),
                   },
-                  { path: "scenario", element: <CampaignSection title="Scenario" /> },
-                  { path: "characters", element: <CampaignSection title="Characters" /> },
-                  { path: "quests", element: <CampaignSection title="Quests" /> },
-                  { path: "npcs", element: <CampaignSection title="NPCs" /> },
-                  { path: "locations", element: <CampaignSection title="Locations" /> },
+                  {
+                    // three.js and react-three-fiber only load with this route
+                    path: "dice",
+                    lazy: {
+                      Component: () =>
+                        import("pages/dice/DiceRoller.tsx").then((module) => module.default),
+                    },
+                  },
                   { path: "players", element: <Players /> },
                 ],
               },

@@ -46,12 +46,14 @@ const ButtonInternals = ({
   type = "button",
   className,
   Icon,
+  disabled,
 }: {
   text?: string;
   onClick?: () => void | Promise<unknown>;
   type?: "button" | "submit" | "reset";
   className?: string;
   Icon?: React.FC<IconProps>;
+  disabled?: boolean;
 }) => {
   const [isLoading, startTransition] = useTransition();
 
@@ -71,7 +73,12 @@ const ButtonInternals = ({
   };
 
   return (
-    <button className={className} type={type} onClick={handleClick} disabled={isLoading}>
+    <button
+      className={className}
+      type={type}
+      onClick={handleClick}
+      disabled={disabled || isLoading}
+    >
       <Content isLoading={isLoading}>
         {Icon && <Icon size={24} />}
         {text && <div>{text}</div>}

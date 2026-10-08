@@ -1,11 +1,12 @@
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
-import type { ElementType } from "react";
 
+// an HTML tag name, not React.ElementType: react-three-fiber adds its own elements to
+// JSX.IntrinsicElements and a tag typed as any element no longer accepts text children
 export type FontProps = {
   text: string;
   className?: string;
-  element?: ElementType;
+  element?: keyof HTMLElementTagNameMap;
 };
 
 const TextInternals = ({ text, className, element: Element = "span" }: FontProps) => (

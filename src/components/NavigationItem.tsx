@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import { Link as ReactRouterLink } from "react-router";
+import { ALLOW_CHILD_SELECTORS } from "utils/emotion.ts";
 
 // Must render inside the left-nav <Nav> (container-name: navigation) — relies on
 // its --expanded-width, --navigation-horizontal-padding, and --custom-transition-delay
@@ -26,7 +27,7 @@ const BaseNavigationItem = styled.label`
     translate 300ms linear;
   transition-delay: var(--custom-transition-delay);
 
-  & > *:not(:first-child) {
+  ${ALLOW_CHILD_SELECTORS} & > *:not(:first-child) {
     opacity: 0;
     transition: opacity 300ms linear;
   }
@@ -34,7 +35,7 @@ const BaseNavigationItem = styled.label`
   @container navigation style(--open: true) {
     translate: 0 0;
 
-    & > *:not(:first-child) {
+    ${ALLOW_CHILD_SELECTORS} & > *:not(:first-child) {
       opacity: 1;
     }
   }
