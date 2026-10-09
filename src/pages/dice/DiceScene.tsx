@@ -40,13 +40,14 @@ const SLOTS: Record<number, readonly (readonly [number, number])[]> = {
     [0.5, 0.5],
   ],
   3: [
-    [0, -0.55],
-    [-0.6, 0.45],
-    [0.6, 0.45],
+    [0, -0.6],
+    [-0.65, 0.48],
+    [0.65, 0.48],
   ],
 };
-// glyph radius as a fraction of the face, the same whatever else shares the face
-const SYMBOL_RADIUS: Record<DieSymbol, number> = { burst: 0.23, special: 0.19, skull: 0.24 };
+// glyph radius as a fraction of the face, the same whatever else shares the face (the
+// wrench is always alone on its face, so it gets more room)
+const SYMBOL_RADIUS: Record<DieSymbol, number> = { burst: 0.23, special: 0.19, skull: 0.3 };
 
 const drawGlyph = (ctx: CanvasRenderingContext2D, symbol: DieSymbol, points: StarPoints) => {
   const glyph = new Path2D(

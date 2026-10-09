@@ -7,7 +7,7 @@ export const CREAM = "#F3E7D3";
 export const DIE_COLOURS = ["blue", "violet", "orange"] as const;
 export type DieColour = (typeof DIE_COLOURS)[number];
 
-// burst = star pip (counts as a hit), special = the squiggle ("s"), skull = "f"
+// burst = star pip (counts as a hit), special = the hex nut ("s"), skull = the wrench ("f")
 export const SYMBOLS = ["burst", "special", "skull"] as const;
 export type DieSymbol = (typeof SYMBOLS)[number];
 
@@ -17,7 +17,7 @@ export type Faces = readonly [Face, Face, Face, Face, Face, Face];
 // face index doubles as the BoxGeometry material index (+x, −x, +y, −y, +z, −z)
 export type FaceIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
-export type StarPoints = 3 | 4 | 6;
+export type StarPoints = 4 | 5 | 6;
 
 // "1s" → { burst: 1, special: 1, skull: 0 }
 const face = (spec: string): Face => ({
@@ -30,13 +30,13 @@ export const DICE: Record<DieColour, { hex: string; points: StarPoints; faces: F
   // old white
   blue: {
     hex: "#14CFFD",
-    points: 3,
+    points: 4,
     faces: [face("0f"), face("0"), face("0s"), face("1"), face("1s"), face("2")],
   },
   // old blue
   violet: {
     hex: "#FF44FD",
-    points: 4,
+    points: 5,
     faces: [face("0f"), face("0s"), face("1"), face("1s"), face("2"), face("2")],
   },
   // old red
@@ -50,8 +50,8 @@ export const DICE: Record<DieColour, { hex: string; points: StarPoints; faces: F
 // Glyphs are SVG path data in a 24×24 box centred on (12, 12), so one string feeds
 // both `new Path2D(d)` on a face canvas and `<path d>` in an icon.
 
-// inner radius as a fraction of the outer one: a three-point star, a sparkle, a hexagram
-const STAR_INNER_RATIO: Record<StarPoints, number> = { 3: 0.3, 4: 0.38, 6: 0.58 };
+// inner radius as a fraction of the outer one: a sparkle, a five-point star, a hexagram
+const STAR_INNER_RATIO: Record<StarPoints, number> = { 4: 0.38, 5: 0.45, 6: 0.58 };
 
 export const starPath = (points: StarPoints, outer = 11, cx = 12, cy = 12) => {
   const vertices = Array.from({ length: points * 2 }, (_, i) => {
@@ -70,18 +70,17 @@ export const starPath = (points: StarPoints, outer = 11, cx = 12, cy = 12) => {
 };
 
 export const STAR_PATHS: Record<StarPoints, string> = {
-  3: starPath(3),
   4: starPath(4),
+  5: starPath(5),
   6: starPath(6),
 };
 
-// the special mark: a hexagon with a lightning bolt cut out; the fail mark: a gear (evenodd,
-// picked from
-// src/holding/glyphSheet.html)
+// the special mark: a hex nut (a hexagon with a round hole, evenodd); the fail mark: an
+// open-end wrench lying head up-left (both picked from src/holding/glyphPreview.html)
 export const SPECIAL_PATH =
-  "M12.00 1.00L16.79 3.71L21.53 6.50L21.57 12.00L21.53 17.50L16.79 20.29L12.00 23.00L7.22 20.29L2.47 17.50L2.43 12.00L2.47 6.50L7.21 3.71ZM13.17 4.98L6.93 12.78L11.22 12.78L10.44 19.02L17.07 10.83L12.78 10.83L13.95 4.98Z";
+  "M12.00 1.00L21.53 6.50L21.53 17.50L12.00 23.00L2.47 17.50L2.47 6.50ZM12.00 7.40A4.6 4.6 0 1 0 12.00 16.60A4.6 4.6 0 1 0 12.00 7.40Z";
 export const FAIL_PATH =
-  "M20.49 12.33L22.70 14.57L21.38 17.75L18.24 17.77L17.77 18.24L17.75 21.38L14.57 22.70L12.33 20.49L11.67 20.49L9.43 22.70L6.25 21.38L6.23 18.24L5.76 17.77L2.62 17.75L1.30 14.57L3.51 12.33L3.51 11.67L1.30 9.43L2.62 6.25L5.76 6.23L6.23 5.76L6.25 2.62L9.43 1.30L11.67 3.51L12.33 3.51L14.57 1.30L17.75 2.62L17.77 5.76L18.24 6.23L21.38 6.25L22.70 9.43L20.49 11.67ZM12 8.5A3.5 3.5 0 1 0 12 15.5A3.5 3.5 0 1 0 12 8.5Z";
+  "M15.96 18.93L10.13 13.10A5.2 5.2 0 0 1 3.58 5.98L7.69 10.09L10.09 7.69L5.98 3.58A5.2 5.2 0 0 1 13.10 10.13L18.93 15.96A2.1 2.1 0 0 1 15.96 18.93Z";
 
 export type Rolled = { colour: DieColour; face: FaceIndex };
 

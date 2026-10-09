@@ -1,5 +1,16 @@
 // @vitest-environment node
-import { DICE, drawFaces, mulberry32, newSeed, score } from "pages/dice/dice.ts";
+import {
+  DICE,
+  DIE_COLOURS,
+  drawFaces,
+  FAIL_PATH,
+  mulberry32,
+  newSeed,
+  score,
+  SPECIAL_PATH,
+  STAR_PATHS,
+  starPath,
+} from "pages/dice/dice.ts";
 import { describe, expect, test } from "vitest";
 
 describe("drawFaces", () => {
@@ -41,5 +52,45 @@ describe("newSeed", () => {
     expect(Number.isInteger(seed)).toBe(true);
     expect(seed).toBeGreaterThanOrEqual(0);
     expect(seed).toBeLessThan(2 ** 32);
+  });
+});
+
+describe("glyph paths", () => {
+  // every coordinate in a path's commands
+  const coordinates = (d: string) =>
+    [...d.matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map(([, x, y]) => [Number(x), Number(y)]);
+
+  test("every die has a star path, closed and centred in the 24-unit box", () => {
+    DIE_COLOURS.forEach((colour) => {
+      const d = STAR_PATHS[DICE[colour].points];
+      expect(d.endsWith("Z")).toBe(true);
+      const points = coordinates(d);
+      expect(points).toHaveLength(DICE[colour].points * 2);
+      const xs = points.map(([x]) => x ?? 0);
+      const ys = points.map(([, y]) => y ?? 0);
+      expect((Math.max(...xs) + Math.min(...xs)) / 2).toBeCloseTo(12, 1);
+      expect((Math.max(...ys) + Math.min(...ys)) / 2).toBeCloseTo(12, 1);
+      expect(Math.min(...xs, ...ys)).toBeGreaterThanOrEqual(1);
+      expect(Math.max(...xs, ...ys)).toBeLessThanOrEqual(23);
+    });
+  });
+
+  test("starPath takes a size and centre for the icons", () => {
+    const points = coordinates(starPath(5, 9, 16, 16));
+    const ys = points.map(([, y]) => y ?? 0);
+    // the top point is on the centre line; the bounding box is centred vertically
+    expect(points[0]).toEqual([
+      16,
+      expect.closeTo(16 - 9 + (9 - 9 * Math.cos(Math.PI / 5)) / 2, 1),
+    ]);
+    expect((Math.max(...ys) + Math.min(...ys)) / 2).toBeCloseTo(16, 1);
+  });
+
+  test("the nut and wrench stay inside the box", () => {
+    [SPECIAL_PATH, FAIL_PATH].forEach((d) => {
+      const all = coordinates(d).flat();
+      expect(Math.min(...all)).toBeGreaterThanOrEqual(1);
+      expect(Math.max(...all)).toBeLessThanOrEqual(23);
+    });
   });
 });
