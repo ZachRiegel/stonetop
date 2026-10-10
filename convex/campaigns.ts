@@ -4,13 +4,13 @@ import { newSeed } from "../src/pages/dice/dice";
 import type { Doc } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
 import { membershipOf, requireGameMaster, requireUser } from "./lib/access";
-import { seedOf } from "./rolls";
+import { seedOf } from "./messages";
 import schema from "./schema";
 
 // Every campaign read returns this: the campaign as the caller sees it. Other
 // members appear without their internal authId, the invite token is only
 // present for the Game Master, since it is the secret in the invite URL, and
-// rollSeed is always the seed of the next dice roll (see rolls.ts).
+// rollSeed is always the seed of the next dice roll (see messages.ts).
 const card = schema
   .doc("campaigns")
   .omit("inviteToken", "rollSeed")

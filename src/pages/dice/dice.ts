@@ -261,6 +261,6 @@ export type RollResult = {
   id: string;
   simulation: Simulation;
   dice: Rolled[];
-  roller: { displayName: string; picture: string };
+  author: { displayName: string; picture: string };
   settled: boolean;
 };

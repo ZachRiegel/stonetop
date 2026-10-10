@@ -42,6 +42,22 @@ const RootLayout = () => {
             --neutral-800: #e3e3e3;
             --neutral-850: #f1f1f1;
             --neutral-900: #ffffff;
+            /* the dice colours (dice.ts), with darker and lighter steps for states */
+            --cyan-300: #0c7c98;
+            --cyan-400: #10a6ca;
+            --cyan-500: #14cffd;
+            --cyan-600: #72e2fe;
+            --cyan-700: #adeefe;
+            --magenta-300: #992998;
+            --magenta-400: #cc36ca;
+            --magenta-500: #ff44fd;
+            --magenta-600: #ff7cfe;
+            --magenta-700: #ffabfe;
+            --orange-300: #994024;
+            --orange-400: #cc5530;
+            --orange-500: #ff6a3c;
+            --orange-600: #ff9776;
+            --orange-700: #ffbca7;
             --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.24);
             --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.28);
             --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.36);

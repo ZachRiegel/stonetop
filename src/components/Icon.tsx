@@ -1,6 +1,8 @@
 import styled from "@emotion/styled";
 import book2Svg from "icons/book2.svg?raw";
+import chatSvg from "icons/chat.svg?raw";
 import cogSvg from "icons/cog.svg?raw";
+import dieSvg from "icons/die.svg?raw";
 import dieBlueSvg from "icons/dieBlue.svg?raw";
 import dieOrangeSvg from "icons/dieOrange.svg?raw";
 import dieVioletSvg from "icons/dieViolet.svg?raw";
@@ -12,6 +14,8 @@ const IconSvgs = {
   Plus: plusSvg,
   Discord: discordSvg,
   Cog: cogSvg,
+  Chat: chatSvg,
+  Die: dieSvg,
   Book2: book2Svg,
   LibraryBooks: libraryBooksSvg,
   DieBlue: dieBlueSvg,
@@ -20,6 +24,11 @@ const IconSvgs = {
 };
 
 type IconName = keyof typeof IconSvgs;
+
+// the path data of a material-symbols icon, which is one path in a 24×24 box, for drawing
+// it inside another SVG
+export const iconPath = (icon: "Chat" | "Cog" | "Die") =>
+  /\bd="([^"]+)"/.exec(IconSvgs[icon])?.[1] ?? "";
 
 type IconPropsInternal = { icon: IconName; className?: string; size: number };
 export type IconProps = Omit<IconPropsInternal, "icon">;
