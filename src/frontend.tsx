@@ -6,11 +6,10 @@
  */
 
 import { type AuthClient, ConvexBetterAuthProvider } from "@convex-dev/better-auth/react";
+import { App } from "App.tsx";
 import { ConvexReactClient } from "convex/react";
+import { authClient } from "lib/auth-client.ts";
 import { createRoot } from "react-dom/client";
-
-import { App } from "./App.tsx";
-import { authClient } from "./lib/auth-client.ts";
 
 // expectAuth holds queries until the Better Auth token is attached, so nothing
 // fires as an anonymous request during the sign-in handshake.

@@ -3,6 +3,7 @@ import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import Loading from "components/Loading.tsx";
+import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
 import useModal from "hooks/useModal.ts";
@@ -11,8 +12,6 @@ import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import { useEffect, useMemo, useRef } from "react";
 import { Link as ReactRouterLink, useNavigate, useSearchParams } from "react-router";
-
-import { api } from "../../../convex/_generated/api";
 
 const Page = styled.div`
   position: relative;

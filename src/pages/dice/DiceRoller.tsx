@@ -2,6 +2,7 @@ import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { Canvas } from "@react-three/fiber";
 import Font from "components/Font.tsx";
+import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import CrtEffect from "pages/dice/CrtEffect.tsx";
@@ -20,8 +21,6 @@ import RollMenu from "pages/dice/RollMenu.tsx";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { MathUtils, Vector3 } from "three";
-
-import { api } from "../../../convex/_generated/api";
 
 const LABELS: Record<DieSymbol, string> = { burst: "Bursts", special: "Specials", skull: "Fails" };
 

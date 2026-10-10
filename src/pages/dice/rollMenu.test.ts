@@ -5,6 +5,8 @@ import {
   bubbleOf,
   buttonPath,
   centreOf,
+  COUNT_ARC,
+  countTurn,
   EXTENT,
   hit,
   insideRing,
@@ -22,7 +24,8 @@ const at = (radius: number, angle: number) =>
     radius * Math.cos((angle * Math.PI) / 180),
     -radius * Math.sin((angle * Math.PI) / 180),
   ] as const;
-const rounded = (point: readonly [number, number]) => point.map((n) => Math.round(n) + 0);
+// rounding a small negative gives -0, which toEqual tells apart from 0
+const rounded = (point: readonly [number, number]) => point.map((n) => Math.round(n) || 0);
 
 const BARE = arcsOf(null);
 const BLUE = arcsOf("blue");
@@ -60,6 +63,11 @@ describe("rollMenu", () => {
     });
     expect(rounded(centreOf(count("blue"), 2))).toEqual([-count("blue").radius, 0]);
     expect(arcsOf(null).count).toBeUndefined();
+    // drawn centred on the middle die and turned, so the arc only ever rotates
+    expect(countTurn("violet")).toBe(0);
+    expect(count("violet")).toEqual(COUNT_ARC);
+    expect(countTurn("blue")).toBe(45);
+    expect(countTurn("orange")).toBe(-45);
   });
 
   test("finds what is under a point", () => {

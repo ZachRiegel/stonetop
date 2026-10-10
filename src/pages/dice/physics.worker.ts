@@ -7,7 +7,6 @@ import RAPIER, {
   type RigidBody,
   type Rotation,
 } from "@dimforge/rapier3d-deterministic-compat";
-
 import {
   type Arena,
   CEILING,
@@ -20,7 +19,7 @@ import {
   mulberry32,
   type SimulateRequest,
   type Simulation,
-} from "./dice.ts"; // relative: the worker is bundled apart from the app, without the src/ path mapping
+} from "pages/dice/dice.ts";
 
 // How the throw feels, in die units (the die is a unit cube). The walls and the pull to
 // the middle are kept subtle so a roll looks natural; the throw is sized to run out of

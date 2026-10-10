@@ -1,10 +1,9 @@
 /// <reference types="vite/client" />
+import { api } from "_generated/api";
+import type { Id } from "_generated/dataModel";
 import { convexTest, type TestConvex } from "convex-test";
+import schema from "schema";
 import { describe, expect, test } from "vitest";
-
-import { api } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
-import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
 

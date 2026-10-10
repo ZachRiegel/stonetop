@@ -13,6 +13,8 @@ import {
   bubbleOf,
   buttonPath,
   centreOf,
+  COUNT_ARC,
+  countTurn,
   entriesOf,
   EXTENT,
   type Hit,
@@ -191,11 +193,19 @@ const Star = styled.path`
   }
 `;
 
+// turned back against the count arc's turn, so it stays upright while sliding round
 const Numeral = styled.text`
   ${FontCSS.Bold20}
   fill: ${INK};
   text-anchor: middle;
   dominant-baseline: central;
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: rotate 200ms ease-out;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 `;
 
 // a material-symbols icon on a dark pill, drawn as a path so the lens's copy of the menu
@@ -214,12 +224,16 @@ const glyph = (arc: Arc, name: "Chat" | "Cog") => {
   );
 };
 
-// the count arc, scaled about the SVG's origin, which is the button's centre
+// The count arc: drawn once centred on the middle die and turned to the chosen one, so a
+// change of die swings it round rather than unfolding it afresh. Scaled and turned about
+// the SVG's origin, which is the button's centre.
 const Unfolding = styled.g`
   animation: ${unfold} 150ms ease-out both;
+  transition: rotate 200ms ease-out;
 
   @media (prefers-reduced-motion: reduce) {
     animation-duration: 0ms;
+    transition: none;
   }
 `;
 
@@ -353,21 +367,28 @@ const RollMenu = ({
     window.addEventListener("pointercancel", stop);
   };
 
-  // The arcs, their dividers and labels. The menu proper is `live`; the copy the lens
-  // magnifies is not, so it stays out of the tab order and the accessibility tree.
+  // The arcs and their labels. The menu proper is `live`; the lens's copy is not, so it
+  // stays out of the tab order and the accessibility tree. The count arc is drawn in its
+  // home place and turned by CSS (clockwise, unlike the angles here); `arcs` holds the
+  // turned one for hit testing.
+  const turn = colour ? countTurn(colour) : 0;
   const art = (live: boolean) =>
     entriesOf(arcs).map(([name, arc]) => {
       const buttons = Array.from({ length: arc.segments }, (_, index) => index);
       const Group = name === "count" ? Unfolding : "g";
+      const drawn = name === "count" ? COUNT_ARC : arc;
       const dimmed = (index: number) =>
         name === "dice" && colour && DIE_COLOURS[index] !== colour ? "dimmed" : "";
       return (
-        // the count arc unfolds again wherever the next chosen die puts it
-        <Group key={name === "count" ? colour : name} aria-hidden={live ? undefined : true}>
+        <Group
+          key={name}
+          style={name === "count" ? { rotate: `${-turn}deg` } : undefined}
+          aria-hidden={live ? undefined : true}
+        >
           {buttons.map((index) => (
             <Segment
               key={index}
-              d={buttonPath(arc, index)}
+              d={buttonPath(drawn, index)}
               paint={paintOf(name, index, hovered?.arc === name && hovered.index === index)}
               className={dimmed(index)}
               role={live ? "menuitem" : undefined}
@@ -390,9 +411,9 @@ const RollMenu = ({
             ))}
           {name === "count" &&
             buttons.map((index) => {
-              const [x, y] = centreOf(arc, index);
+              const [x, y] = centreOf(drawn, index);
               return (
-                <Numeral key={index} x={x} y={y}>
+                <Numeral key={index} x={x} y={y} style={{ rotate: `${turn}deg` }}>
                   {index + 1}
                 </Numeral>
               );

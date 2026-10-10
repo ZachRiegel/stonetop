@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import AuthenticatedLayout from "AuthenticatedLayout.tsx";
 import CampaignNavigationLayout from "CampaignNavigationLayout.tsx";
 import Loading from "components/Loading.tsx";
 import { useConvexAuth } from "convex/react";
@@ -20,8 +21,6 @@ import {
   useSearchParams,
 } from "react-router";
 import RootLayout from "RootLayout.tsx";
-
-import AuthenticatedLayout from "./AuthenticatedLayout.tsx";
 
 const FullPageLoading = styled.div`
   display: grid;

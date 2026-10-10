@@ -1,12 +1,11 @@
+import { components, internal } from "_generated/api";
+import type { DataModel } from "_generated/dataModel";
+import { env } from "_generated/server";
 import { type AuthFunctions, createClient, type GenericCtx } from "@convex-dev/better-auth";
 import { convex, crossDomain } from "@convex-dev/better-auth/plugins";
+import authConfig from "auth.config";
 import { betterAuth } from "better-auth/minimal";
 import type { GenericMutationCtx } from "convex/server";
-
-import { components, internal } from "./_generated/api";
-import type { DataModel } from "./_generated/dataModel";
-import { env } from "./_generated/server";
-import authConfig from "./auth.config";
 
 const authFunctions: AuthFunctions = internal.auth;
 

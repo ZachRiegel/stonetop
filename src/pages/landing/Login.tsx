@@ -5,9 +5,8 @@ import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import { authClient } from "lib/auth-client.ts";
-
-import gintoWoff from "./ABCGintoDiscord-Medium.woff";
-import footer from "./footer.png";
+import gintoWoff from "pages/landing/ABCGintoDiscord-Medium.woff";
+import footer from "pages/landing/footer.png";
 
 const discordFont = css`
   @font-face {

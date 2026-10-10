@@ -1,14 +1,13 @@
 import styled from "@emotion/styled";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
+import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import InvitePlayers from "pages/players/InvitePlayers.tsx";
 import { useParams } from "react-router";
-
-import { api } from "../../../convex/_generated/api";
 
 const Page = styled.div`
   position: relative;

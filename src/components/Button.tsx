@@ -1,9 +1,8 @@
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
+import { FontCSS } from "components/Font.tsx";
+import { type IconProps } from "components/Icon.tsx";
 import { useTransition } from "react";
-
-import { FontCSS } from "./Font.tsx";
-import { type IconProps } from "./Icon.tsx";
 
 const wiggle = keyframes`
   0%, 60%, 100% {

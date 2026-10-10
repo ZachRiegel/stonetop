@@ -1,10 +1,9 @@
 import Button from "components/Button.tsx";
 import ButtonRow from "components/ButtonRow.tsx";
+import { api } from "convex/_generated/api";
+import type { Id } from "convex/_generated/dataModel";
 import { useMutation } from "convex/react";
 import { useTransition } from "react";
-
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
 
 // Rendered by the Players page for the Game Master, who is the only member
 // the server hands the token to

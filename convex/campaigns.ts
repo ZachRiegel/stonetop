@@ -1,11 +1,10 @@
+import type { Doc } from "_generated/dataModel";
+import { mutation, query, type QueryCtx } from "_generated/server";
 import { v } from "convex/values";
-
-import { newSeed } from "../src/pages/dice/dice";
-import type { Doc } from "./_generated/dataModel";
-import { mutation, query, type QueryCtx } from "./_generated/server";
-import { membershipOf, requireGameMaster, requireUser } from "./lib/access";
-import { seedOf } from "./messages";
-import schema from "./schema";
+import { membershipOf, requireGameMaster, requireUser } from "lib/access";
+import { seedOf } from "messages";
+import { newSeed } from "pages/dice/dice";
+import schema from "schema";
 
 // Every campaign read returns this: the campaign as the caller sees it. Other
 // members appear without their internal authId, the invite token is only

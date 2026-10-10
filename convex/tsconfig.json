@@ -11,6 +11,10 @@
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+    /* non-relative imports resolve against src/ ("pages/dice/dice"), then this folder
+     * ("_generated/server", "lib/access"), in the same order as the root tsconfig, which
+     * tsc and vitest use; esbuild reads this one when Convex bundles the functions */
+    "paths": { "*": ["../src/*", "./*"] },
 
     /* These compiler options are required by Convex */
     "target": "ESNext",

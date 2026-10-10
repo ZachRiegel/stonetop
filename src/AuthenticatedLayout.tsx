@@ -5,14 +5,13 @@ import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import NavigationItem from "components/NavigationItem.tsx";
 import Popover from "components/Popover.tsx";
+import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
 import useModal from "hooks/useModal.ts";
 import { authClient } from "lib/auth-client.ts";
+import { NavigationItemPortalContext } from "NavigationItemPortalContext.tsx";
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router";
-
-import { api } from "../convex/_generated/api";
-import { NavigationItemPortalContext } from "./NavigationItemPortalContext.tsx";
 
 const Layout = styled.div`
   display: grid;

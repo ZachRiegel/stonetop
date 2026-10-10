@@ -1,11 +1,10 @@
+import type { Doc } from "_generated/dataModel";
+import { mutation, type MutationCtx, query } from "_generated/server";
 import type { WithoutSystemFields } from "convex/server";
 import { ConvexError, v } from "convex/values";
-
-import { drawFaces, MAX_POOL, mulberry32, newSeed, score } from "../src/pages/dice/dice";
-import type { Doc } from "./_generated/dataModel";
-import { mutation, type MutationCtx, query } from "./_generated/server";
-import { membershipOf, requireMember, requireUser } from "./lib/access";
-import schema, { dieColour, messageKind } from "./schema";
+import { membershipOf, requireMember, requireUser } from "lib/access";
+import { drawFaces, MAX_POOL, mulberry32, newSeed, score } from "pages/dice/dice";
+import schema, { dieColour, messageKind } from "schema";
 
 // The seed of a campaign's next roll. A campaign made before the dice roller has
 // none stored; its first roll uses a seed derived from its creation time, and

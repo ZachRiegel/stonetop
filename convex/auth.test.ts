@@ -1,9 +1,8 @@
 /// <reference types="vite/client" />
+import { internal } from "_generated/api";
 import { convexTest } from "convex-test";
+import schema from "schema";
 import { describe, expect, test } from "vitest";
-
-import { internal } from "./_generated/api";
-import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
 

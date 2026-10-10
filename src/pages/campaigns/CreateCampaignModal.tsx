@@ -4,11 +4,10 @@ import ButtonRow from "components/ButtonRow.tsx";
 import Font from "components/Font.tsx";
 import Input from "components/Input.tsx";
 import Modal from "components/Modal.tsx";
+import { api } from "convex/_generated/api";
 import { useMutation } from "convex/react";
 import MakeDialog from "hoc/MakeDialog.tsx";
 import { useState } from "react";
-
-import { api } from "../../../convex/_generated/api";
 
 const CardHeader = styled.div`
   padding: 12px 20px;

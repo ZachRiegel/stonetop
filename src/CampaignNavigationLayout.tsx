@@ -4,13 +4,12 @@ import Icon from "components/Icon.tsx";
 import Link from "components/Link.tsx";
 import NavigationIcon from "components/NavigationIcon.tsx";
 import NavigationItem from "components/NavigationItem.tsx";
+import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
 import knotworkPng from "icons/knotwork.png";
 import treePng from "icons/tree.png";
 import NavigationItemPortal from "NavigationItemPortalContext.tsx";
 import { Outlet, useMatch, useParams } from "react-router";
-
-import { api } from "../convex/_generated/api";
 
 const CampaignTitle = styled.div`
   display: grid;

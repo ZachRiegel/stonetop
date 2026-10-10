@@ -48,31 +48,31 @@ const RING_ARCS = {
     cap: CORNER,
   },
 } satisfies Partial<Record<ArcName, Arc>>;
-export type Arcs = typeof RING_ARCS & { count?: Arc };
-// the menu's arcs, with the count arc once a die is chosen
-export const arcsOf = (colour: DieColour | null): Arcs => {
-  if (!colour) return RING_ARCS;
-  const middle = RING_ARCS.dice.from - (DIE_COLOURS.indexOf(colour) + 0.5) * DIE_SPAN;
-  const span = (DIE_SPAN / 2) * MAX_POOL;
-  return {
-    ...RING_ARCS,
-    count: {
-      radius: OUTER_RING,
-      from: middle + span / 2,
-      to: middle - span / 2,
-      segments: MAX_POOL,
-      cap: CORNER,
-    },
-  };
+// the count arc as drawn, centred on the middle die; it is turned to the chosen die
+const COUNT_SPAN = (DIE_SPAN / 2) * MAX_POOL;
+export const COUNT_ARC: Arc = {
+  radius: OUTER_RING,
+  from: 135 + COUNT_SPAN / 2,
+  to: 135 - COUNT_SPAN / 2,
+  segments: MAX_POOL,
+  cap: CORNER,
 };
+// how far the count arc turns, anticlockwise in degrees, to centre on the chosen die
+export const countTurn = (colour: DieColour) =>
+  middleOf(RING_ARCS.dice, DIE_COLOURS.indexOf(colour)) - 135;
+const turned = (arc: Arc, by: number): Arc => ({ ...arc, from: arc.from + by, to: arc.to + by });
+export type Arcs = typeof RING_ARCS & { count?: Arc };
+// the menu's arcs, with the count arc in place once a die is chosen
+export const arcsOf = (colour: DieColour | null): Arcs =>
+  colour ? { ...RING_ARCS, count: turned(COUNT_ARC, countTurn(colour)) } : RING_ARCS;
 export const entriesOf = (arcs: Arcs) => Object.entries(arcs) as [ArcName, Arc][];
 
 const stepOf = ({ from, to, segments }: Arc) => (from - to) / segments;
 // how far round an arc an angle is, in degrees from `from` (negative before it)
 const along = ({ from }: Arc, angle: number) => ((((from - angle) % 360) + 540) % 360) - 180;
-// the middle of a button, where its label goes
-export const centreOf = (arc: Arc, index: number) =>
-  point(arc.radius, arc.from - (index + 0.5) * stepOf(arc));
+// the angle through the middle of a button, and the point there, where its label goes
+const middleOf = (arc: Arc, index: number) => arc.from - (index + 0.5) * stepOf(arc);
+export const centreOf = (arc: Arc, index: number) => point(arc.radius, middleOf(arc, index));
 
 // a button's share of its arc; only the arc's two ends are rounded
 type Sector = { from: number; to: number; startCap: number; endCap: number };

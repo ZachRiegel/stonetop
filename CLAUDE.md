@@ -30,7 +30,7 @@ func(thirtyMinutesInSeconds)
 
 The backend is Convex. Server functions live in `convex/` (`campaigns.ts`, `users.ts`), the schema in `convex/schema.ts`, and the shared access helpers in `convex/lib/access.ts`.
 
-- Read with `useQuery(api.x.y, args)` from `convex/react`: `undefined` while loading, and `"skip"` in place of args leaves it unsubscribed. Write with `useMutation(api.x.y)`, which returns an async function. Import `api` and `Id` by relative path (`../convex/_generated/api` from `src/`), never the bare `convex/_generated/...` specifier, since `paths` maps `*` to `src/` first.
+- Read with `useQuery(api.x.y, args)` from `convex/react`: `undefined` while loading, and `"skip"` in place of args leaves it unsubscribed. Write with `useMutation(api.x.y)`, which returns an async function. Import `api` and `Id` as `convex/_generated/api` and `convex/_generated/dataModel`. All imports are bare: `paths` resolves a name against `src/` first and `convex/` second, in both tsconfigs, so pages write `components/Font.tsx` and Convex functions write `_generated/server`, `lib/access`, `schema` and `pages/dice/dice`. Keep file paths unique across the two trees, since the first match wins.
 - Auth is Better Auth with Discord via `@convex-dev/better-auth`: `convex/auth.ts` (triggers upsert one `users` row per auth user; `picture` is always set because the Discord provider supplies a default avatar), routes in `convex/http.ts`, client in `src/lib/auth-client.ts`, provider in `src/frontend.tsx`. Server functions resolve the caller with `currentUser` / `requireUser` from `convex/lib/access.ts`, which maps the JWT subject to the `users` row.
 - Membership is `campaignMembers` rows, one per (campaign, user) with `isOwner`; the Game Master has a row too, so "who is in it" and "who runs it" are answered from one place (`membershipOf`, `requireGameMaster`). Every campaign read (`campaigns.list`, `campaigns.get`) returns the same card: the campaign plus `isOwner`, `members` (public profile, `isOwner`, `character`), `myCharacter`, and `inviteToken` for the Game Master only. The token lives on the campaign row; `campaigns.join` looks it up and `campaigns.regenerateInvite` rotates it. The URL form is `${origin}/?inviteLinkId=<token>`.
 - Dev: run `yarn dev:convex` (`convex dev`) alongside `yarn dev`; it pushes functions to the dev deployment and regenerates `convex/_generated`.
@@ -45,7 +45,7 @@ The frontend is a React SPA bundled with **Vite** (config in `vite.config.ts`). 
 - Dev server with HMR / React Fast Refresh: `yarn dev` (alias for `yarn vite`).
 - Production build to `dist/`: `yarn build` (`yarn vite build`). Preview it with `yarn preview`.
 - Vite handles `.tsx/.jsx/.ts/.js`, CSS, and asset imports (`.png`, `.svg` resolve to URL strings — see `vite-env.d.ts` at the project root).
-- Non-relative imports resolve against `src/` via `paths: { "*": ["./src/*"] }` in `tsconfig.json`, wired into Vite via `vite-tsconfig-paths`.
+- Non-relative imports resolve against `src/` via `paths` in `tsconfig.json` (`"*"` to `./src/*`, and `convex/_generated/*` to the generated Convex folder), wired into Vite via `vite-tsconfig-paths` for the app and, through `worker.plugins`, for the physics worker bundle.
 - Browser-exposed env vars use the `VITE_` prefix and are read via `import.meta.env.VITE_*`.
 
 Emotion is the styling library and is configured in `vite.config.ts` through `@vitejs/plugin-react`:

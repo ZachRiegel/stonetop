@@ -1,6 +1,6 @@
-import { query } from "./_generated/server";
-import { requireUser } from "./lib/access";
-import schema from "./schema";
+import { query } from "_generated/server";
+import { requireUser } from "lib/access";
+import schema from "schema";
 
 export const me = query({
   args: {},

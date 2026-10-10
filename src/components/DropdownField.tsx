@@ -1,12 +1,11 @@
 import styled from "@emotion/styled";
+import Input from "components/Input.tsx";
 import DefaultItemRenderer from "components/internals/DefaultItemRenderer.tsx";
+import Loading from "components/Loading.tsx";
 import useFocusWithin from "hooks/useFocusWithin.ts";
 import useNonNullable from "hooks/useNonNullable.ts";
 import * as React from "react";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-
-import Input from "./Input.tsx";
-import Loading from "./Loading.tsx";
 
 const DropdownFieldInternals = <T, U>({
   items,

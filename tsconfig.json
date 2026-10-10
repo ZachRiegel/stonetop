@@ -23,8 +23,15 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
 
-    // non-relative imports ("components/Font.tsx") resolve against src/; convex/_generated is imported by relative path
-    "paths": { "*": ["./src/*"] },
+    // Non-relative imports resolve against src/, then convex/ ("_generated/server",
+    // "lib/access" from the Convex functions); convex/tsconfig.json lists the same two in the
+    // same order, so a name means the same file to tsc, Vite, vitest and Convex's bundler.
+    // The generated Convex API is "convex/_generated/api": the more specific pattern wins,
+    // and the convex package has no _generated subpath, so "convex/react" still reaches it.
+    "paths": {
+      "convex/_generated/*": ["./convex/_generated/*"],
+      "*": ["./src/*", "./convex/*"]
+    },
 
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
