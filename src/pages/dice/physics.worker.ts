@@ -43,18 +43,22 @@ const FEEL = {
   angularDamping: 0.6,
   // a pull towards the middle of the screen, far below what friction holds at rest
   spring: 0.8,
-  throwSpeed: 90,
+  throwSpeed: 80,
   // standard deviations of the throw's randomness (normally distributed)
   throwSpeedSpread: 7,
-  // how far past the corner the first die waits, and the gap to each next one
+  // how far past the corner the first die waits, and the gap to each next one: a cube's
+  // diagonal, so two neighbours never start inside each other whichever way they turn
   throwStart: 1,
-  throwSpacing: 1.3,
+  throwSpacing: 1.75,
   // sideways scatter of the start spots (one sigma, as a share of the arena's smaller half
   // size): wide enough that the dice do not pile up mid-screen, never wider than the screen
-  throwAcross: 0.7,
+  throwAcross: 0.55,
   spin: 7,
   // the throw heads for the aim, give or take this much (radians, one sigma)
   throwAngleSpread: 0.18,
+  // where a wide screen's dice converge, from the middle (0) to the far corner (1): nearer
+  // the corner reads as a throw into it, at the cost of harder top-wall bounces
+  throwTarget: 0.25,
 };
 export type Feel = typeof FEEL;
 // how flat a die must land (cosine of the top face's lean) to count
@@ -221,8 +225,15 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
 
   // the dice queue past the bottom-right corner along the line to the middle of the
   // screen (not at 45°, which sticks out past a narrow screen's edge), scattered sideways,
-  // then fly in spinning along that line
+  // then fly in spinning
   const aim = unit({ x: -half.x, y: half.y });
+  // On a wide screen each die heads for the target from its own spot: flying parallel to
+  // the line instead, the dice set off towards the right edge meet the top wall at the
+  // line's angle and are thrown back down the board (4 of 5 dice, dropping 5.7 dice;
+  // converging, 2.3 and 2.9). A tall screen keeps the parallel flight, which converging
+  // would only steepen.
+  const converge = Math.min(1, Math.max(0, 2 * (half.x / half.y - 1)));
+  const target = { x: -half.x * feel.throwTarget, y: half.y * feel.throwTarget };
   // a tall screen gets a narrower angle spread (and the scatter is clipped at one sigma):
   // a die that sets off too far aside, or too far off the line, misses the board
   const narrowing = Math.min(1, Math.sqrt(half.x / half.y));
@@ -233,15 +244,22 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   const dice = faces.map((_, i) => {
     const along = feel.throwStart + i * feel.throwSpacing;
     const across = (spread(random, sigma, 1) + sigma) * side;
-    const direction = turned(aim, spread(random, feel.throwAngleSpread * narrowing));
+    const start = {
+      x: half.x - along * aim.x - across * aim.y,
+      y: -half.y - along * aim.y + across * aim.x,
+    };
+    const inward = unit({ x: target.x - start.x, y: target.y - start.y });
+    const direction = turned(
+      unit({
+        x: aim.x + (inward.x - aim.x) * converge,
+        y: aim.y + (inward.y - aim.y) * converge,
+      }),
+      spread(random, feel.throwAngleSpread * narrowing),
+    );
     const speed = feel.throwSpeed + spread(random, feel.throwSpeedSpread);
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
-        .setTranslation(
-          half.x - along * aim.x - across * aim.y,
-          -half.y - along * aim.y + across * aim.x,
-          1 + random() * (CEILING - 2),
-        )
+        .setTranslation(start.x, start.y, 1 + random() * (CEILING - 2))
         .setRotation(randomRotation(random))
         .setLinvel(speed * direction.x, speed * direction.y, 0)
         .setAngvel({

@@ -55,6 +55,49 @@ describe("physics worker", () => {
     expect(tall.frames).not.toEqual(wide.frames);
   });
 
+  // the direction a die set off in, from its first two frames
+  const heading = (simulation: Simulation, die: number) =>
+    poseAt(simulation, 1, die)
+      .position.sub(poseAt(simulation, 0, die).position)
+      .setZ(0)
+      .normalize();
+  const parallel = (a: Vector3, b: Vector3) => Math.abs(a.x * b.y - a.y * b.x) < 0.02;
+
+  test("on a wide arena, every die heads for the target from its own spot", async () => {
+    const simulation = await simulate({
+      count: 5,
+      seed: 42,
+      arena: ARENA,
+      tuning: { throwAngleSpread: 0, throwTarget: 0.25 },
+    });
+    const target = new Vector3(-ARENA.width / 8, ARENA.height / 8, 0);
+    Array.from({ length: 5 }, (_, die) => die).forEach((die) => {
+      const toTarget = target.clone().sub(poseAt(simulation, 0, die).position.setZ(0));
+      expect(parallel(heading(simulation, die), toTarget)).toBe(true);
+    });
+  });
+
+  test("on a tall arena, the dice fly parallel to the corner-to-middle line", async () => {
+    const simulation = await simulate({
+      count: 5,
+      seed: 42,
+      arena: { width: 6, height: 13 },
+      tuning: { throwAngleSpread: 0 },
+    });
+    Array.from({ length: 5 }, (_, die) => die).forEach((die) =>
+      expect(parallel(heading(simulation, die), new Vector3(-6, 13, 0))).toBe(true),
+    );
+  });
+
+  test("queues the dice far enough apart to start clear of each other", async () => {
+    const simulation = await simulate({ count: 5, seed: 42, arena: ARENA });
+    Array.from({ length: 4 }, (_, die) => die).forEach((die) =>
+      expect(
+        poseAt(simulation, 0, die).position.distanceTo(poseAt(simulation, 0, die + 1).position),
+      ).toBeGreaterThan(1.6),
+    );
+  });
+
   test.each([1, 2, 3, 4, 5])(
     "leaves %i dice flat, on screen, with the landed face up",
     async (count) => {
