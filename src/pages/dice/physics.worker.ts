@@ -29,8 +29,9 @@ const FEEL = {
   gravity: 30,
   wallRestitution: 0.7,
   floorRestitution: 0.55,
-  floorFriction: 0.7,
-  dieFriction: 0.6,
+  floorFriction: 0.65,
+  // dice on dice: kept low so a die slides off another instead of settling on top of it
+  dieFriction: 0.2,
   dieRestitution: 0.5,
   // the throw flies almost freely until the die's first wall bounce, then the heavy
   // damping takes over so it runs out of speed around the middle
@@ -48,6 +49,9 @@ const FEEL = {
   // how far past the corner the first die waits, and the gap to each next one
   throwStart: 1,
   throwSpacing: 1.3,
+  // sideways scatter of the start spots (one sigma, as a share of the arena's smaller half
+  // size): wide enough that the dice do not pile up mid-screen, never wider than the screen
+  throwAcross: 0.7,
   spin: 7,
   // the throw heads for the aim, give or take this much (radians, one sigma)
   throwAngleSpread: 0.18,
@@ -66,8 +70,8 @@ const CLEARANCE = 0.9;
 // the inner face, so it is pushed back into the arena rather than out
 const GATE_DEPTH = 6;
 // the floor, ceiling and side walls extend this far past the arena so the off-screen
-// throw start is boxed in too
-const APRON = 12;
+// throw start (up to about 15 dice out) is boxed in too
+const APRON = 16;
 const MAX_FRAMES = MAX_SECONDS * FRAME_RATE;
 const FACE_INDICES: FaceIndex[] = [0, 1, 2, 3, 4, 5];
 
@@ -75,27 +79,35 @@ const ready = RAPIER.init();
 
 type Position = { x: number; y: number };
 
-// a normally distributed offset with the given standard deviation (Box–Muller), clipped
-// at three sigma so no seed produces a freak throw
-const spread = (random: () => number, sigma: number) => {
-  const u = 1 - random();
-  const v = random();
-  const z = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-  return Math.min(3, Math.max(-3, z)) * sigma;
+// The throw uses only arithmetic and square roots, which every JavaScript engine rounds
+// identically; Math.log, sin, cos and atan2 differ by a bit between engines, and one bit
+// is a different roll after the first bounce.
+
+// a normally distributed offset with the given standard deviation (twelve uniform draws
+// less six), clipped at so many sigmas (three, unless said) so no seed throws a freak
+const spread = (random: () => number, sigma: number, sigmas = 3) => {
+  const z = Array.from({ length: 12 }, random).reduce((sum, u) => sum + u, -6);
+  return Math.min(sigmas, Math.max(-sigmas, z)) * sigma;
 };
 
-// a uniformly random orientation (Shoemake's method)
+// a uniformly random orientation: a normal draw per component, normalised
 const randomRotation = (random: () => number): Rotation => {
-  const u = random();
-  const a = 2 * Math.PI * random();
-  const b = 2 * Math.PI * random();
-  return {
-    x: Math.sqrt(1 - u) * Math.sin(a),
-    y: Math.sqrt(1 - u) * Math.cos(a),
-    z: Math.sqrt(u) * Math.sin(b),
-    w: Math.sqrt(u) * Math.cos(b),
-  };
+  const x = spread(random, 1);
+  const y = spread(random, 1);
+  const z = spread(random, 1);
+  const w = spread(random, 1);
+  const length = Math.sqrt(x * x + y * y + z * z + w * w) || 1;
+  return { x: x / length, y: y / length, z: z / length, w: w / length };
 };
+
+const unit = ({ x, y }: Position): Position => {
+  const length = Math.sqrt(x * x + y * y);
+  return { x: x / length, y: y / length };
+};
+
+// `aim` turned aside by about `aside` radians (a sideways offset of that size, normalised)
+const turned = (aim: Position, aside: number) =>
+  unit({ x: aim.x - aim.y * aside, y: aim.y + aim.x * aside });
 
 // the world z of a local direction under a rotation (the last row of its matrix)
 const upwardness = ({ x, y, z, w }: Rotation, [nx, ny, nz]: readonly [number, number, number]) =>
@@ -126,7 +138,9 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
             ? RAPIER.CoefficientCombineRule.Max
             : RAPIER.CoefficientCombineRule.Min,
         )
-        .setFriction(friction),
+        // the fixture's friction wins too; the dice's own, lower, is for dice on dice
+        .setFriction(friction)
+        .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max),
     );
   // floor (its top is z = 0) and ceiling
   fixture(
@@ -137,13 +151,13 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   fixture(
     RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1).setTranslation(0, 0, CEILING + 1),
     0.2,
-    0.5,
+    0.55,
   );
   // the walls report their collisions: a die's first bounce off any of them switches
   // its damping (passing through a one-way wall is no collision, so it does not count)
   const walls = new Set<number>();
   const wall = (desc: ColliderDesc) =>
-    fixture(desc.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS), feel.wallRestitution, 0.5);
+    fixture(desc.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS), feel.wallRestitution, 0.55);
   // left and top walls, inner faces on the arena's edges
   walls.add(
     wall(
@@ -205,23 +219,31 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
     filterIntersectionPair: () => true,
   };
 
-  // the dice wait in a line past the bottom-right corner, spread out across the throw,
-  // then fly in spinning towards the middle
+  // the dice queue past the bottom-right corner along the line to the middle of the
+  // screen (not at 45°, which sticks out past a narrow screen's edge), scattered sideways,
+  // then fly in spinning along that line
+  const aim = unit({ x: -half.x, y: half.y });
+  // a tall screen gets a narrower angle spread (and the scatter is clipped at one sigma):
+  // a die that sets off too far aside, or too far off the line, misses the board
+  const narrowing = Math.min(1, Math.sqrt(half.x / half.y));
+  const sigma = Math.min(half.x, half.y) * feel.throwAcross;
+  // the scatter sits one sigma to the side of the line nearer the shorter edge, and wholly
+  // on that side: a die set off on the other side flies the length of the long edge
+  const side = half.x > half.y ? -1 : 1;
   const dice = faces.map((_, i) => {
     const along = feel.throwStart + i * feel.throwSpacing;
-    const across = spread(random, half.y * 0.3);
-    // aimed from the corner at the middle of the screen, whatever its shape
-    const heading = Math.atan2(half.y, -half.x) + spread(random, feel.throwAngleSpread);
+    const across = (spread(random, sigma, 1) + sigma) * side;
+    const direction = turned(aim, spread(random, feel.throwAngleSpread * narrowing));
     const speed = feel.throwSpeed + spread(random, feel.throwSpeedSpread);
     const body = world.createRigidBody(
       RAPIER.RigidBodyDesc.dynamic()
         .setTranslation(
-          half.x + (along + across) * Math.SQRT1_2,
-          -half.y - (along - across) * Math.SQRT1_2,
+          half.x - along * aim.x - across * aim.y,
+          -half.y - along * aim.y + across * aim.x,
           1 + random() * (CEILING - 2),
         )
         .setRotation(randomRotation(random))
-        .setLinvel(speed * Math.cos(heading), speed * Math.sin(heading), 0)
+        .setLinvel(speed * direction.x, speed * direction.y, 0)
         .setAngvel({
           x: spread(random, feel.spin),
           y: spread(random, feel.spin),
@@ -334,6 +356,7 @@ const simulate = (
         ...simulation,
         faces: faces ?? simulation.faces,
         seed: request.seed,
+        arena: request.arena,
         attempts: MAX_TRIES - tries + 1,
       }
     : simulate(request, next, tries - 1, faces ?? simulation.faces);

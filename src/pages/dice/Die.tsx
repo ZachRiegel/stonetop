@@ -1,5 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import {
+  anchor,
+  type Arena,
   CREAM,
   type FaceIndex,
   FADE_SECONDS,
@@ -7,6 +9,7 @@ import {
   FRAME_STRIDE,
   PLAYBACK_RATE,
   PULSE_SECONDS,
+  reach,
 } from "pages/dice/dice.ts";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -29,7 +32,9 @@ const WHITE = new Color("#ffffff");
 // Plays one die's slice of a recorded simulation: frames are in die units, interpolated
 // between steps, and `remap` is the fixed turn that puts the rolled face's art on the
 // face the physics left on top (the die was turned before the throw, in effect). A
-// `settled` die skips the throw and sits on its last frame from the start.
+// `settled` die skips the throw and sits on its last frame from the start. When the
+// `shown` arena is not the `thrown` one, every frame is anchored to it, and `shift` (from
+// `arrange`) moves the whole flight to where the die found room to rest.
 const Die = ({
   geometry,
   base,
@@ -42,6 +47,9 @@ const Die = ({
   size,
   remap,
   settled,
+  thrown,
+  shown,
+  shift,
 }: {
   geometry: BufferGeometry;
   base: Material;
@@ -54,6 +62,9 @@ const Die = ({
   size: number;
   remap: Quaternion;
   settled: boolean;
+  thrown: Arena;
+  shown: Arena;
+  shift: readonly [number, number];
 }) => {
   const group = useRef<Group>(null);
   const elapsed = useRef(0);
@@ -78,17 +89,21 @@ const Die = ({
     const t = at - a;
     const read = (frame: number, offset: number) =>
       frames[(frame * count + index) * FRAME_STRIDE + offset] ?? 0;
-    group.current.position
-      .set(
-        MathUtils.lerp(read(a, 0), read(b, 0), t),
-        MathUtils.lerp(read(a, 1), read(b, 1), t),
-        MathUtils.lerp(read(a, 2), read(b, 2), t),
-      )
-      .multiplyScalar(size);
     const { from, to } = scratch.current;
     from.set(read(a, 3), read(a, 4), read(a, 5), read(a, 6));
     to.set(read(b, 3), read(b, 4), read(b, 5), read(b, 6));
-    group.current.quaternion.copy(from).slerp(to, t).multiply(remap);
+    const turn = group.current.quaternion.copy(from).slerp(to, t);
+    const [x, y] = anchor(
+      MathUtils.lerp(read(a, 0), read(b, 0), t),
+      MathUtils.lerp(read(a, 1), read(b, 1), t),
+      reach(turn.x, turn.y, turn.z, turn.w),
+      thrown,
+      shown,
+    );
+    group.current.position
+      .set(x + shift[0], y + shift[1], MathUtils.lerp(read(a, 2), read(b, 2), t))
+      .multiplyScalar(size);
+    turn.multiply(remap);
     group.current.visible = true;
 
     // seconds at rest; a settled die (or reduced motion) has faded and skips the pulse

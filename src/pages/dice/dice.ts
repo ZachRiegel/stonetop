@@ -167,6 +167,92 @@ export type Simulation = {
   frameCount: number;
   // frameCount × count × FRAME_STRIDE
   frames: Float32Array;
+  // the arena it was thrown in; played back in another, the dice are anchored to it
+  arena: Arena;
+};
+
+// how far a die turned by this quaternion reaches from its centre along the screen's x
+// and y: half a die face-on, √2/2 at a 45° yaw
+export const reach = (qx: number, qy: number, qz: number, qw: number): [number, number] => [
+  (Math.abs(1 - 2 * (qy * qy + qz * qz)) +
+    Math.abs(2 * (qx * qy - qz * qw)) +
+    Math.abs(2 * (qx * qz + qy * qw))) /
+    2,
+  (Math.abs(2 * (qx * qy + qz * qw)) +
+    Math.abs(1 - 2 * (qx * qx + qz * qz)) +
+    Math.abs(2 * (qy * qz - qx * qw))) /
+    2,
+];
+
+// centre to centre between placed dice (over a die's diagonal, so they never overlap),
+// and twice their margin from the edges
+export const SPACING = 1.5;
+
+// Where a die thrown in one arena sits in another: it keeps its distance from the
+// bottom-right corner, and if the left or top edge would clip it, it is pushed back in by
+// its reach. The right and bottom are never clamped, so the throw can enter from off-screen.
+export const anchor = (
+  x: number,
+  y: number,
+  [rx, ry]: readonly [number, number],
+  thrown: Arena,
+  shown: Arena,
+): [number, number] => [
+  Math.max(x + (shown.width - thrown.width) / 2, rx - shown.width / 2),
+  Math.min(y - (shown.height - thrown.height) / 2, shown.height / 2 - ry),
+];
+
+// offsets to try around a crowded spot, nearest first
+const RINGS = Array.from({ length: 24 }, (_, k) =>
+  Array.from({ length: 16 }, (_, a): [number, number] => [
+    ((k + 1) / 4) * Math.cos((a * Math.PI) / 8),
+    ((k + 1) / 4) * Math.sin((a * Math.PI) / 8),
+  ]),
+).flat();
+
+export type Rest = { x: number; y: number; reach: readonly [number, number] };
+
+// v kept within ±half, or centred when there is no room
+const within = (v: number, half: number) => Math.min(Math.max(v, -half), Math.max(half, 0));
+
+// How far each die of a roll moves from its anchored spot once the arena has changed:
+// a die the left or top edge pushed in takes the nearest spot (searched in rings, kept
+// half a SPACING inside the arena) that is a SPACING clear of every die placed before it,
+// unpushed dice first. The others do not move. With no such spot within six dice, it stays.
+export const arrange = (
+  rests: readonly Rest[],
+  thrown: Arena,
+  shown: Arena,
+): [number, number][] => {
+  const anchored = rests.map(({ x, y, reach }) => anchor(x, y, reach, thrown, shown));
+  const pushed = rests.map(
+    ({ x, y, reach: [rx, ry] }) =>
+      x + (shown.width - thrown.width) / 2 < rx - shown.width / 2 ||
+      y - (shown.height - thrown.height) / 2 > shown.height / 2 - ry,
+  );
+  const fit = ([x, y]: readonly [number, number]): [number, number] => [
+    within(x, (shown.width - SPACING) / 2),
+    within(y, (shown.height - SPACING) / 2),
+  ];
+  const placed = rests
+    .map((_, i) => i)
+    .filter((i) => pushed[i])
+    .reduce(
+      (taken, i) => {
+        const home = fit(anchored[i] ?? [0, 0]);
+        const free = (spot: readonly [number, number]) =>
+          [...taken.values()].every(([x, y]) => Math.hypot(spot[0] - x, spot[1] - y) >= SPACING);
+        return taken.set(
+          i,
+          [home, ...RINGS.map(([dx, dy]) => fit([home[0] + dx, home[1] + dy]))].find(free) ?? home,
+        );
+      },
+      new Map(anchored.flatMap((spot, i) => (pushed[i] ? [] : [[i, spot] as const]))),
+    );
+  return anchored.map(([ax, ay], i) => {
+    const [x, y] = placed.get(i) ?? [ax, ay];
+    return [x - ax, y - ay];
+  });
 };
 
 // a roll on the table: the campaign's roll record paired with its simulation; one shown

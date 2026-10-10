@@ -43,6 +43,7 @@ describe("physics worker", () => {
     const second = await simulate({ count: 3, seed: 42, arena: ARENA });
     expect(second).toEqual(first);
     expect(first.version).toBe(3);
+    expect(first.arena).toEqual(ARENA);
     expect(first.frames).toHaveLength(first.frameCount * 3 * FRAME_STRIDE);
   });
 

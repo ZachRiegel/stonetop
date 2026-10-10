@@ -1,5 +1,6 @@
 import { useThree } from "@react-three/fiber";
 import {
+  arrange,
   CREAM,
   DICE,
   DIE_COLOURS,
@@ -9,6 +10,8 @@ import {
   FACE_NORMALS,
   type FaceIndex,
   FAIL_PATH,
+  FRAME_STRIDE,
+  reach,
   type RollResult,
   SPECIAL_PATH,
   STAR_PATHS,
@@ -157,6 +160,28 @@ const DiceScene = ({ result, seed }: { result?: RollResult; seed?: number }) => 
     [result],
   );
 
+  // the live arena, and how far each die moves from where the roll left it, once the
+  // arena has changed under the roll (a die pushed in by an edge makes room for itself)
+  const shown = useMemo(
+    () => ({ width: arenaWidth, height: arenaHeight }),
+    [arenaWidth, arenaHeight],
+  );
+  const shifts = useMemo(() => {
+    if (!result) return [];
+    const { frames, frameCount, count, arena } = result.simulation;
+    const last = (i: number, offset: number) =>
+      frames[((frameCount - 1) * count + i) * FRAME_STRIDE + offset] ?? 0;
+    return arrange(
+      result.dice.map((_, i) => ({
+        x: last(i, 0),
+        y: last(i, 1),
+        reach: reach(last(i, 3), last(i, 4), last(i, 5), last(i, 6)),
+      })),
+      arena,
+      shown,
+    );
+  }, [result, shown]);
+
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(
     () => () =>
@@ -190,6 +215,9 @@ const DiceScene = ({ result, seed }: { result?: RollResult; seed?: number }) => 
           size={size}
           remap={remaps[i] ?? IDENTITY}
           settled={result.settled}
+          thrown={result.simulation.arena}
+          shown={shown}
+          shift={shifts[i] ?? [0, 0]}
         />
       ))}
     </>
