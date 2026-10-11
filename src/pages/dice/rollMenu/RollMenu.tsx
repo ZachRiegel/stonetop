@@ -1,7 +1,7 @@
 // The roll menu's React side: the die button, the Popover that holds the open menu, the
 // arcs drawn from geometry.ts, the glass bubble and the pointer handling. README.md has the
 // interaction model and the design decisions.
-import { keyframes } from "@emotion/react";
+import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
 import Icon, { iconPath } from "components/Icon.tsx";
@@ -12,7 +12,6 @@ import {
   type Arc,
   type ArcName,
   arcsOf,
-  type Bubble,
   bubbleOf,
   buttonPath,
   centreOf,
@@ -31,18 +30,20 @@ import React, { useEffect, useRef, useState } from "react";
 const INK = "#1A1A1A";
 const WHITE = "#ffffff";
 const BORDER = 2;
+// the SVG defs are referenced by id, which is fine with one menu on a page
+const ID = "roll-menu";
 // the drawing's half size: the menu's reach plus the outer half of a border
 const SIZE = EXTENT + BORDER / 2;
 // how far the lens magnifies what is under it
 const ZOOM = 1.03;
-// how far the rim bends each colour channel, in px, red least and blue most, with the
-// feColorMatrix that keeps only that channel (and alpha) of a bent copy
+// a feColorMatrix keeping only one channel, and alpha, of its input
 const only = (channel: number) =>
   Array.from({ length: 4 }, (_, row) =>
     Array.from({ length: 5 }, (_, col) => Number(col === row && (row === channel || row === 3))),
   )
     .map((row) => row.join(" "))
     .join("  ");
+// how far the rim bends each colour channel, in px, red least and blue most
 const CHANNELS = [
   { channel: "r", scale: -8, keep: only(0) },
   { channel: "g", scale: -10, keep: only(1) },
@@ -165,7 +166,7 @@ const Board = styled.div<{ pointing: boolean }>`
 `;
 
 // a button, outlined so neighbours read apart; its fill lifts under the pointer, and it
-// dims when another die is chosen
+// dims when another of its arc is chosen
 const Segment = styled.path<{ paint: string }>`
   fill: ${({ paint }) => paint};
   stroke: var(--neutral-200);
@@ -205,15 +206,21 @@ const Numeral = styled.text`
   dominant-baseline: central;
   transform-box: fill-box;
   transform-origin: center;
-  transition: rotate 200ms ease-out;
+  transition:
+    rotate 200ms ease-out,
+    opacity 200ms ease-out;
+
+  &:where(.dimmed) {
+    opacity: 0.45;
+  }
 
   @media (prefers-reduced-motion: reduce) {
-    transition: none;
+    transition: opacity 200ms ease-out;
   }
 `;
 
-// a material-symbols icon on a dark pill, drawn as a path so the lens's copy of the menu
-// has it too
+// a material-symbols icon on a dark pill, drawn as a path so the lens's clone of the menu
+// renders it the same way
 const Glyph = styled.path`
   fill: ${CREAM};
 `;
@@ -241,30 +248,90 @@ const Unfolding = styled.g`
   }
 `;
 
-// A pane of glass over whatever a drag is passing: three layers sharing one shape, which
-// eases while snapping onto a button. The lens shows the menu magnified about the glass's
-// centre and bent at the rim, under a sheen and a bright edge.
+// The drawing, and the bubble's place in CSS: the button it is placed on, the pointer, and a
+// slider mixing the two, registered in RootLayout.tsx so they interpolate. The slider
+// transitions, as does the placed point when hopping between buttons; arriving from free the
+// slider already carries the move, so the placed point jumps. The pointer never transitions.
+const Drawing = styled.svg`
+  --roll-menu-x: calc(
+    var(--roll-menu-mouse-x) + (var(--roll-menu-placed-x) - var(--roll-menu-mouse-x)) *
+      var(--roll-menu-slide)
+  );
+  --roll-menu-y: calc(
+    var(--roll-menu-mouse-y) + (var(--roll-menu-placed-y) - var(--roll-menu-mouse-y)) *
+      var(--roll-menu-slide)
+  );
+  transition:
+    --roll-menu-slide 200ms ease-out,
+    --roll-menu-placed-x 200ms ease-out,
+    --roll-menu-placed-y 200ms ease-out;
+
+  &:where(.arriving) {
+    transition-duration: 200ms, 0ms, 0ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+`;
+
+// A pane of glass over whatever a drag is passing: a lens, a sheen and a rim sharing one
+// shape, which morphs between a circle and the buttons' shapes. The lens is the live menu
+// again, through a <use>, clipped to the shape, magnified about the glass's place and bent
+// at the rim. Filters cannot see what lies beneath an element, so the menu has to be drawn
+// into it.
 const Glass = styled.g`
   filter: drop-shadow(0 3px 8px rgb(0 0 0 / 0.45));
   transition: opacity 200ms ease-out;
+`;
+const Lens = styled.g`
+  filter: url(#${ID}-refract);
+`;
+const Magnified = styled.use`
+  transform: translate(var(--roll-menu-x), var(--roll-menu-y)) scale(${ZOOM})
+    translate(calc(-1 * var(--roll-menu-x)), calc(-1 * var(--roll-menu-y)));
+`;
+// the glass's layers share one place and one morphing shape
+const placedAt = css`
+  translate: var(--roll-menu-x) var(--roll-menu-y);
+`;
+const morphing = css`
+  transition: d 200ms ease-out;
 
-  & > * {
-    transition-property: d;
-    transition-timing-function: ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 `;
-const Lens = styled.path`
-  fill: url(#lens);
-  filter: url(#refract);
+const Placed = styled.g`
+  ${placedAt}
+`;
+const Clip = styled.path`
+  ${placedAt}
+  ${morphing}
 `;
 const Sheen = styled.path`
-  fill: url(#sheen);
+  fill: url(#${ID}-sheen);
+  ${morphing}
 `;
 const Rim = styled.path`
   fill: none;
-  stroke: url(#rim);
+  stroke: url(#${ID}-rim);
   stroke-width: 1.5px;
+  ${morphing}
 `;
+
+// The bubble as drawn: its shape, what it sits `on` (null when free), `placed` is the last
+// button's centre, kept after leaving it, `mouse` the held pointer. A `hop` is straight from
+// one button to another, which eases the placed point. It stays after the drag, `shown` off,
+// so the glass fades out in its last shape.
+type Drawn = {
+  d: string;
+  on: Hit | null;
+  placed: readonly [number, number];
+  mouse: readonly [number, number];
+  hop: boolean;
+  shown: boolean;
+};
 
 // A radial menu round one die button: dice colours up and to the left, log right, settings
 // below; a chosen colour unfolds a count arc, and a count rolls. Click through it, or press
@@ -287,12 +354,9 @@ const RollMenu = ({
   const button = useRef<HTMLButtonElement>(null);
   const [colour, setColour] = useState<DieColour | null>(null);
   const arcs = arcsOf(colour);
-  // the button under the pointer between presses, and the bubble during a drag, which
-  // keeps its last shape while fading out
+  // the button under the pointer between presses, and the bubble of the last drag
   const [hovered, setHovered] = useState<Hit | null>(null);
-  const [bubble, setBubble] = useState<Bubble | null>(null);
-  const last = useRef<Bubble>(null);
-  last.current = bubble ?? last.current;
+  const [bubble, setBubble] = useState<Drawn | null>(null);
   // the chosen colour and the press under way, as the window listeners see them
   const chosen = useRef<DieColour | null>(null);
   const pressed = useRef<(() => void) | null>(null);
@@ -315,8 +379,8 @@ const RollMenu = ({
     setHovered(null);
     setBubble(null);
   };
-  // what a release does; a plain `click` of the die button leaves the menu it just opened
-  const activate = (target: Hit | null, click: boolean) => {
+  // what a release, or Enter on a focused button, does
+  const activate = (target: Hit | null) => {
     const die = target?.arc === "dice" ? DIE_COLOURS[target.index] : undefined;
     if (target?.arc === "count" && chosen.current) {
       const colour = chosen.current;
@@ -329,12 +393,13 @@ const RollMenu = ({
     } else if (target?.arc === "settings") {
       onSettings();
       close();
-    } else if (!(target?.arc === "button" && click)) close();
+    } else close();
   };
   // A press, reported by the window until it ends, since the dialog that opens mid-press
   // makes the button inert (captured events still bubble). A `drag` starts on the die
   // button: the bubble follows, a colour is picked in passing and dropped by coming back
-  // inside the ring. A press on the open menu moves nothing until it is released.
+  // inside the ring or landing on a pill. A press on the open menu moves nothing until it
+  // is released.
   const startPress = (event: React.PointerEvent, drag: boolean) => {
     if (event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -344,20 +409,31 @@ const RollMenu = ({
       if (!at || !drag) return;
       const arcs = arcsOf(chosen.current);
       const found = hit(...at, arcs);
-      setBubble(bubbleOf(found, ...at, arcs));
+      const { d, placed } = bubbleOf(found, arcs);
+      setBubble((previous) => ({
+        d,
+        on: found,
+        placed: placed ?? previous?.placed ?? [0, 0],
+        mouse: at,
+        hop: !!previous?.shown && previous.on !== null && found !== null,
+        shown: true,
+      }));
       if (found?.arc !== "button") left = true;
-      if (insideRing(...at)) choose(null);
+      // coming back inside the ring, or landing on a pill, drops the chosen die
+      if (insideRing(...at) || found?.arc === "log" || found?.arc === "settings") choose(null);
       const die = found?.arc === "dice" ? DIE_COLOURS[found.index] : undefined;
       if (die) choose(die);
     };
     const onUp = (event: PointerEvent) => {
       stop();
       const at = offsetOf(event);
-      activate(at && hit(...at, arcsOf(chosen.current)), drag && !left);
+      const target = at && hit(...at, arcsOf(chosen.current));
+      // a press that never left the die button is a click, and leaves the menu it opened
+      if (!(drag && !left && target?.arc === "button")) activate(target);
     };
     const stop = () => {
       pressed.current = null;
-      setBubble(null);
+      setBubble((previous) => previous && { ...previous, shown: false });
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", stop);
@@ -371,37 +447,36 @@ const RollMenu = ({
     window.addEventListener("pointercancel", stop);
   };
 
-  // The arcs and their labels. The menu proper is `live`; the lens's copy is not, so it
-  // stays out of the tab order and the accessibility tree. The count arc is drawn in its
-  // home place and turned by CSS (clockwise, unlike the angles here); `arcs` holds the
-  // turned one for hit testing.
+  // The arcs and their labels. The count arc is drawn in its home place and turned by CSS
+  // (clockwise, unlike the angles here); `arcs` holds the turned one for hit testing.
   const turn = colour ? countTurn(colour) : 0;
-  const art = (live: boolean) =>
+  const art = () =>
     entriesOf(arcs).map(([name, arc]) => {
       const buttons = Array.from({ length: arc.segments }, (_, index) => index);
       const Group = name === "count" ? Unfolding : "g";
-      const drawn = name === "count" ? COUNT_ARC : arc;
+      const home = name === "count" ? COUNT_ARC : arc;
+      // the other dice dim once one is chosen, and the other counts while a drag sits on one
+      const under = bubble?.shown ? bubble.on : null;
       const dimmed = (index: number) =>
-        name === "dice" && colour && DIE_COLOURS[index] !== colour ? "dimmed" : "";
+        (name === "dice" && colour && DIE_COLOURS[index] !== colour) ||
+        (name === "count" && under?.arc === "count" && under.index !== index)
+          ? "dimmed"
+          : "";
       return (
-        <Group
-          key={name}
-          style={name === "count" ? { rotate: `${-turn}deg` } : undefined}
-          aria-hidden={live ? undefined : true}
-        >
+        <Group key={name} style={name === "count" ? { rotate: `${-turn}deg` } : undefined}>
           {buttons.map((index) => (
             <Segment
               key={index}
-              d={buttonPath(drawn, index)}
+              d={buttonPath(home, index)}
               paint={paintOf(name, index, hovered?.arc === name && hovered.index === index)}
               className={dimmed(index)}
-              role={live ? "menuitem" : undefined}
-              tabIndex={live ? 0 : undefined}
-              aria-label={live ? labelOf(name, index, colour) : undefined}
+              role="menuitem"
+              tabIndex={0}
+              aria-label={labelOf(name, index, colour)}
               onKeyDown={(event) => {
-                if (!live || (event.key !== "Enter" && event.key !== " ")) return;
+                if (event.key !== "Enter" && event.key !== " ") return;
                 event.preventDefault();
-                activate({ arc: name, index }, false);
+                activate({ arc: name, index });
               }}
             />
           ))}
@@ -415,9 +490,15 @@ const RollMenu = ({
             ))}
           {name === "count" &&
             buttons.map((index) => {
-              const [x, y] = centreOf(drawn, index);
+              const [x, y] = centreOf(home, index);
               return (
-                <Numeral key={index} x={x} y={y} style={{ rotate: `${turn}deg` }}>
+                <Numeral
+                  key={index}
+                  x={x}
+                  y={y}
+                  className={dimmed(index)}
+                  style={{ rotate: `${turn}deg` }}
+                >
                   {index + 1}
                 </Numeral>
               );
@@ -428,9 +509,16 @@ const RollMenu = ({
       );
     });
 
-  const [fx, fy] = last.current?.focus ?? [0, 0];
-  const easing = { transitionDuration: last.current?.snap ? "200ms" : "0ms" };
-  const shape = { d: `path("${last.current?.d}")`, ...easing };
+  // the bubble's shape, and its place for the Drawing's variables (custom properties are
+  // not in React's style type, hence the cast below)
+  const shape = { d: `path("${bubble?.d}")` };
+  const place = bubble && {
+    "--roll-menu-placed-x": `${bubble.placed[0]}px`,
+    "--roll-menu-placed-y": `${bubble.placed[1]}px`,
+    "--roll-menu-mouse-x": `${bubble.mouse[0]}px`,
+    "--roll-menu-mouse-y": `${bubble.mouse[1]}px`,
+    "--roll-menu-slide": bubble.on ? 1 : 0,
+  };
   return (
     <Menu
       verticalAlignment="span-all"
@@ -454,33 +542,17 @@ const RollMenu = ({
             if (!pressed.current) setHovered(null);
           }}
         >
-          <svg
+          <Drawing
             width={SIZE * 2}
             height={SIZE * 2}
             viewBox={`${-SIZE} ${-SIZE} ${SIZE * 2} ${SIZE * 2}`}
+            className={bubble?.on && !bubble.hop ? "arriving" : undefined}
+            style={place as React.CSSProperties}
           >
             <defs>
-              {/* the menu again, magnified a little about the glass's centre, on a tile
-                  twice the drawing so the lens never shows a repeat */}
-              <pattern
-                id="lens"
-                patternUnits="userSpaceOnUse"
-                x={-SIZE * 2}
-                y={-SIZE * 2}
-                width={SIZE * 4}
-                height={SIZE * 4}
-                viewBox={`${-SIZE * 2} ${-SIZE * 2} ${SIZE * 4} ${SIZE * 4}`}
-              >
-                <g
-                  style={{
-                    transform: `translate(${fx}px, ${fy}px) scale(${ZOOM}) translate(${-fx}px, ${-fy}px)`,
-                    transitionProperty: "transform",
-                    ...easing,
-                  }}
-                >
-                  {art(false)}
-                </g>
-              </pattern>
+              <clipPath id={`${ID}-glass`}>
+                <Clip style={shape} />
+              </clipPath>
               {/* Refraction in a band at the rim: the glass's blurred silhouette is a
                   height map whose slope (Sobel kernels; feConvolveMatrix applies them
                   flipped) pulls the picture outward at the edge like a convex lens and
@@ -488,7 +560,7 @@ const RollMenu = ({
                   chromatic fringe, the result is softened (displacement is not
                   supersampled) and cut back to the silhouette. */}
               <filter
-                id="refract"
+                id={`${ID}-refract`}
                 x="-25%"
                 y="-25%"
                 width="150%"
@@ -555,27 +627,35 @@ const RollMenu = ({
                 <feGaussianBlur stdDeviation={0.4} />
                 <feComposite in2="SourceAlpha" operator="in" />
               </filter>
-              <radialGradient id="sheen" cx={0.3} cy={0.25} r={0.7}>
+              <radialGradient id={`${ID}-sheen`} cx={0.3} cy={0.25} r={0.7}>
                 <stop offset={0} stopColor={WHITE} stopOpacity={0.4} />
                 <stop offset={0.6} stopColor={WHITE} stopOpacity={0.1} />
                 <stop offset={1} stopColor={WHITE} stopOpacity={0.2} />
               </radialGradient>
-              <linearGradient id="rim" x1={0} y1={0} x2={1} y2={1}>
+              <linearGradient id={`${ID}-rim`} x1={0} y1={0} x2={1} y2={1}>
                 <stop offset={0} stopColor={WHITE} stopOpacity={0.85} />
                 <stop offset={0.45} stopColor={WHITE} stopOpacity={0.15} />
                 <stop offset={0.7} stopColor={WHITE} stopOpacity={0.2} />
                 <stop offset={1} stopColor={WHITE} stopOpacity={0.6} />
               </linearGradient>
             </defs>
-            {art(true)}
-            {last.current && (
-              <Glass style={{ opacity: bubble ? 1 : 0 }}>
-                <Lens style={shape} />
-                <Sheen style={shape} />
-                <Rim style={shape} />
+            <g id={`${ID}-arcs`}>{art()}</g>
+            {bubble && (
+              <Glass style={{ opacity: bubble.shown ? 1 : 0 }} aria-hidden>
+                {/* clipped before the filter sees it, so the silhouette the rim is bent
+                    from is the glass's own */}
+                <Lens>
+                  <g clipPath={`url(#${ID}-glass)`}>
+                    <Magnified href={`#${ID}-arcs`} />
+                  </g>
+                </Lens>
+                <Placed>
+                  <Sheen style={shape} />
+                  <Rim style={shape} />
+                </Placed>
               </Glass>
             )}
-          </svg>
+          </Drawing>
         </Board>
       }
     >

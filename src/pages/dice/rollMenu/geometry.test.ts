@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Pins the geometry README.md describes: morph-safe paths, alignment, hit-testing, the bubble.
+// Pins the geometry README.md describes: morphing paths, alignment, hit-testing, the bubble.
 import { DIE_COLOURS } from "pages/dice/dice.ts";
 import {
   arcsOf,
@@ -43,11 +43,16 @@ describe("roll menu geometry", () => {
       ...Object.values(BLUE).flatMap((arc) =>
         Array.from({ length: arc.segments }, (_, index) => buttonPath(arc, index)),
       ),
-      bubbleOf(null, 90, -40, BARE).d,
-      bubbleOf({ arc: "button", index: 0 }, 0, 0, BARE).d,
-      bubbleOf({ arc: "count", index: 4 }, 0, 0, BLUE).d,
+      bubbleOf(null, BARE).d,
+      bubbleOf({ arc: "button", index: 0 }, BARE).d,
+      bubbleOf({ arc: "count", index: 4 }, BLUE).d,
     ];
-    paths.forEach((d) => expect(commandsOf(d)).toBe("MAALAAALAZ"));
+    // traced clockwise from straight up round their centres
+    const [first = [], second = []] = pointsOf(bubbleOf(null, BARE).d);
+    expect(first).toEqual([0, -20]);
+    expect(second[0]).toBeGreaterThan(0);
+    paths.forEach((d) => expect(commandsOf(d)).toBe(commandsOf(bubbleOf(null, BARE).d)));
+    expect(commandsOf(bubbleOf(null, BARE).d)).toMatch(/^ML+Z$/);
   });
 
   test("centres blue straight left, orange straight above, log right and settings below", () => {
@@ -87,21 +92,19 @@ describe("roll menu geometry", () => {
     expect(insideRing(...centreOf(BARE.dice, 0))).toBe(false);
   });
 
-  test("includes a button's round cap but not the gap beside it", () => {
-    // on the ring just past blue's straight run, inside its cap; then in the gap to settings
+  test("counts a button to its square-cut end but not the gap beside it", () => {
+    // on the ring near blue's end, inside it; then in the gap to settings
     expect(hit(...at(BARE.dice.radius, 195), BARE)).toEqual({ arc: "dice", index: 0 });
     expect(hit(...at(BARE.dice.radius, 210), BARE)).toBeNull();
   });
 
   test("puts the free bubble on the pointer, held within the menu, and snaps onto buttons", () => {
-    // a free bubble is a circle of the cap's radius round the pointer
-    const circle = (d: string, cx: number, cy: number) =>
-      pointsOf(d).forEach(([x = 0, y = 0]) =>
-        expect(Math.hypot(x - cx, y - cy)).toBeCloseTo(20, 1),
-      );
-    circle(bubbleOf(null, 60, -30, BARE).d, 60, -30);
-    circle(bubbleOf({ arc: "button", index: 0 }, 0, 0, BARE).d, 0, 0);
-    expect(bubbleOf(null, 60, -30, BARE).snap).toBe(false);
+    // a free bubble is a circle of the cap's radius, drawn round its centre
+    const circle = (d: string) =>
+      pointsOf(d).forEach(([x = 0, y = 0]) => expect(Math.hypot(x, y)).toBeCloseTo(20, 1));
+    circle(bubbleOf(null, BARE).d);
+    expect(bubbleOf(null, BARE).placed).toBeNull();
+    circle(bubbleOf({ arc: "button", index: 0 }, BARE).d);
     // the pointer is held within the menu's reach before anything reads it: a far pointer
     // lands on the outer ring, which with blue chosen is the count arc, and the button
     // there is the one the drag means
@@ -109,11 +112,15 @@ describe("roll menu geometry", () => {
     expect(Math.hypot(...held(-400, 300))).toBeLessThanOrEqual(EXTENT);
     expect(hit(...held(-400, 300), BLUE)).toEqual({ arc: "count", index: 0 });
     expect(hit(...held(-400, 300), BARE)).toBeNull();
-    expect(bubbleOf({ arc: "button", index: 0 }, 0, 0, BARE).snap).toBe(true);
-    expect(bubbleOf({ arc: "dice", index: 1 }, 0, 0, BARE)).toEqual({
-      d: buttonPath(BARE.dice, 1),
-      focus: centreOf(BARE.dice, 1),
-      snap: true,
+    expect(bubbleOf({ arc: "button", index: 0 }, BARE).placed).toEqual([0, 0]);
+    // on a button the bubble is that button's shape, drawn round the button's centre
+    const onViolet = bubbleOf({ arc: "dice", index: 1 }, BARE);
+    const [vx, vy] = centreOf(BARE.dice, 1);
+    expect(onViolet.placed).toEqual([vx, vy]);
+    pointsOf(onViolet.d).forEach(([x = 0, y = 0], i) => {
+      const [bx = 0, by = 0] = pointsOf(buttonPath(BARE.dice, 1))[i] ?? [];
+      expect(x + vx).toBeCloseTo(bx, 1);
+      expect(y + vy).toBeCloseTo(by, 1);
     });
   });
 });

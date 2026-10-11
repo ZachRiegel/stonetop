@@ -19,6 +19,33 @@ const RootLayout = () => {
             syntax: "<color>";
             initial-value: transparent;
           }
+          /* the roll menu's glass bubble (pages/dice/rollMenu/README.md): registered so
+             they interpolate */
+          @property --roll-menu-placed-x {
+            inherits: true;
+            syntax: "<length>";
+            initial-value: 0px;
+          }
+          @property --roll-menu-placed-y {
+            inherits: true;
+            syntax: "<length>";
+            initial-value: 0px;
+          }
+          @property --roll-menu-mouse-x {
+            inherits: true;
+            syntax: "<length>";
+            initial-value: 0px;
+          }
+          @property --roll-menu-mouse-y {
+            inherits: true;
+            syntax: "<length>";
+            initial-value: 0px;
+          }
+          @property --roll-menu-slide {
+            inherits: true;
+            syntax: "<number>";
+            initial-value: 0;
+          }
           :root,
           dialog {
             --neutral-0: #000000;

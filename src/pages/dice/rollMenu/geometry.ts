@@ -1,5 +1,5 @@
-// The roll menu's geometry: rings of arc buttons round the die button, the eight-point
-// paths that draw them and the glass bubble, and hit testing. No React or DOM in here.
+// The roll menu's geometry: rings of arc buttons round the die button, the paths that draw
+// them and the glass bubble, traced so they morph, and hit testing. No React or DOM in here.
 import { DIE_COLOURS, type DieColour, MAX_POOL } from "pages/dice/dice.ts";
 
 // the die button's radius; the arcs are a little thinner, CAP deep each side of their ring
@@ -79,88 +79,91 @@ const sectorOf = (arc: Arc, index: number): Sector => ({
   endCap: index === arc.segments - 1 ? arc.cap : 0,
 });
 
-// A ring segment with rounded corners as one path of eight points: outer arc, corner, end
-// edge, corner, inner arc, corner, start edge, corner. A corner radius is 0 on an edge
-// shared with the next button, the arc's `cap` at its ends, or CAP for the bubble's full
-// half-round, which with no straight run is a circle. The bubble morphs between all of
-// these because the commands never change and every shape is traced the same way round
-// from its outer anticlockwise end.
-const sectorPath = (
-  [ox, oy]: readonly [number, number],
-  radius: number,
-  { from, to, startCap, endCap }: Sector,
-) => {
-  const outer = radius + CAP;
-  const inner = radius - CAP;
-  // a corner circle sits this many degrees inside the end it rounds
-  const turnOf = (cap: number, at: number) => (cap ? degrees(Math.asin(cap / at)) : 0);
-  const [o0, i0, o1, i1] = [
-    turnOf(startCap, outer - startCap),
-    turnOf(startCap, inner + startCap),
-    turnOf(endCap, outer - endCap),
-    turnOf(endCap, inner + endCap),
-  ];
-  const at = (r: number, angle: number) => {
-    const [x, y] = point(r, angle);
-    return `${(ox + x).toFixed(2)} ${(oy + y).toFixed(2)}`;
-  };
-  // where a corner circle touches the radial edge
-  const edge = (cap: number, turn: number) => Math.cos(turn / degrees(1)) * cap;
-  return [
-    `M ${at(outer, from - o0)}`,
-    `A ${outer} ${outer} 0 0 1 ${at(outer, to + o1)}`,
-    `A ${endCap} ${endCap} 0 0 1 ${at(edge(outer - endCap, o1), to)}`,
-    `L ${at(edge(inner + endCap, i1), to)}`,
-    `A ${endCap} ${endCap} 0 0 1 ${at(inner, to + i1)}`,
-    `A ${inner} ${inner} 0 0 0 ${at(inner, from - i0)}`,
-    `A ${startCap} ${startCap} 0 0 1 ${at(edge(inner + startCap, i0), from)}`,
-    `L ${at(edge(outer - startCap, o0), from)}`,
-    `A ${startCap} ${startCap} 0 0 1 ${at(outer, from - o0)}`,
-    "Z",
-  ].join(" ");
-};
-export const buttonPath = (arc: Arc, index: number) =>
-  sectorPath([0, 0], arc.radius, sectorOf(arc, index));
-// A cap-sized circle at a point: a capped segment with no straight run on the ring through
-// the point, so its points face the same way as a button's and the morph between them
-// stretches along the ring instead of spinning. Too close to the centre for such a ring,
-// it is drawn on a small ring beside the point instead, facing the dice.
-const circlePath = (x: number, y: number) => {
-  const reach = Math.hypot(x, y);
-  const radius = Math.max(CAP + 1, reach);
-  const angle = reach ? degrees(Math.atan2(-y, x)) : 135;
-  const [ux, uy] = point(1, angle);
-  const origin =
-    reach >= radius ? ([0, 0] as const) : ([x - ux * radius, y - uy * radius] as const);
-  const cap = degrees(Math.asin(CAP / radius));
-  return sectorPath(origin, radius, {
-    from: angle + cap,
-    to: angle - cap,
-    startCap: CAP,
-    endCap: CAP,
+// Every shape is traced the same way: SAMPLES points on its outline at equal angles round its
+// centre, clockwise from straight up, joined by lines. A CSS `d` transition then morphs any
+// shape into any other point for point along those rays, with no spin whichever way the
+// shapes face (an eight-point arc path swung its points round the ring). The outline is found
+// by bisection along each ray, so a shape only needs an inside test; every shape here is
+// star-shaped about its centre and reaches less than EXTENT from it. At 5° a step the lines
+// are within 0.15px of the true arcs.
+const SAMPLES = 72;
+const traced = (inside: (x: number, y: number) => boolean, [sx, sy]: readonly [number, number]) => {
+  const points = Array.from({ length: SAMPLES }, (_, i) => {
+    const [ux, uy] = point(1, 90 - (i * 360) / SAMPLES);
+    const [r] = Array.from({ length: 16 }).reduce<[number, number]>(
+      ([lo, hi]) => {
+        const mid = (lo + hi) / 2;
+        return inside(ux * mid, uy * mid) ? [mid, hi] : [lo, mid];
+      },
+      [0, EXTENT],
+    );
+    return `${(sx + ux * r).toFixed(2)} ${(sy + uy * r).toFixed(2)}`;
   });
+  return `M ${points.join(" L ")} Z`;
 };
+
+// Whether a point, from a button's centre, is inside its ring sector, whose ring is centred
+// at [ox, oy]: within the ring's band and the sector's turn, and not cut off by a corner. A
+// corner circle sits `cap` inside both the arc and the edge it rounds, and past its centre
+// towards the corner only the circle itself is inside.
+const inSector =
+  ([ox, oy]: readonly [number, number], radius: number, { from, to, startCap, endCap }: Sector) =>
+  (x: number, y: number) => {
+    const [dx, dy] = [x - ox, y - oy];
+    const r = Math.hypot(dx, dy);
+    // degrees clockwise from `from`
+    const turn = (((from - degrees(Math.atan2(-dy, dx))) % 360) + 360) % 360;
+    if (r < radius - CAP || r > radius + CAP || turn > from - to) return false;
+    // whether the corner circle of `cap` at an `end` of the sector, on the arc at radius
+    // `at`, cuts the point off; `towards` is the way into the sector from that end
+    const cutBy = (cap: number, end: number, towards: 1 | -1, at: number) => {
+      const o = degrees(Math.asin(cap / at));
+      const [cx, cy] = point(at, end - towards * o);
+      const past = at > radius ? r > at : r < at;
+      const beside = towards === 1 ? turn < o : turn > from - to - o;
+      return past && beside && Math.hypot(dx - cx, dy - cy) > cap;
+    };
+    return !(
+      [
+        [startCap, from, 1],
+        [endCap, to, -1],
+      ] as const
+    ).some(
+      ([cap, end, towards]) =>
+        cap > 0 &&
+        [radius + CAP - cap, radius - CAP + cap].some((at) => cutBy(cap, end, towards, at)),
+    );
+  };
+// a button's outline, about `origin`
+const sectorPath = (arc: Arc, index: number, origin: readonly [number, number]) =>
+  traced(
+    inSector(point(-arc.radius, middleOf(arc, index)), arc.radius, sectorOf(arc, index)),
+    origin,
+  );
+// a button's path about the menu's centre; traced once per button, since the menu redraws
+// on every hover change
+const paths = new Map<string, string>();
+export const buttonPath = (arc: Arc, index: number) => {
+  const key = `${arc.radius} ${arc.from} ${arc.to} ${arc.segments} ${arc.cap} ${index}`;
+  const path = paths.get(key) ?? sectorPath(arc, index, centreOf(arc, index));
+  paths.set(key, path);
+  return path;
+};
+// the free bubble: a cap-sized circle round its centre
+const CIRCLE = traced((x, y) => Math.hypot(x, y) <= CAP, [0, 0]);
 
 export type Hit = { arc: "button" | ArcName; index: number };
 
-// whether a point is on a button: within the ring's band along the button's run, or inside
-// a full round cap. An end that is only rounded at the corners counts to its edge.
+// whether a point is on a button: within the ring's band, along the button's run; the
+// rounded corners are counted square, so an arc's end counts to its edge
 const covers = (arc: Arc, index: number, x: number, y: number) => {
-  const { from, to, startCap, endCap } = sectorOf(arc, index);
-  const round = (cap: number) => (cap === CAP ? degrees(Math.asin(CAP / arc.radius)) : 0);
+  const { from, to } = sectorOf(arc, index);
   const turn = along(arc, degrees(Math.atan2(-y, x)));
-  const onRun =
+  return (
     Math.abs(Math.hypot(x, y) - arc.radius) <= CAP &&
-    turn >= along(arc, from) + round(startCap) &&
-    turn <= along(arc, to) - round(endCap);
-  const inCap = [
-    [startCap, from - round(startCap)],
-    [endCap, to + round(endCap)],
-  ].some(([cap = 0, angle = 0]) => {
-    const [cx, cy] = point(arc.radius, angle);
-    return cap === CAP && Math.hypot(x - cx, y - cy) <= CAP;
-  });
-  return onRun || inCap;
+    turn >= along(arc, from) &&
+    turn <= along(arc, to)
+  );
 };
 
 // whether a point is inside the first ring, among the die button and its gap
@@ -186,14 +189,13 @@ export const held = (x: number, y: number) => {
   return reach > limit ? ([(x * limit) / reach, (y * limit) / reach] as const) : ([x, y] as const);
 };
 
-// Where the bubble is: a button's shape, or a circle round the (already held) pointer. The
-// lens magnifies about `focus`, and a `snap` onto a button is eased while following the
-// pointer is not.
-export type Bubble = { d: string; focus: readonly [number, number]; snap: boolean };
-export const bubbleOf = (found: Hit | null, x: number, y: number, arcs: Arcs): Bubble => {
+// What the bubble is: its shape, a button's or a circle, drawn round where it is `placed`, a
+// button's centre, or null when free. CSS mixes the placed point with the pointer (README.md,
+// "The glass bubble").
+export type Bubble = { d: string; placed: readonly [number, number] | null };
+export const bubbleOf = (found: Hit | null, arcs: Arcs): Bubble => {
   const arc = found && found.arc !== "button" ? arcs[found.arc] : undefined;
   if (found && arc)
-    return { d: buttonPath(arc, found.index), focus: centreOf(arc, found.index), snap: true };
-  const focus = found ? ([0, 0] as const) : ([x, y] as const);
-  return { d: circlePath(...focus), focus, snap: found !== null };
+    return { d: sectorPath(arc, found.index, [0, 0]), placed: centreOf(arc, found.index) };
+  return { d: CIRCLE, placed: found ? [0, 0] : null };
 };
