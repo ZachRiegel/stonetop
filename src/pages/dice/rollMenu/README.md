@@ -50,7 +50,10 @@ shapes face. Button paths are cached, since the menu redraws on every hover chan
   die (`COUNT_ARC`) and turned by `countTurn` so its middle button sits on the line through the
   chosen die. `arcsOf(colour)` returns the turned arc for hit-testing; the component turns the
   drawn one with a CSS `rotate` transition and turns the numerals back so they stay upright,
-  which is why a change of die swings the arc round instead of unfolding a new one.
+  which is why a change of die swings the arc round instead of unfolding a new one. Each
+  numeral is drawn at the origin of a group translated to its button's centre, so its turn
+  is about that centre with the default transform origin: iOS Safari misplaced numerals
+  turned about a `fill-box` origin.
 - **Hit-testing** (`hit`) is polar maths from the die button's centre: the button within 30px,
   otherwise the first button whose band and run cover the point, with the rounded corners
   counted square. `insideRing` is the deselect zone for drags.

@@ -198,14 +198,14 @@ const Star = styled.path`
   }
 `;
 
-// turned back against the count arc's turn, so it stays upright while sliding round
+// turned back against the count arc's turn so it stays upright while sliding round, about
+// its parent's origin, which the parent moves to the button's centre: iOS Safari misplaced
+// a fill-box transform-origin on text
 const Numeral = styled.text`
   ${FontCSS.Bold20}
   fill: ${INK};
   text-anchor: middle;
   dominant-baseline: central;
-  transform-box: fill-box;
-  transform-origin: center;
   transition:
     rotate 200ms ease-out,
     opacity 200ms ease-out;
@@ -492,15 +492,11 @@ const RollMenu = ({
             buttons.map((index) => {
               const [x, y] = centreOf(home, index);
               return (
-                <Numeral
-                  key={index}
-                  x={x}
-                  y={y}
-                  className={dimmed(index)}
-                  style={{ rotate: `${turn}deg` }}
-                >
-                  {index + 1}
-                </Numeral>
+                <g key={index} transform={`translate(${x} ${y})`}>
+                  <Numeral className={dimmed(index)} style={{ rotate: `${turn}deg` }}>
+                    {index + 1}
+                  </Numeral>
+                </g>
               );
             })}
           {name === "log" && glyph(arc, "Chat")}
