@@ -1,6 +1,7 @@
 // Rolls the dice for real, off the main thread. One seed decides everything: first the
-// faces the roll will show, then the throw. The page plays the recorded frames back and
-// turns each die's art onto whichever face the physics left on top.
+// faces the roll will show, then the throw. The page plays the recorded frames back, with
+// the impacts noted along the way as sounds, and turns each die's art onto whichever face
+// the physics left on top.
 import RAPIER, {
   type ColliderDesc,
   type PhysicsHooks,
@@ -10,6 +11,9 @@ import RAPIER, {
 import {
   type Arena,
   CEILING,
+  type Contact,
+  CONTACT_FLOOR,
+  CONTACT_LOUD,
   drawFaces,
   FACE_NORMALS,
   type FaceIndex,
@@ -145,12 +149,14 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
         .setFriction(friction)
         .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max),
     );
-  // floor (its top is z = 0) and ceiling
-  fixture(
-    RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1).setTranslation(0, 0, -1),
+  // floor (its top is z = 0) and ceiling; the floor reports its collisions for the sounds
+  const floor = fixture(
+    RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1)
+      .setTranslation(0, 0, -1)
+      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     feel.floorRestitution,
     feel.floorFriction,
-  );
+  ).handle;
   fixture(
     RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1).setTranslation(0, 0, CEILING + 1),
     0.2,
@@ -274,7 +280,9 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
       RAPIER.ColliderDesc.cuboid(0.5, 0.5, 0.5)
         .setDensity(1)
         .setFriction(feel.dieFriction)
-        .setRestitution(feel.dieRestitution),
+        .setRestitution(feel.dieRestitution)
+        // dice on dice report their collisions for the sounds too
+        .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
       body,
     );
     return { body, collider };
@@ -282,13 +290,39 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   const dieByCollider = new Map(dice.map(({ body, collider }) => [collider.handle, body]));
   // the frame each die first hit a wall; from then on its damping ramps up to settle
   const bounced = new Map<number, number>();
-  // read outside the step, so unlike the hooks this may call into Rapier
-  const noteBounces = (frame: number) =>
+  // each die's velocity going into the step: by the time an impact is reported the step
+  // has turned it into the rebound, and the closing speed is what the sound's volume follows
+  const approaching = new Map<number, { x: number; y: number; z: number }>();
+  const contacts: Contact[] = [];
+  // Every impact that began this step, read outside it (so unlike the hooks this may call
+  // into Rapier): a die's first wall hit starts its settling, and a die meeting the floor,
+  // a wall or another die is a contact for the sounds, dropped when too soft to hear. A
+  // die passing through an open gate raises no event, so a throw-in is no knock.
+  const noteContacts = (frame: number) =>
     events.drainCollisionEvents((handle1, handle2, started) => {
-      const die = dieByCollider.get(
-        walls.has(handle1) ? handle2 : walls.has(handle2) ? handle1 : -1,
+      const first = dieByCollider.get(handle1);
+      const second = dieByCollider.get(handle2);
+      const die = first ?? second;
+      const other = first ? handle2 : handle1;
+      const kind = first && second ? "dice" : walls.has(other) || other === floor ? "table" : null;
+      if (!started || !die || !kind) return;
+      if (walls.has(other) && !bounced.has(die.handle)) bounced.set(die.handle, frame);
+      const a = approaching.get(die.handle) ?? { x: 0, y: 0, z: 0 };
+      const b = (second && first && approaching.get(second.handle)) || { x: 0, y: 0, z: 0 };
+      const relative = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+      // the speed along the contact's normal: a die skimming the floor at throw speed is
+      // a graze, not a thump (the full speed, if the manifold is gone); arithmetic and a
+      // square root, like the throw, so every engine records the same
+      const normals: { x: number; y: number; z: number }[] = [];
+      world.contactPair(world.getCollider(handle1), world.getCollider(handle2), (manifold) =>
+        normals.push(manifold.normal()),
       );
-      if (started && die && !bounced.has(die.handle)) bounced.set(die.handle, frame);
+      const [normal] = normals;
+      const closing = normal
+        ? Math.abs(relative.x * normal.x + relative.y * normal.y + relative.z * normal.z)
+        : Math.sqrt(relative.x ** 2 + relative.y ** 2 + relative.z ** 2);
+      const strength = Math.min(1, (closing - CONTACT_FLOOR) / (CONTACT_LOUD - CONTACT_FLOOR));
+      if (strength > 0) contacts.push({ frame, kind, strength });
     });
   const rampFrames = Math.max(1, feel.settleRampSeconds * FRAME_RATE);
   const settleAfterBounce = (frame: number) =>
@@ -308,6 +342,7 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
     });
   const prepare = () =>
     dice.forEach(({ body }) => {
+      approaching.set(body.handle, body.linvel());
       const { x, y } = body.translation();
       gates.forEach(({ isInside, closedFor }) => {
         if (isInside({ x, y })) closedFor.add(body.handle);
@@ -322,7 +357,7 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
     prepare();
     settleAfterBounce(frame);
     world.step(events, hooks);
-    noteBounces(frame);
+    noteContacts(frame);
     record(frame);
     return run(frame + 1);
   };
@@ -350,6 +385,7 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
       landed: landed.map(({ face }) => face),
       frameCount,
       frames: frames.slice(0, frameCount * count * FRAME_STRIDE),
+      contacts,
     },
   };
 };

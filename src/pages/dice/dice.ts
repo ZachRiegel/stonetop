@@ -137,6 +137,12 @@ export const PLAYBACK_RATE = 1;
 export const MAX_SECONDS = 6;
 // one die in one frame: x y z qx qy qz qw
 export const FRAME_STRIDE = 7;
+// An impact's closing speed along the contact's normal (die units per second) below which
+// it is too soft to hear, cutting the patter of a die settling, and the speed that plays at
+// full volume. Measured over 12 seeds: a five-die roll then sounds 20–30 impacts and a lone
+// die 2–7, the throw's first hits at full volume and the last at a quarter.
+export const CONTACT_FLOOR = 3;
+export const CONTACT_LOUD = 25;
 // once at rest, a die's other faces fade over the fade time, then its rolled face
 // pulses for the pulse time; the readout fades in along with the pulse
 export const FADE_SECONDS = 0.3;
@@ -164,6 +170,10 @@ export type SimulateRequest = {
   tuning?: Record<string, number>;
 };
 
+// an impact in the recorded roll, for the sounds: a die on the table (floor or wall) or on
+// another die, its `strength` 0–1 from the closing speed
+export type Contact = { frame: number; kind: "table" | "dice"; strength: number };
+
 export type Simulation = {
   count: number;
   seed: number;
@@ -178,6 +188,8 @@ export type Simulation = {
   frameCount: number;
   // frameCount × count × FRAME_STRIDE
   frames: Float32Array;
+  // the impacts the sounds play, by frame
+  contacts: Contact[];
   // the arena it was thrown in; played back in another, the dice are anchored to it
   arena: Arena;
 };

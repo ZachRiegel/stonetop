@@ -1,10 +1,14 @@
 import { css, Global } from "@emotion/react";
 import useBlurOnEscape from "hooks/useBlurOnEscape.ts";
-import { Suspense } from "react";
+import { unlockOnGesture } from "pages/dice/sounds.ts";
+import { Suspense, useEffect } from "react";
 import { Outlet } from "react-router";
 
 const RootLayout = () => {
   useBlurOnEscape();
+  // audio may only start from a gesture, and the first one is usually before the dice page;
+  // the dice module owns the audio for now, and this moves with it when something else sounds
+  useEffect(unlockOnGesture, []);
   return (
     <>
       <Global

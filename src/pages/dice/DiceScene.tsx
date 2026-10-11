@@ -1,6 +1,7 @@
 import { useThree } from "@react-three/fiber";
 import { type RollResult } from "pages/dice/dice.ts";
 import DiceTable from "pages/dice/DiceTable.tsx";
+import RollSounds from "pages/dice/RollSounds.tsx";
 
 // a die's edge as a share of the canvas height, whatever the width
 const DIE_SHARE = 0.075;
@@ -22,6 +23,7 @@ const DiceScene = ({ result, seed }: { result?: RollResult; seed?: number }) => 
         result={result}
         seed={seed}
       />
+      <RollSounds result={result} />
     </>
   );
 };

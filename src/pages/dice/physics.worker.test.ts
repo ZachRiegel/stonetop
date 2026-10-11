@@ -22,10 +22,17 @@ vi.stubGlobal("postMessage", (reply: Simulation) => replies.push(reply));
 await import("pages/dice/physics.worker.ts");
 
 const ARENA = { width: 24, height: 12 };
+// the reply to this request, found by its seed and count: requests made together all
+// resolve after the first reply, so the first reply is not necessarily theirs
 const simulate = async (request: Omit<SimulateRequest, "version">) => {
-  replies.length = 0;
   await listeners[0]?.({ data: { ...request, version: 3 } });
-  const reply = replies[0];
+  const reply = replies.find(
+    ({ seed, count, arena }) =>
+      seed === request.seed &&
+      count === request.count &&
+      arena.width === request.arena.width &&
+      arena.height === request.arena.height,
+  );
   if (!reply) throw new Error("no reply");
   return reply;
 };
@@ -96,6 +103,26 @@ describe("physics worker", () => {
         poseAt(simulation, 0, die).position.distanceTo(poseAt(simulation, 0, die + 1).position),
       ).toBeGreaterThan(1.6),
     );
+  });
+
+  test("records the impacts the sounds play, in order, every roll landing on the table", async () => {
+    const rolls = await Promise.all(
+      [1, 5].flatMap((count) =>
+        [1, 2, 3, 4, 5, 6].map((seed) => simulate({ count, seed, arena: ARENA })),
+      ),
+    );
+    rolls.forEach(({ contacts, count, frameCount }) => {
+      expect(contacts.some((contact) => contact.kind === "table")).toBe(true);
+      contacts.forEach((contact, i) => {
+        expect(contact.frame).toBeGreaterThanOrEqual(contacts[i - 1]?.frame ?? 0);
+        expect(contact.frame).toBeLessThan(frameCount);
+        expect(contact.strength).toBeGreaterThan(0);
+        expect(contact.strength).toBeLessThanOrEqual(1);
+      });
+      // a lone die meets nothing but the table
+      if (count === 1) expect(contacts.every((contact) => contact.kind === "table")).toBe(true);
+    });
+    expect(rolls.some(({ contacts }) => contacts.some(({ kind }) => kind === "dice"))).toBe(true);
   });
 
   test.each([1, 2, 3, 4, 5])(

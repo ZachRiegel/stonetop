@@ -17,6 +17,7 @@ import {
   SYMBOLS,
 } from "pages/dice/dice.ts";
 import DiceScene from "pages/dice/DiceScene.tsx";
+import DiceSettingsModal from "pages/dice/DiceSettingsModal.tsx";
 import { take } from "pages/dice/rollCache.ts";
 import RollLog from "pages/dice/RollLog.tsx";
 import RollMenu from "pages/dice/rollMenu/RollMenu.tsx";
@@ -133,7 +134,8 @@ const Menu = styled(RollMenu)`
 // Every roll in the campaign plays here, whoever threw it: the campaign's next seed is
 // simulated ahead of time, the menu posts a roll message with it, and the message
 // comes back through the subscription to be played, on this screen and everyone else's.
-// The menu's log button opens a side panel of the campaign's recent rolls.
+// The menu's log button opens a side panel of the campaign's recent rolls, its settings
+// button a modal with the page's settings.
 const DiceRoller = () => {
   const { campaignId = "" } = useParams();
   const campaign = useQuery(api.campaigns.get, { campaignId });
@@ -142,6 +144,7 @@ const DiceRoller = () => {
   const latest = message && message.kind !== "roll" ? null : message;
   const roll = useMutation(api.messages.roll);
   const log = useModal();
+  const settings = useModal();
   const [result, setResult] = useState<RollResult>();
   // the roll on the table (null for none), undefined until the first query result: the
   // roll already there when the page opened is drawn at rest, every later one is played
@@ -225,9 +228,10 @@ const DiceRoller = () => {
             );
           }}
           onLog={log.open}
-          onSettings={() => undefined}
+          onSettings={settings.open}
         />
         <RollLog isOpen={log.isOpen} requestClose={log.close} campaignId={campaignId} />
+        <DiceSettingsModal isOpen={settings.isOpen} requestClose={settings.close} />
       </Overlay>
     </Page>
   );

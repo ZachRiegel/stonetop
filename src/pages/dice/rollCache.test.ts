@@ -27,6 +27,7 @@ class FakeWorker {
       landed: [],
       frameCount: 0,
       frames: new Float32Array(),
+      contacts: [],
       arena: WIDE,
     };
     this.onmessage?.({ data: simulation });

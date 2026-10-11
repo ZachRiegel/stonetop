@@ -47,6 +47,9 @@ const SidePanel = styled(DialogInternals)<{ isOpen: boolean }>`
   position: fixed;
   inset: 0;
   display: grid;
+  /* the focus-trap span gets no row; the section takes the whole height, shrinking below
+     its content so the panel's own scroll regions work */
+  grid-template-rows: 0 minmax(0, 1fr);
   justify-content: end;
   padding: 12px;
   /* the section starts past the right edge; without this the page gains a horizontal scroll */
