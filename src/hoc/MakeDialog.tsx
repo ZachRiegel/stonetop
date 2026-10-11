@@ -1,6 +1,6 @@
 import AnimateInOut from "hoc/AnimateInOut.tsx";
 import type { FC, ReactNode, RefObject } from "react";
-import { useEffect, useRef } from "react";
+import { createElement, useEffect, useRef } from "react";
 
 type DialogComponent = FC<{
   isOpen: boolean;
@@ -52,7 +52,10 @@ const MakeDialog = <
         dialogRef={dialogRef}
         afterUnmount={() => openerRef.current?.focus()}
       >
-        {Content(props)}
+        {/* rendered as a component (createElement: JSX cannot type a generic one), so its
+            hooks and state live only while the dialog is mounted; called as a function they
+            would run on every render of the closed one */}
+        {createElement(Content, props)}
       </AnimatedDialog>
     );
   };

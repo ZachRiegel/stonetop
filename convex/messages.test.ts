@@ -224,3 +224,47 @@ describe("messages.latest", () => {
     ).toBeNull();
   });
 });
+
+describe("messages.recent", () => {
+  test("is empty before any roll", async () => {
+    const { asPlayer, campaignId } = await setup();
+    expect(await asPlayer.query(api.messages.recent, { campaignId })).toEqual([]);
+  });
+
+  test("lists the newest rolls first, each with who threw it, at most 20 of them", async () => {
+    const { t, asGm, asPlayer, campaignId, seed } = await setup();
+    await asGm.mutation(api.messages.roll, { campaignId, seed, dice: ["blue"] });
+    await asPlayer.mutation(api.messages.roll, {
+      campaignId,
+      seed: await seedOf(t, campaignId),
+      dice: ["orange", "violet"],
+    });
+    expect(await asGm.query(api.messages.recent, { campaignId })).toMatchObject([
+      { sequence: 2, dice: ["orange", "violet"], author: { displayName: "Pat" } },
+      { sequence: 1, dice: ["blue"], author: { displayName: "Gwendolyn" } },
+    ]);
+    // 19 more, one after another since each needs the seed the last one left
+    await Array.from({ length: 19 }).reduce<Promise<unknown>>(
+      (previous) =>
+        previous.then(async () =>
+          asGm.mutation(api.messages.roll, {
+            campaignId,
+            seed: await seedOf(t, campaignId),
+            dice: ["violet"],
+          }),
+        ),
+      Promise.resolve(),
+    );
+    const rolls = await asGm.query(api.messages.recent, { campaignId });
+    expect(rolls.map(({ sequence }) => sequence)).toEqual(
+      Array.from({ length: 20 }, (_, i) => 21 - i),
+    );
+  });
+
+  test("reads as empty for a non-member or a malformed id", async () => {
+    const { asGm, asOutsider, campaignId, seed } = await setup();
+    await asGm.mutation(api.messages.roll, { campaignId, seed, dice: ["blue"] });
+    expect(await asOutsider.query(api.messages.recent, { campaignId })).toEqual([]);
+    expect(await asGm.query(api.messages.recent, { campaignId: "nonsense" })).toEqual([]);
+  });
+});

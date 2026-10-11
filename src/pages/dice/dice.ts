@@ -10,6 +10,17 @@ export type DieColour = (typeof DIE_COLOURS)[number];
 // burst = star pip (counts as a hit), special = the hex nut ("s"), skull = the wrench ("f")
 export const SYMBOLS = ["burst", "special", "skull"] as const;
 export type DieSymbol = (typeof SYMBOLS)[number];
+// what a roll's totals are called on screen
+export const LABELS: Record<DieSymbol, string> = {
+  burst: "Bursts",
+  special: "Specials",
+  skull: "Fails",
+};
+// how many dice of each colour a roll threw, colours in the menu's order, absent ones left out
+export const countsOf = (dice: readonly DieColour[]) =>
+  DIE_COLOURS.filter((colour) => dice.includes(colour)).map(
+    (colour) => [colour, dice.filter((die) => die === colour).length] as const,
+  );
 
 // how many of each symbol a face shows
 export type Face = Record<DieSymbol, number>;

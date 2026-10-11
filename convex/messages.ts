@@ -1,5 +1,5 @@
 import type { Doc } from "_generated/dataModel";
-import { mutation, type MutationCtx, query } from "_generated/server";
+import { mutation, type MutationCtx, query, type QueryCtx } from "_generated/server";
 import type { WithoutSystemFields } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import { membershipOf, requireMember, requireUser } from "lib/access";
@@ -34,6 +34,19 @@ const [rollMessage] = schema.doc("messages").members;
 const authored = v.union(
   rollMessage.extend({ author: schema.doc("users").pick("displayName", "picture") }),
 );
+// the message and who sent it, or null once the sender's row is gone
+const withAuthor = async (ctx: QueryCtx, message: Doc<"messages">) => {
+  const sender = await ctx.db.get(message.userId);
+  return sender
+    ? { ...message, author: { displayName: sender.displayName, picture: sender.picture } }
+    : null;
+};
+// the campaign's id when the caller is a member of it, otherwise null (a malformed id too)
+const readableCampaign = async (ctx: QueryCtx, campaignId: string) => {
+  const user = await requireUser(ctx);
+  const id = ctx.db.normalizeId("campaigns", campaignId);
+  return id && (await membershipOf(ctx, id, user._id)) ? id : null;
+};
 
 // The campaign's newest message of this kind (or of any kind, "all") and who sent it:
 // null before the first, and for anyone outside the campaign
@@ -41,9 +54,8 @@ export const latest = query({
   args: { campaignId: v.string(), kind: v.union(messageKind, v.literal("all")) },
   returns: v.union(authored, v.null()),
   handler: async (ctx, { campaignId, kind }) => {
-    const user = await requireUser(ctx);
-    const id = ctx.db.normalizeId("campaigns", campaignId);
-    if (!id || !(await membershipOf(ctx, id, user._id))) return null;
+    const id = await readableCampaign(ctx, campaignId);
+    if (!id) return null;
     const message = await (
       kind === "all"
         ? ctx.db
@@ -57,10 +69,28 @@ export const latest = query({
     )
       .order("desc")
       .first();
-    const sender = message && (await ctx.db.get(message.userId));
-    return message && sender
-      ? { ...message, author: { displayName: sender.displayName, picture: sender.picture } }
-      : null;
+    return message && withAuthor(ctx, message);
+  },
+});
+
+// The campaign's last 20 rolls, newest first, each with who threw it: the roll log shows
+// that many and does not page yet. Empty for anyone outside the campaign.
+export const recent = query({
+  args: { campaignId: v.string() },
+  returns: v.array(authored),
+  handler: async (ctx, { campaignId }) => {
+    const id = await readableCampaign(ctx, campaignId);
+    if (!id) return [];
+    const rolls = await ctx.db
+      .query("messages")
+      .withIndex("by_campaignId_and_kind_and_sequence", (q) =>
+        q.eq("campaignId", id).eq("kind", "roll"),
+      )
+      .order("desc")
+      .take(20);
+    return (await Promise.all(rolls.map((roll) => withAuthor(ctx, roll)))).filter(
+      (roll) => roll !== null,
+    );
   },
 });
 

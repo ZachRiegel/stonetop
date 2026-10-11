@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <path d="M7 3H25A4 4 0 0 1 29 7V25A4 4 0 0 1 25 29H7A4 4 0 0 1 3 25V7A4 4 0 0 1 7 3Z" fill="#FF6A3C" stroke="#1A1A1A" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M16.80 7.80L19.41 12.28L24.59 12.30L22.02 16.80L24.59 21.30L19.41 21.32L16.80 25.80L14.19 21.32L9.01 21.30L11.58 16.80L9.01 12.30L14.19 12.28Z" fill="rgba(0, 0, 0, 0.45)" stroke="none"/>
-  <path d="M16.00 7.00L18.61 11.48L23.79 11.50L21.22 16.00L23.79 20.50L18.61 20.52L16.00 25.00L13.39 20.52L8.21 20.50L10.78 16.00L8.21 11.50L13.39 11.48Z" fill="#F3E7D3" stroke="#1A1A1A" stroke-width="1.2" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 90 90">
+  <!-- the heavy outline lies wholly outside the faces (half of a 10 stroke), so the faces'
+       thin edges meet at clean corners inside it -->
+  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="#38170D" stroke-width="10" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 64,16" fill="#FF9E80" stroke="#38170D" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="64,16 80,0 80,64 64,80" fill="#B24A2A" stroke="#38170D" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="0,16 64,16 64,80 0,80" fill="#FF6A3C" stroke="#38170D" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="33.5,24.5 41.0,37.4 56.0,37.5 48.6,50.5 56.0,63.5 41.0,63.6 33.5,76.5 26.0,63.6 11.0,63.5 18.4,50.5 11.0,37.5 26.0,37.4" fill="#38170D" opacity="0.4" stroke="#38170D" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="32.0,22.0 39.5,34.9 54.5,35.0 47.1,48.0 54.5,61.0 39.5,61.1 32.0,74.0 24.5,61.1 9.5,61.0 16.9,48.0 9.5,35.0 24.5,34.9" fill="#FFF4DC" stroke="#38170D" stroke-width="2.5" stroke-linejoin="round"/>
 </svg>

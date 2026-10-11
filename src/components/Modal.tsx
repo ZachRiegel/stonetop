@@ -1,6 +1,7 @@
+// A centred dialog that fades in and out; the content sets its own size and background.
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
-import type { ReactNode, RefObject } from "react";
+import DialogInternals from "components/DialogInternals.tsx";
 
 const FadeIn = keyframes`
   from {
@@ -38,39 +39,7 @@ const BackdropOut = keyframes`
   }
 `;
 
-export const ModalInternals = ({
-  requestClose,
-  className,
-  children,
-  dialogRef,
-}: {
-  isOpen: boolean;
-  requestClose: () => void;
-  className?: string;
-  children: ReactNode;
-  dialogRef: RefObject<HTMLDialogElement | null>;
-}) => (
-  <dialog
-    ref={dialogRef}
-    className={className}
-    onCancel={(event) => {
-      // Esc must close through app state so the exit animation plays
-      event.preventDefault();
-      requestClose();
-    }}
-    onClick={(event) => {
-      event.stopPropagation();
-      // The dialog spans the viewport; only clicks outside <section> hit it directly
-      if (event.target === event.currentTarget) requestClose();
-    }}
-    onKeyDown={(event) => event.stopPropagation()}
-  >
-    <span tabIndex={0} />
-    <section>{children}</section>
-  </dialog>
-);
-
-const Modal = styled(ModalInternals)<{ isOpen: boolean }>`
+const Modal = styled(DialogInternals)<{ isOpen: boolean }>`
   position: fixed;
   inset: 0;
   display: grid;
@@ -81,15 +50,13 @@ const Modal = styled(ModalInternals)<{ isOpen: boolean }>`
 
   & section {
     isolation: isolate;
-    animation: ${(props) => (props.isOpen ? FadeIn : FadeOut)} 300ms linear;
-    animation-fill-mode: both;
+    animation: ${(props) => (props.isOpen ? FadeIn : FadeOut)} 300ms linear both;
   }
 
   &::backdrop {
     position: fixed;
     inset: 0;
-    animation: ${(props) => (props.isOpen ? BackdropIn : BackdropOut)} 300ms linear;
-    animation-fill-mode: both;
+    animation: ${(props) => (props.isOpen ? BackdropIn : BackdropOut)} 300ms linear both;
   }
 `;
 

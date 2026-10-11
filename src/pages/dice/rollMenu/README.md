@@ -13,7 +13,8 @@ Two ways to use it, sharing one hit-test:
 - **Click mode.** Click the die button to open the menu. Hovering lifts a button's fill one
   palette step and sets the pointer cursor. Clicking a die colour chooses it and dims the other
   two; the count arc unfolds beside it. Clicking a count rolls that many dice of the colour and
-  closes. Clicking log or settings calls its callback (no-ops today) and closes. Escape, a click
+  closes. Clicking log opens the page's roll log panel (`../RollLog.tsx`), settings calls its
+  callback (a no-op today), and both close the menu. Escape, a click
   outside, and a click on the now-inert die button close it; those come from the `Popover`
   (`components/Popover.tsx`), which holds the open menu in a modal `<dialog>` and returns focus.
 - **Drag mode.** Press on the die button and drag. A glass bubble follows the pointer, snapping

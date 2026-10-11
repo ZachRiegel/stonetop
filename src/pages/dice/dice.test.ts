@@ -3,6 +3,7 @@ import {
   anchor,
   type Arena,
   arrange,
+  countsOf,
   DICE,
   DIE_COLOURS,
   drawFaces,
@@ -32,6 +33,17 @@ describe("drawFaces", () => {
     const seeds = Array.from({ length: 20 }, (_, i) => i + 1);
     const rolls = seeds.map((seed) => drawFaces(mulberry32(seed), 5).join(""));
     expect(new Set(rolls).size).toBeGreaterThan(15);
+  });
+});
+
+describe("countsOf", () => {
+  test("counts each colour thrown, in the menu's order, leaving out colours not thrown", () => {
+    expect(countsOf(["violet", "violet", "violet"])).toEqual([["violet", 3]]);
+    expect(countsOf(["orange", "blue", "orange"])).toEqual([
+      ["blue", 1],
+      ["orange", 2],
+    ]);
+    expect(countsOf([])).toEqual([]);
   });
 });
 

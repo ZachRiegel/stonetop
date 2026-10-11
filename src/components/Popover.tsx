@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { ModalInternals } from "components/Modal.tsx";
+import DialogInternals from "components/DialogInternals.tsx";
 import MakeDialog from "hoc/MakeDialog.tsx";
 import type { ReactNode } from "react";
 import { ALLOW_CHILD_SELECTORS } from "utils/emotion.ts";
@@ -11,7 +11,7 @@ const RenderChild = ({
   requestClose: () => void;
   children: ReactNode;
 }) => children;
-const BaseModal = MakeDialog("isOpen", RenderChild, ModalInternals);
+const BaseModal = MakeDialog("isOpen", RenderChild, DialogInternals);
 
 const PopoverInternals = ({
   className,

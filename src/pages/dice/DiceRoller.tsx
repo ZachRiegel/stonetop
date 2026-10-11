@@ -5,11 +5,12 @@ import Font from "components/Font.tsx";
 import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
+import useModal from "hooks/useModal.ts";
 import CrtEffect from "pages/dice/CrtEffect.tsx";
 import {
-  type DieSymbol,
   FADE_SECONDS,
   FRAME_RATE,
+  LABELS,
   PLAYBACK_RATE,
   PULSE_SECONDS,
   type RollResult,
@@ -17,12 +18,11 @@ import {
 } from "pages/dice/dice.ts";
 import DiceScene from "pages/dice/DiceScene.tsx";
 import { take } from "pages/dice/rollCache.ts";
+import RollLog from "pages/dice/RollLog.tsx";
 import RollMenu from "pages/dice/rollMenu/RollMenu.tsx";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { MathUtils, Vector3 } from "three";
-
-const LABELS: Record<DieSymbol, string> = { burst: "Bursts", special: "Specials", skull: "Fails" };
 
 // orthographic, looking down at the floor (z = 0, screen right = +x, screen up = +y) with a
 // slight tilt so the right and far sides of a resting die just show; aimed at the origin
@@ -133,6 +133,7 @@ const Menu = styled(RollMenu)`
 // Every roll in the campaign plays here, whoever threw it: the campaign's next seed is
 // simulated ahead of time, the menu posts a roll message with it, and the message
 // comes back through the subscription to be played, on this screen and everyone else's.
+// The menu's log button opens a side panel of the campaign's recent rolls.
 const DiceRoller = () => {
   const { campaignId = "" } = useParams();
   const campaign = useQuery(api.campaigns.get, { campaignId });
@@ -140,6 +141,7 @@ const DiceRoller = () => {
   // narrowed to a roll, so the page still reads it as one once other kinds exist
   const latest = message && message.kind !== "roll" ? null : message;
   const roll = useMutation(api.messages.roll);
+  const log = useModal();
   const [result, setResult] = useState<RollResult>();
   // the roll on the table (null for none), undefined until the first query result: the
   // roll already there when the page opened is drawn at rest, every later one is played
@@ -222,9 +224,10 @@ const DiceRoller = () => {
               },
             );
           }}
-          onLog={() => undefined}
+          onLog={log.open}
           onSettings={() => undefined}
         />
+        <RollLog isOpen={log.isOpen} requestClose={log.close} campaignId={campaignId} />
       </Overlay>
     </Page>
   );
