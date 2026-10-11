@@ -1,3 +1,6 @@
+// The roll menu's React side: the die button, the Popover that holds the open menu, the
+// arcs drawn from geometry.ts, the glass bubble and the pointer handling. README.md has the
+// interaction model and the design decisions.
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
@@ -17,11 +20,12 @@ import {
   countTurn,
   entriesOf,
   EXTENT,
+  held,
   type Hit,
   hit,
   insideRing,
   RADIUS,
-} from "pages/dice/rollMenu.ts";
+} from "pages/dice/rollMenu/geometry.ts";
 import React, { useEffect, useRef, useState } from "react";
 
 const INK = "#1A1A1A";
@@ -294,11 +298,11 @@ const RollMenu = ({
   const pressed = useRef<(() => void) | null>(null);
   useEffect(() => () => pressed.current?.(), []);
 
-  // the pointer's offset from the button's centre
+  // the pointer's offset from the button's centre, held within the menu's reach
   const offsetOf = ({ clientX, clientY }: { clientX: number; clientY: number }) => {
     const rect = button.current?.getBoundingClientRect();
     return rect
-      ? ([clientX - rect.left - rect.width / 2, clientY - rect.top - rect.height / 2] as const)
+      ? held(clientX - rect.left - rect.width / 2, clientY - rect.top - rect.height / 2)
       : null;
   };
   const choose = (die: DieColour | null) => {

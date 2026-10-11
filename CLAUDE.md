@@ -26,6 +26,10 @@ const thirtyMinutesInSeconds = 30 * 60
 func(thirtyMinutesInSeconds)
 ```
 
+Before working on a file, look for a README.md in its folder (and the folders above it, up to
+`src/` or `convex/`) and read it first: a feature's design, decisions and verification notes
+live there, next to the code, not in this file.
+
 ## Data layer (Convex)
 
 The backend is Convex. Server functions live in `convex/` (`campaigns.ts`, `users.ts`), the schema in `convex/schema.ts`, and the shared access helpers in `convex/lib/access.ts`.

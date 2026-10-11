@@ -17,7 +17,7 @@ import {
 } from "pages/dice/dice.ts";
 import DiceScene from "pages/dice/DiceScene.tsx";
 import { take } from "pages/dice/rollCache.ts";
-import RollMenu from "pages/dice/RollMenu.tsx";
+import RollMenu from "pages/dice/rollMenu/RollMenu.tsx";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { MathUtils, Vector3 } from "three";

@@ -17,14 +17,10 @@ const degrees = (radians: number) => (radians * 180) / Math.PI;
 const point = (radius: number, angle: number) =>
   [radius * Math.cos(angle / degrees(1)), -radius * Math.sin(angle / degrees(1))] as const;
 
-// An arc runs clockwise from `from` to `to`, ends included, cut into equal buttons. Its
-// ends are cut square with rounded corners (`cap`), so every arc reads as a piece of one
-// ring rather than a pill; only the free bubble is a full half-round. The inner ring: three
-// dice up and to the left, blue centred straight left of the button and orange straight
-// above it; log centred straight right and settings straight below, shorter than the dice
-// arc, so the gaps either side of the dice are wider than the one between the pills. The
-// count arc sits one ring further out, its middle button on the line from the centre
-// through the chosen die, its buttons half as far apart as the dice.
+// An arc runs clockwise from `from` to `to`, ends included, cut into equal buttons, its
+// ends square with `cap` corners so it reads as a piece of a ring. The layout (dice up and
+// to the left with blue straight left and orange straight above, log right, settings below,
+// the count arc one ring out on the chosen die's line) is described in README.md.
 const CORNER = 6;
 const DIE_SPAN = 45;
 const DICE_SPAN = DIE_SPAN * DIE_COLOURS.length;
@@ -181,20 +177,23 @@ export const hit = (x: number, y: number, arcs: Arcs): Hit | null => {
   return found ? { arc: found.name, index: found.index } : null;
 };
 
-// a point held within the menu's reach, so a dragged bubble never leaves the drawing
-const held = (x: number, y: number) => {
+// A point held within the menu's reach: the pointer as the menu sees it, so a dragged
+// bubble never leaves the drawing and, pulled past the outer ring, sits on the ring and
+// means whatever it sits on.
+export const held = (x: number, y: number) => {
   const reach = Math.hypot(x, y);
   const limit = EXTENT - CAP;
   return reach > limit ? ([(x * limit) / reach, (y * limit) / reach] as const) : ([x, y] as const);
 };
 
-// Where the bubble is: a button's shape, or a circle round the pointer. The lens magnifies
-// about `focus`, and a `snap` onto a button is eased while following the pointer is not.
+// Where the bubble is: a button's shape, or a circle round the (already held) pointer. The
+// lens magnifies about `focus`, and a `snap` onto a button is eased while following the
+// pointer is not.
 export type Bubble = { d: string; focus: readonly [number, number]; snap: boolean };
 export const bubbleOf = (found: Hit | null, x: number, y: number, arcs: Arcs): Bubble => {
   const arc = found && found.arc !== "button" ? arcs[found.arc] : undefined;
   if (found && arc)
     return { d: buttonPath(arc, found.index), focus: centreOf(arc, found.index), snap: true };
-  const focus = found ? ([0, 0] as const) : held(x, y);
+  const focus = found ? ([0, 0] as const) : ([x, y] as const);
   return { d: circlePath(...focus), focus, snap: found !== null };
 };

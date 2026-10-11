@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Pins the geometry README.md describes: morph-safe paths, alignment, hit-testing, the bubble.
 import { DIE_COLOURS } from "pages/dice/dice.ts";
 import {
   arcsOf,
@@ -8,9 +9,10 @@ import {
   COUNT_ARC,
   countTurn,
   EXTENT,
+  held,
   hit,
   insideRing,
-} from "pages/dice/rollMenu.ts";
+} from "pages/dice/rollMenu/geometry.ts";
 import { describe, expect, test } from "vitest";
 
 // the command letters of a path, which a CSS `d` transition needs to match to morph
@@ -35,7 +37,7 @@ const count = (colour: (typeof DIE_COLOURS)[number]) => {
   return arc;
 };
 
-describe("rollMenu", () => {
+describe("roll menu geometry", () => {
   test("draws every button and every bubble with the same commands, so they morph", () => {
     const paths = [
       ...Object.values(BLUE).flatMap((arc) =>
@@ -99,9 +101,14 @@ describe("rollMenu", () => {
       );
     circle(bubbleOf(null, 60, -30, BARE).d, 60, -30);
     circle(bubbleOf({ arc: "button", index: 0 }, 0, 0, BARE).d, 0, 0);
-    const far = bubbleOf(null, -400, 300, BARE);
-    expect(Math.hypot(...far.focus)).toBeLessThanOrEqual(EXTENT);
-    expect(far.snap).toBe(false);
+    expect(bubbleOf(null, 60, -30, BARE).snap).toBe(false);
+    // the pointer is held within the menu's reach before anything reads it: a far pointer
+    // lands on the outer ring, which with blue chosen is the count arc, and the button
+    // there is the one the drag means
+    expect(held(-30, 10)).toEqual([-30, 10]);
+    expect(Math.hypot(...held(-400, 300))).toBeLessThanOrEqual(EXTENT);
+    expect(hit(...held(-400, 300), BLUE)).toEqual({ arc: "count", index: 0 });
+    expect(hit(...held(-400, 300), BARE)).toBeNull();
     expect(bubbleOf({ arc: "button", index: 0 }, 0, 0, BARE).snap).toBe(true);
     expect(bubbleOf({ arc: "dice", index: 1 }, 0, 0, BARE)).toEqual({
       d: buttonPath(BARE.dice, 1),
