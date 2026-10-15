@@ -79,17 +79,21 @@ describe("glyph paths", () => {
       Number(y),
     ]);
 
-  test("every die's burst is the hexagon with its own cut-outs, closed and inside the box", () => {
-    DIE_COLOURS.forEach((colour) => {
+  test("every die's burst is the hexagon with its own shape cut out, inside the box", () => {
+    DIE_COLOURS.forEach((colour, i) => {
       const d = DICE[colour].burst;
       expect(d.startsWith("M50.0,12.0L82.9,31.0")).toBe(true);
+      expect(d.endsWith("Z")).toBe(true);
+      // six hexagon points, then the cut-out: a circle of two arcs (three points), a
+      // square, a triangle
+      expect(coordinates(d)).toHaveLength(6 + ([3, 4, 3][i] ?? 0));
       const all = coordinates(d).flat();
       expect(Math.min(...all)).toBeGreaterThanOrEqual(2);
       expect(Math.max(...all)).toBeLessThanOrEqual(98);
     });
-    expect(DICE.blue.burst.endsWith("Z")).toBe(true);
-    // three different marks
-    expect(new Set(DIE_COLOURS.map((colour) => DICE[colour].burst)).size).toBe(3);
+    expect(DICE.blue.burst).toContain("ZM37,50A13,13 0 1,0 63,50A13,13 0 1,0 37,50Z");
+    expect(DICE.violet.burst).toContain("ZM50.0,33.0L67.0,50.0L50.0,67.0L33.0,50.0Z");
+    expect(DICE.orange.burst).toContain("ZM50.0,30.0L67.3,60.0L32.7,60.0Z");
   });
 
   test("the hollow hex and wrench stay inside the box", () => {

@@ -93,6 +93,12 @@ export const FontCSS = {
     font-size: 20px;
   `,
 
+  Normal24: css`
+    font-family: "faustina", serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 24px;
+  `,
   Bold24: css`
     font-family: "faustina", serif;
     font-weight: 700;
@@ -165,6 +171,7 @@ const Font = {
   Semibold20: styled(BaseText)(FontCSS.Semibold20),
   Bold20: styled(BaseText)(FontCSS.Bold20),
 
+  Normal24: styled(BaseText)(FontCSS.Normal24),
   Bold24: styled(BaseText)(FontCSS.Bold24),
   Bold32: styled(BaseText)(FontCSS.Bold32),
 

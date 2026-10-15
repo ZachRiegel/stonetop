@@ -11,14 +11,7 @@ import RadialMenu from "components/radialMenu/RadialMenu.tsx";
 import Ring from "components/radialMenu/Ring.tsx";
 import Segment from "components/radialMenu/Segment.tsx";
 import useModal from "hooks/useModal.ts";
-import {
-  DICE,
-  DIE_COLOURS,
-  type DieColour,
-  glyphTransform,
-  HEX,
-  MAX_POOL,
-} from "pages/dice/dice.ts";
+import { DICE, DIE_COLOURS, type DieColour, glyphTransform, MAX_POOL } from "pages/dice/dice.ts";
 import { useState } from "react";
 
 // the dice arc is centred up and to the left, 45° a die, so blue sits straight left and
@@ -50,13 +43,10 @@ const Numeral = styled.text`
 const Glyph = styled.path`
   fill: var(--cream);
 `;
-// Under a die's mark, the hexagon's outside edge alone, stroked: half the stroke lies under
-// the cream, so 1px of black shows round it (and none round the cut-outs), whatever the
-// glyph's scale. It keeps the solid cream from glaring on a light die.
-const Outline = styled.path`
-  fill: none;
+// a die's mark: a hairline of black round it, whatever the glyph's scale
+const Mark = styled(Glyph)`
   stroke: var(--neutral-0);
-  stroke-width: 2px;
+  stroke-width: 0.75px;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
 `;
@@ -134,8 +124,7 @@ const RollMenu = ({
               onDragEnter={() => setColour(die)}
             >
               {/* the die's mark, outlined, as on the die icons */}
-              <Outline d={HEX} transform={glyphTransform(MARK_SIZE)} />
-              <Glyph d={DICE[die].burst} fillRule="evenodd" transform={glyphTransform(MARK_SIZE)} />
+              <Mark d={DICE[die].burst} fillRule="evenodd" transform={glyphTransform(MARK_SIZE)} />
             </Segment>
           ))}
         </Arc>

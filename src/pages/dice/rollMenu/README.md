@@ -23,8 +23,8 @@ the menu knows nothing about rolling itself.
   and hover `--white`; the pills are `--neutral-200` and hover `--neutral-300`. A chosen die
   dims the other two.
 - Content: each die's burst mark (`DICE[colour].burst` from `dice.ts`, 30px, fitted by
-  `glyphTransform`) over a 1px black outline of the hexagon's outside edge alone, so the
-  solid cream does not glare on a light die; a bold numeral per count; and the Chat and Cog
+  `glyphTransform`) with a 0.75px black outline, so the solid cream does not glare on a
+  light die; a bold numeral per count; and the Chat and Cog
   icons as paths (`iconPath` in `components/Icon.tsx`). The die icons in `icons/` draw the
   same mark the same way.
 
@@ -49,4 +49,5 @@ the edge by 8px.
 - The resting bubble on the chosen die was dropped; dimming shows the choice, the bubble is
   for drags.
 - The marks' drop shadow went, for the outline, and the marks shrank from 34px to 30px: the
-  plain hexagon on blue read too bright.
+  plain hexagon on blue read too bright. Cut-outs in the hexagon (circles, polygons, lines)
+  were tried and dropped: the hexagon is plain, and the colour alone tells the dice apart.

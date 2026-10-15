@@ -71,11 +71,11 @@ const Avatar = styled.img`
 // a count beside its die, the die dropped a little below the baseline to sit with the text
 const Pips = styled.span`
   white-space: nowrap;
-  --icon-size: 20px;
+  --icon-size: 30px;
 
   & > div {
-    vertical-align: -3px;
-    margin-left: 4px;
+    vertical-align: -4.5px;
+    margin-left: 6px;
   }
 `;
 
@@ -123,13 +123,13 @@ const RollLog = ({
             <Roll key={roll._id}>
               <Avatar src={roll.author.picture} alt="" />
               <Thrown>
-                <Font.Bold16 text={capitalised(roll.author.displayName)} />
-                <Font.Normal16 text=" rolled " />
+                <Font.Bold24 text={capitalised(roll.author.displayName)} />
+                <Font.Normal24 text=" rolled " />
                 {countsOf(roll.dice).map(([colour, count]) => {
                   const Die = DIE_ICONS[colour];
                   return (
                     <Pips key={colour}>
-                      <Font.Bold16 text={String(count)} />
+                      <Font.Bold24 text={String(count)} />
                       <Die />
                     </Pips>
                   );

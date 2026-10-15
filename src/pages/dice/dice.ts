@@ -35,32 +35,42 @@ const face = (spec: string): Face => ({
   skull: Number(spec.includes("f")),
 });
 
-// Glyphs are SVG path data in a 100-unit face box (the "Rounded Ends" sheet, verbatim), so
-// one string feeds both `new Path2D(d)` on a face canvas and `<path d>` in an icon. The
-// bursts and the hollow hex are evenodd fills (their holes are subpaths wound the same way
-// as the outline); the wrench is a nonzero fill, as its jaws overlap its bar. The burst is
-// a pointy-top hexagon of circumradius 38; each die cuts its own mark out of it. The menu
-// outlines the hexagon alone, so it is exported on its own.
+// Glyphs are SVG path data in a 100-unit face box (the hexagon, hollow hex and wrench from
+// the "Rounded Ends" sheet, verbatim), so one string feeds both `new Path2D(d)` on a face
+// canvas and `<path d>` in an icon. The bursts and the hollow hex are evenodd fills (their
+// holes are subpaths); the wrench is a nonzero fill, as its jaws overlap its bar. The burst
+// is a pointy-top hexagon of circumradius 38 with a shape cut out of its middle, a circle,
+// a square or a triangle, which is what tells the dice apart.
 export const GLYPH_BOX = 100;
-export const HEX = "M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z";
+const HEX = "M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z";
+// a regular polygon of `sides` and circumradius `r` round the middle, a vertex straight up
+const polygon = (sides: number, r: number) =>
+  Array.from({ length: sides }, (_, i) => {
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / sides;
+    return `${i ? "L" : "M"}${(50 + r * Math.cos(angle)).toFixed(1)},${(50 + r * Math.sin(angle)).toFixed(1)}`;
+  }).join("") + "Z";
+// a circle of radius `r` round the middle
+const circle = (r: number) =>
+  `M${50 - r},50A${r},${r} 0 1,0 ${50 + r},50A${r},${r} 0 1,0 ${50 - r},50Z`;
 
+// the cut-outs are sized so the three cover about the same area
 export const DICE: Record<DieColour, { hex: string; burst: string; faces: Faces }> = {
-  // old white: the plain hexagon
+  // old white
   blue: {
     hex: "#2CB9E1",
-    burst: HEX,
+    burst: `${HEX}${circle(13)}`,
     faces: [face("0f"), face("0"), face("0s"), face("1"), face("1s"), face("2")],
   },
-  // old blue: two opposite quarter arcs with round caps cut out
+  // old blue
   violet: {
     hex: "#FC4EFA",
-    burst: `${HEX}M66.62,66.62A23.5,23.5 0 0,1 33.38,66.62A3.5,3.5 0 0,1 38.33,61.67A16.5,16.5 0 0,0 61.67,61.67A3.5,3.5 0 0,1 66.62,66.62ZM33.38,33.38A23.5,23.5 0 0,1 66.62,33.38A3.5,3.5 0 0,1 61.67,38.33A16.5,16.5 0 0,0 38.33,38.33A3.5,3.5 0 0,1 33.38,33.38Z`,
+    burst: `${HEX}${polygon(4, 17)}`,
     faces: [face("0f"), face("0s"), face("1"), face("1s"), face("2"), face("2")],
   },
-  // old red: a ring cut out (the sheet's relative arcs written out absolute)
+  // old red
   orange: {
     hex: "#FC6E47",
-    burst: `${HEX}M26.5,50.0A23.5,23.5 0 1,0 73.5,50.0A23.5,23.5 0 1,0 26.5,50.0ZM33.5,50.0A16.5,16.5 0 1,0 66.5,50.0A16.5,16.5 0 1,0 33.5,50.0Z`,
+    burst: `${HEX}${polygon(3, 20)}`,
     faces: [face("0f"), face("0s"), face("1s"), face("2"), face("3"), face("3")],
   },
 };
