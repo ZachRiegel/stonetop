@@ -1,10 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 90 90">
+  <!-- inlined by components/Icon.tsx, so the faces are the die's palette ramp (RootLayout.tsx):
+       500 in front, 600 on top, 400 on the side, 300 for the outline -->
   <!-- the heavy outline lies wholly outside the faces (half of a 10 stroke), so the faces'
        thin edges meet at clean corners inside it -->
-  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="#042E38" stroke-width="10" stroke-linejoin="round"/>
-  <polygon points="0,16 16,0 80,0 64,16" fill="#66E0FE" stroke="#042E38" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="64,16 80,0 80,64 64,80" fill="#0E91B1" stroke="#042E38" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="0,16 64,16 64,80 0,80" fill="#14CFFD" stroke="#042E38" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="33.5,24.5 40.5,43.5 59.5,50.5 40.5,57.5 33.5,76.5 26.5,57.5 7.5,50.5 26.5,43.5" fill="#042E38" opacity="0.4" stroke="#042E38" stroke-width="2.5" stroke-linejoin="round"/>
-  <polygon points="32.0,22.0 39.0,41.0 58.0,48.0 39.0,55.0 32.0,74.0 25.0,55.0 6.0,48.0 25.0,41.0" fill="#FFF4DC" stroke="#042E38" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="var(--cyan-300)" stroke-width="10" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 64,16" fill="var(--cyan-600)" stroke="var(--cyan-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="64,16 80,0 80,64 64,80" fill="var(--cyan-400)" stroke="var(--cyan-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="0,16 64,16 64,80 0,80" fill="var(--cyan-500)" stroke="var(--cyan-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- the die's burst mark (pages/dice/dice.ts) centred on the front face over a 1px outline of
+       its outside edge, as in the roll menu (the stroke is 2, half of it under the mark) -->
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z" fill="none" stroke="var(--neutral-0)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" transform="translate(5.5 21.5) scale(0.53)"/>
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z" fill="var(--cream)" fill-rule="evenodd" stroke="none" transform="translate(5.5 21.5) scale(0.53)"/>
 </svg>

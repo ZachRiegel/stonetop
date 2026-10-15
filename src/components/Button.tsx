@@ -2,7 +2,7 @@ import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
 import { type IconProps } from "components/Icon.tsx";
-import { useTransition } from "react";
+import { type ComponentProps, useTransition } from "react";
 
 const wiggle = keyframes`
   0%, 60%, 100% {
@@ -46,6 +46,7 @@ const ButtonInternals = ({
   className,
   Icon,
   disabled,
+  ...rest
 }: {
   text?: string;
   onClick?: () => void | Promise<unknown>;
@@ -53,7 +54,8 @@ const ButtonInternals = ({
   className?: string;
   Icon?: React.FC<IconProps>;
   disabled?: boolean;
-}) => {
+  // anything else a button takes (aria attributes, a ref) goes straight through
+} & Omit<ComponentProps<"button">, "onClick" | "type" | "className" | "disabled" | "children">) => {
   const [isLoading, startTransition] = useTransition();
 
   const handleClick = () => {
@@ -73,6 +75,7 @@ const ButtonInternals = ({
 
   return (
     <button
+      {...rest}
       className={className}
       type={type}
       onClick={handleClick}
@@ -159,6 +162,20 @@ const Button = {
     }
     &:where(:active:not(:disabled)) {
       background: var(--neutral-600);
+    }
+  `,
+  // the dice page's paper button, ink on cream, lit white
+  Cream: styled(BaseButton)`
+    background: var(--cream);
+    color: var(--neutral-100);
+    &:where(:hover:not(:disabled)) {
+      background: var(--white);
+    }
+    &:where(:active:not(:disabled)) {
+      background: var(--white);
+    }
+    &:where(:disabled) {
+      opacity: 0.4;
     }
   `,
   Transparent,

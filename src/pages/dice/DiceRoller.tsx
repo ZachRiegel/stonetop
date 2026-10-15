@@ -6,8 +6,9 @@ import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import useModal from "hooks/useModal.ts";
-import CrtEffect from "pages/dice/CrtEffect.tsx";
 import {
+  DIE_SHARE,
+  EYE,
   FADE_SECONDS,
   FRAME_RATE,
   LABELS,
@@ -23,25 +24,25 @@ import RollLog from "pages/dice/RollLog.tsx";
 import RollMenu from "pages/dice/rollMenu/RollMenu.tsx";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
-import { MathUtils, Vector3 } from "three";
+import { MathUtils } from "three";
 
-// orthographic, looking down at the floor (z = 0, screen right = +x, screen up = +y) with a
-// slight tilt so the right and far sides of a resting die just show; aimed at the origin
-const TILT = MathUtils.degToRad(5);
+// Perspective, looking straight down at the floor (z = 0, screen right = +x, screen up = +y)
+// from EYE dice up: the field of view is chosen so that, with a die DIE_SHARE of the canvas
+// height, the camera is that many dice above the floor whatever the canvas size (the scene
+// measures the floor at the origin plane, and a die's size follows from it). The frustum's
+// sides then meet the floor on the arena's edges, where the worker leans the walls.
 const CAMERA = {
-  position: new Vector3(0, 0, 20)
-    .applyAxisAngle(new Vector3(0, 1, 0), TILT)
-    .applyAxisAngle(new Vector3(1, 0, 0), -TILT),
-  zoom: 180,
-  near: 0.1,
+  position: [0, 0, 20] as const,
+  fov: MathUtils.radToDeg(2 * Math.atan(1 / (2 * DIE_SHARE * EYE))),
+  near: 1,
   far: 100,
 };
 
-// one cell: the CRT-filtered render fills the whole backdrop, the UI floats on top
+// one cell: the transparent render floats over the page's dark grey, the UI on top of both
 const Page = styled.div`
   height: 100%;
   overflow: hidden;
-  background-color: var(--neutral-0);
+  background-color: var(--neutral-100);
   display: grid;
 
   & > * {
@@ -178,10 +179,14 @@ const DiceRoller = () => {
 
   return (
     <Page>
-      <Canvas flat orthographic dpr={[1, 2]} gl={{ alpha: true, antialias: true }} camera={CAMERA}>
-        <color attach="background" args={["#000000"]} />
+      <Canvas
+        flat
+        shadows="soft"
+        dpr={[1, 2]}
+        gl={{ alpha: true, antialias: true }}
+        camera={CAMERA}
+      >
         <DiceScene result={result} seed={campaign?.rollSeed} />
-        <CrtEffect />
       </Canvas>
       <Overlay>
         <Toolbar>

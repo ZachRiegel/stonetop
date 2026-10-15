@@ -1,10 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 90 90">
+  <!-- inlined by components/Icon.tsx, so the faces are the die's palette ramp (RootLayout.tsx):
+       500 in front, 600 on top, 400 on the side, 300 for the outline -->
   <!-- the heavy outline lies wholly outside the faces (half of a 10 stroke), so the faces'
        thin edges meet at clean corners inside it -->
-  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="#38170D" stroke-width="10" stroke-linejoin="round"/>
-  <polygon points="0,16 16,0 80,0 64,16" fill="#FF9E80" stroke="#38170D" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="64,16 80,0 80,64 64,80" fill="#B24A2A" stroke="#38170D" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="0,16 64,16 64,80 0,80" fill="#FF6A3C" stroke="#38170D" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="33.5,24.5 41.0,37.4 56.0,37.5 48.6,50.5 56.0,63.5 41.0,63.6 33.5,76.5 26.0,63.6 11.0,63.5 18.4,50.5 11.0,37.5 26.0,37.4" fill="#38170D" opacity="0.4" stroke="#38170D" stroke-width="2.5" stroke-linejoin="round"/>
-  <polygon points="32.0,22.0 39.5,34.9 54.5,35.0 47.1,48.0 54.5,61.0 39.5,61.1 32.0,74.0 24.5,61.1 9.5,61.0 16.9,48.0 9.5,35.0 24.5,34.9" fill="#FFF4DC" stroke="#38170D" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="var(--orange-300)" stroke-width="10" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 64,16" fill="var(--orange-600)" stroke="var(--orange-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="64,16 80,0 80,64 64,80" fill="var(--orange-400)" stroke="var(--orange-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="0,16 64,16 64,80 0,80" fill="var(--orange-500)" stroke="var(--orange-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- the die's burst mark (pages/dice/dice.ts) centred on the front face over a 1px outline of
+       its outside edge, as in the roll menu (the stroke is 2, half of it under the mark) -->
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z" fill="none" stroke="var(--neutral-0)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" transform="translate(5.5 21.5) scale(0.53)"/>
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0ZM26.5,50.0A23.5,23.5 0 1,0 73.5,50.0A23.5,23.5 0 1,0 26.5,50.0ZM33.5,50.0A16.5,16.5 0 1,0 66.5,50.0A16.5,16.5 0 1,0 33.5,50.0Z" fill="var(--cream)" fill-rule="evenodd" stroke="none" transform="translate(5.5 21.5) scale(0.53)"/>
 </svg>

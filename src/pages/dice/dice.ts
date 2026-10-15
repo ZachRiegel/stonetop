@@ -28,8 +28,6 @@ export type Faces = readonly [Face, Face, Face, Face, Face, Face];
 // face index doubles as the BoxGeometry material index (+x, −x, +y, −y, +z, −z)
 export type FaceIndex = 0 | 1 | 2 | 3 | 4 | 5;
 
-export type StarPoints = 4 | 5 | 6;
-
 // "1s" → { burst: 1, special: 1, skull: 0 }
 const face = (spec: string): Face => ({
   burst: Number(spec[0]),
@@ -37,61 +35,47 @@ const face = (spec: string): Face => ({
   skull: Number(spec.includes("f")),
 });
 
-export const DICE: Record<DieColour, { hex: string; points: StarPoints; faces: Faces }> = {
-  // old white
+// Glyphs are SVG path data in a 100-unit face box (the "Rounded Ends" sheet, verbatim), so
+// one string feeds both `new Path2D(d)` on a face canvas and `<path d>` in an icon. The
+// bursts and the hollow hex are evenodd fills (their holes are subpaths wound the same way
+// as the outline); the wrench is a nonzero fill, as its jaws overlap its bar. The burst is
+// a pointy-top hexagon of circumradius 38; each die cuts its own mark out of it. The menu
+// outlines the hexagon alone, so it is exported on its own.
+export const GLYPH_BOX = 100;
+export const HEX = "M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z";
+
+export const DICE: Record<DieColour, { hex: string; burst: string; faces: Faces }> = {
+  // old white: the plain hexagon
   blue: {
-    hex: "#14CFFD",
-    points: 4,
+    hex: "#2CB9E1",
+    burst: HEX,
     faces: [face("0f"), face("0"), face("0s"), face("1"), face("1s"), face("2")],
   },
-  // old blue
+  // old blue: two opposite quarter arcs with round caps cut out
   violet: {
-    hex: "#FF44FD",
-    points: 5,
+    hex: "#FC4EFA",
+    burst: `${HEX}M66.62,66.62A23.5,23.5 0 0,1 33.38,66.62A3.5,3.5 0 0,1 38.33,61.67A16.5,16.5 0 0,0 61.67,61.67A3.5,3.5 0 0,1 66.62,66.62ZM33.38,33.38A23.5,23.5 0 0,1 66.62,33.38A3.5,3.5 0 0,1 61.67,38.33A16.5,16.5 0 0,0 38.33,38.33A3.5,3.5 0 0,1 33.38,33.38Z`,
     faces: [face("0f"), face("0s"), face("1"), face("1s"), face("2"), face("2")],
   },
-  // old red
+  // old red: a ring cut out (the sheet's relative arcs written out absolute)
   orange: {
-    hex: "#FF6A3C",
-    points: 6,
+    hex: "#FC6E47",
+    burst: `${HEX}M26.5,50.0A23.5,23.5 0 1,0 73.5,50.0A23.5,23.5 0 1,0 26.5,50.0ZM33.5,50.0A16.5,16.5 0 1,0 66.5,50.0A16.5,16.5 0 1,0 33.5,50.0Z`,
     faces: [face("0f"), face("0s"), face("1s"), face("2"), face("3"), face("3")],
   },
 };
 
-// Glyphs are SVG path data in a 24×24 box centred on (12, 12), so one string feeds
-// both `new Path2D(d)` on a face canvas and `<path d>` in an icon.
-
-// inner radius as a fraction of the outer one: a sparkle, a five-point star, a hexagram
-const STAR_INNER_RATIO: Record<StarPoints, number> = { 4: 0.38, 5: 0.45, 6: 0.58 };
-
-export const starPath = (points: StarPoints, outer = 11, cx = 12, cy = 12) => {
-  const vertices = Array.from({ length: points * 2 }, (_, i) => {
-    const radius = i % 2 ? outer * STAR_INNER_RATIO[points] : outer;
-    const angle = -Math.PI / 2 + (i * Math.PI) / points;
-    return [radius * Math.cos(angle), radius * Math.sin(angle)] as const;
-  });
-  // centre the bounding box, not the circumcentre: an odd-pointed star otherwise sits high
-  const ys = vertices.map(([, y]) => y);
-  const lift = (Math.max(...ys) + Math.min(...ys)) / 2;
-  return (
-    vertices
-      .map(([x, y], i) => `${i ? "L" : "M"}${(cx + x).toFixed(2)} ${(cy + y - lift).toFixed(2)}`)
-      .join("") + "Z"
-  );
-};
-
-export const STAR_PATHS: Record<StarPoints, string> = {
-  4: starPath(4),
-  5: starPath(5),
-  6: starPath(6),
-};
-
-// the special mark: a hex nut (a hexagon with a round hole, evenodd); the fail mark: an
-// open-end wrench lying head up-left (both picked from src/holding/glyphPreview.html)
+// the special mark: a hollow hexagon with a 9-unit wall; the fail mark: a double open-end
+// wrench on the diagonal (the sheet's rotate(-45 50 50) baked into the coordinates): the
+// bar, then each jaw as a disc less the notch, all wound the same way for a nonzero fill
 export const SPECIAL_PATH =
-  "M12.00 1.00L21.53 6.50L21.53 17.50L12.00 23.00L2.47 17.50L2.47 6.50ZM12.00 7.40A4.6 4.6 0 1 0 12.00 16.60A4.6 4.6 0 1 0 12.00 7.40Z";
+  "M50.0,6.8L87.4,28.4L87.4,71.6L50.0,93.2L12.6,71.6L12.6,28.4ZM50.0,17.2L78.4,33.6L78.4,66.4L50.0,82.8L21.6,66.4L21.6,33.6Z";
 export const FAIL_PATH =
-  "M15.96 18.93L10.13 13.10A5.2 5.2 0 0 1 3.58 5.98L7.69 10.09L10.09 7.69L5.98 3.58A5.2 5.2 0 0 1 13.10 10.13L18.93 15.96A2.1 2.1 0 0 1 15.96 18.93Z";
+  "M22.07,70.15L70.15,22.07L77.93,29.85L29.85,77.93ZM11.6,78.5A15,15 0 1,1 21.5,88.4L30.91,78.99L21.01,69.09ZM88.4,21.5A15,15 0 1,1 78.5,11.6L69.09,21.01L78.99,30.91Z";
+
+// the SVG transform that fits the glyph box into `size` pixels centred on (cx, cy)
+export const glyphTransform = (size: number, cx = 0, cy = 0) =>
+  `translate(${cx - size / 2} ${cy - size / 2}) scale(${size / GLYPH_BOX})`;
 
 export type Rolled = { colour: DieColour; face: FaceIndex };
 
@@ -131,6 +115,12 @@ export const drawFaces = (random: () => number, count: number): FaceIndex[] =>
 export const MAX_POOL = 5;
 // how high (in dice) the arena's ceiling sits
 export const CEILING = 4;
+// a die's edge as a share of the canvas height, whatever the width
+export const DIE_SHARE = 0.075;
+// how high above the floor (in dice) the camera sits: the scene derives its field of view
+// from it, and the worker leans the walls along the frustum it gives. A plain number, so
+// the worker never needs Math.tan (its throw stays to arithmetic and square roots).
+export const EYE = 40;
 export const FRAME_RATE = 60;
 // playback speed of a recorded roll; drop it to watch a roll in slow motion
 export const PLAYBACK_RATE = 1;

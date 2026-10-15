@@ -15,6 +15,7 @@ import {
   CONTACT_FLOOR,
   CONTACT_LOUD,
   drawFaces,
+  EYE,
   FACE_NORMALS,
   type FaceIndex,
   FRAME_RATE,
@@ -162,55 +163,53 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
     0.2,
     0.55,
   );
+  // The walls lean inward along the camera's frustum: each one's inner face is the plane
+  // through the eye (0, 0, EYE) and the wall's floor edge, so a die kept inside the walls
+  // is inside the screen at any height. The lean is worked out with square roots alone,
+  // like the throw, so every engine builds the same walls.
+  type Axis = "x" | "y";
+  // the tangent of each wall's lean from the vertical, by the axis it faces along
+  const lean = { x: half.x / EYE, y: half.y / EYE };
+  // a slab `depth` thick whose inner face runs through the arena's floor edge `sign` way
+  // along `axis`, leaning inward, long enough to reach from under the floor past the ceiling
+  const slab = (axis: Axis, sign: 1 | -1, depth: number) => {
+    const cos = EYE / Math.sqrt(EYE * EYE + half[axis] * half[axis]);
+    const sin = lean[axis] * cos;
+    // the rotation that leans the slab's up toward the arena, about the edge's own axis
+    // (half-angle cosine and sine for the quaternion)
+    const hc = Math.sqrt((1 + cos) / 2);
+    const hs = Math.sqrt((1 - cos) / 2);
+    const rotation =
+      axis === "x" ? { x: 0, y: -sign * hs, z: 0, w: hc } : { x: sign * hs, y: 0, z: 0, w: hc };
+    // the centre: from the floor edge, up the leaning slab and half its depth outward
+    const along = CEILING - 1;
+    const out = sign * (half[axis] - sin * along + cos * (depth / 2));
+    const up = cos * along + sin * (depth / 2);
+    const desc =
+      axis === "x"
+        ? RAPIER.ColliderDesc.cuboid(depth / 2, half.y + APRON, CEILING).setTranslation(out, 0, up)
+        : RAPIER.ColliderDesc.cuboid(half.x + APRON, depth / 2, CEILING).setTranslation(0, out, up);
+    return desc.setRotation(rotation);
+  };
   // the walls report their collisions: a die's first bounce off any of them switches
   // its damping (passing through a one-way wall is no collision, so it does not count)
   const walls = new Set<number>();
   const wall = (desc: ColliderDesc) =>
     fixture(desc.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS), feel.wallRestitution, 0.55);
-  // left and top walls, inner faces on the arena's edges
-  walls.add(
-    wall(
-      RAPIER.ColliderDesc.cuboid(1, half.y + APRON, CEILING).setTranslation(
-        -half.x - 1,
-        0,
-        CEILING / 2,
-      ),
-    ).handle,
-  );
-  walls.add(
-    wall(
-      RAPIER.ColliderDesc.cuboid(half.x + APRON, 1, CEILING).setTranslation(
-        0,
-        half.y + 1,
-        CEILING / 2,
-      ),
-    ).handle,
-  );
+  // left and top walls
+  walls.add(wall(slab("x", -1, 2)).handle);
+  walls.add(wall(slab("y", 1, 2)).handle);
   // the right and bottom walls are one-way: the dice are thrown in from past the
   // bottom-right corner and pass through them, and each wall turns solid for a die once
-  // that die has been clear of it on the inside
-  const gate = (desc: ColliderDesc, isInside: (position: Position) => boolean) => {
+  // that die has been clear of it on the inside (of its leaning face, at the die's height)
+  const gate = (desc: ColliderDesc, isInside: (at: Position & { z: number }) => boolean) => {
     const handle = wall(desc.setActiveHooks(RAPIER.ActiveHooks.FILTER_CONTACT_PAIRS)).handle;
     walls.add(handle);
     return [handle, { isInside, closedFor: new Set<number>() }] as const;
   };
   const gates = new Map([
-    gate(
-      RAPIER.ColliderDesc.cuboid(GATE_DEPTH / 2, half.y + APRON, CEILING).setTranslation(
-        half.x + GATE_DEPTH / 2,
-        0,
-        CEILING / 2,
-      ),
-      ({ x }) => x < half.x - CLEARANCE,
-    ),
-    gate(
-      RAPIER.ColliderDesc.cuboid(half.x + APRON, GATE_DEPTH / 2, CEILING).setTranslation(
-        0,
-        -half.y - GATE_DEPTH / 2,
-        CEILING / 2,
-      ),
-      ({ y }) => y > -half.y + CLEARANCE,
-    ),
+    gate(slab("x", 1, GATE_DEPTH), ({ x, z }) => x < half.x - z * lean.x - CLEARANCE),
+    gate(slab("y", -1, GATE_DEPTH), ({ y, z }) => y > -half.y + z * lean.y + CLEARANCE),
   ]);
   // the hooks only reach the solver when an event queue is passed along with them, and
   // they must not call back into Rapier (that leaves a borrow dangling and the world can
@@ -343,9 +342,9 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   const prepare = () =>
     dice.forEach(({ body }) => {
       approaching.set(body.handle, body.linvel());
-      const { x, y } = body.translation();
+      const { x, y, z } = body.translation();
       gates.forEach(({ isInside, closedFor }) => {
-        if (isInside({ x, y })) closedFor.add(body.handle);
+        if (isInside({ x, y, z })) closedFor.add(body.handle);
       });
       if (body.isSleeping()) return;
       body.resetForces(false);
@@ -364,15 +363,19 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   const frameCount = run(0);
 
   const landed = dice.map(({ body }) => landedFace(body));
-  // never past the solid walls (left, top, floor, ceiling); the gates are checked at rest
+  // never past the solid walls (left, top, floor, ceiling), measured from the leaning
+  // faces at the die's height; the gates are checked at rest
   const inside = (x: number, y: number, z: number) =>
-    x >= -half.x + MARGIN && y <= half.y - MARGIN && z >= MARGIN && z <= CEILING - MARGIN;
+    x >= -half.x + z * lean.x + MARGIN &&
+    y <= half.y - z * lean.y - MARGIN &&
+    z >= MARGIN &&
+    z <= CEILING - MARGIN;
   const stayedIn = Array.from({ length: frameCount * count }, (_, k) => k * FRAME_STRIDE).every(
     (at) => inside(frames[at] ?? 0, frames[at + 1] ?? 0, frames[at + 2] ?? 0),
   );
   const settledIn = dice.every(({ body }) => {
-    const { x, y } = body.translation();
-    return x <= half.x - MARGIN && y >= -half.y + MARGIN;
+    const { x, y, z } = body.translation();
+    return x <= half.x - z * lean.x - MARGIN && y >= -half.y + z * lean.y + MARGIN;
   });
   events.free();
   world.free();

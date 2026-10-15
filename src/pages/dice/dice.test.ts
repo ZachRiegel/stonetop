@@ -8,14 +8,13 @@ import {
   DIE_COLOURS,
   drawFaces,
   FAIL_PATH,
+  glyphTransform,
   mulberry32,
   newSeed,
   reach,
   score,
   SPACING,
   SPECIAL_PATH,
-  STAR_PATHS,
-  starPath,
 } from "pages/dice/dice.ts";
 import { describe, expect, test } from "vitest";
 
@@ -73,42 +72,37 @@ describe("newSeed", () => {
 });
 
 describe("glyph paths", () => {
-  // every coordinate in a path's commands
+  // every coordinate pair in a path's commands (line and arc endpoints alike)
   const coordinates = (d: string) =>
-    [...d.matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map(([, x, y]) => [Number(x), Number(y)]);
-
-  test("every die has a star path, closed and centred in the 24-unit box", () => {
-    DIE_COLOURS.forEach((colour) => {
-      const d = STAR_PATHS[DICE[colour].points];
-      expect(d.endsWith("Z")).toBe(true);
-      const points = coordinates(d);
-      expect(points).toHaveLength(DICE[colour].points * 2);
-      const xs = points.map(([x]) => x ?? 0);
-      const ys = points.map(([, y]) => y ?? 0);
-      expect((Math.max(...xs) + Math.min(...xs)) / 2).toBeCloseTo(12, 1);
-      expect((Math.max(...ys) + Math.min(...ys)) / 2).toBeCloseTo(12, 1);
-      expect(Math.min(...xs, ...ys)).toBeGreaterThanOrEqual(1);
-      expect(Math.max(...xs, ...ys)).toBeLessThanOrEqual(23);
-    });
-  });
-
-  test("starPath takes a size and centre for the icons", () => {
-    const points = coordinates(starPath(5, 9, 16, 16));
-    const ys = points.map(([, y]) => y ?? 0);
-    // the top point is on the centre line; the bounding box is centred vertically
-    expect(points[0]).toEqual([
-      16,
-      expect.closeTo(16 - 9 + (9 - 9 * Math.cos(Math.PI / 5)) / 2, 1),
+    [...d.matchAll(/(-?[\d.]+)[,\s](-?[\d.]+)(?=[A-Za-z]|$)/g)].map(([, x, y]) => [
+      Number(x),
+      Number(y),
     ]);
-    expect((Math.max(...ys) + Math.min(...ys)) / 2).toBeCloseTo(16, 1);
+
+  test("every die's burst is the hexagon with its own cut-outs, closed and inside the box", () => {
+    DIE_COLOURS.forEach((colour) => {
+      const d = DICE[colour].burst;
+      expect(d.startsWith("M50.0,12.0L82.9,31.0")).toBe(true);
+      const all = coordinates(d).flat();
+      expect(Math.min(...all)).toBeGreaterThanOrEqual(2);
+      expect(Math.max(...all)).toBeLessThanOrEqual(98);
+    });
+    expect(DICE.blue.burst.endsWith("Z")).toBe(true);
+    // three different marks
+    expect(new Set(DIE_COLOURS.map((colour) => DICE[colour].burst)).size).toBe(3);
   });
 
-  test("the nut and wrench stay inside the box", () => {
+  test("the hollow hex and wrench stay inside the box", () => {
     [SPECIAL_PATH, FAIL_PATH].forEach((d) => {
       const all = coordinates(d).flat();
-      expect(Math.min(...all)).toBeGreaterThanOrEqual(1);
-      expect(Math.max(...all)).toBeLessThanOrEqual(23);
+      expect(Math.min(...all)).toBeGreaterThanOrEqual(2);
+      expect(Math.max(...all)).toBeLessThanOrEqual(98);
     });
+  });
+
+  test("glyphTransform fits the box into a size centred on a point", () => {
+    expect(glyphTransform(32)).toBe("translate(-16 -16) scale(0.32)");
+    expect(glyphTransform(50, 10, 20)).toBe("translate(-15 -5) scale(0.5)");
   });
 });
 

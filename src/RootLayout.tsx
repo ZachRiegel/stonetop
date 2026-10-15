@@ -1,5 +1,6 @@
 import { css, Global } from "@emotion/react";
 import useBlurOnEscape from "hooks/useBlurOnEscape.ts";
+import { CREAM, DICE } from "pages/dice/dice.ts";
 import { unlockOnGesture } from "pages/dice/sounds.ts";
 import { Suspense, useEffect } from "react";
 import { Outlet } from "react-router";
@@ -23,29 +24,29 @@ const RootLayout = () => {
             syntax: "<color>";
             initial-value: transparent;
           }
-          /* the roll menu's glass bubble (pages/dice/rollMenu/README.md): registered so
+          /* the radial menu's glass bubble (components/radialMenu/README.md): registered so
              they interpolate */
-          @property --roll-menu-placed-x {
+          @property --radial-menu-placed-x {
             inherits: true;
             syntax: "<length>";
             initial-value: 0px;
           }
-          @property --roll-menu-placed-y {
+          @property --radial-menu-placed-y {
             inherits: true;
             syntax: "<length>";
             initial-value: 0px;
           }
-          @property --roll-menu-mouse-x {
+          @property --radial-menu-mouse-x {
             inherits: true;
             syntax: "<length>";
             initial-value: 0px;
           }
-          @property --roll-menu-mouse-y {
+          @property --radial-menu-mouse-y {
             inherits: true;
             syntax: "<length>";
             initial-value: 0px;
           }
-          @property --roll-menu-slide {
+          @property --radial-menu-slide {
             inherits: true;
             syntax: "<number>";
             initial-value: 0;
@@ -73,22 +74,26 @@ const RootLayout = () => {
             --neutral-800: #e3e3e3;
             --neutral-850: #f1f1f1;
             --neutral-900: #ffffff;
-            /* the dice colours (dice.ts), with darker and lighter steps for states */
-            --cyan-300: #0c7c98;
-            --cyan-400: #10a6ca;
-            --cyan-500: #14cffd;
-            --cyan-600: #72e2fe;
-            --cyan-700: #adeefe;
-            --magenta-300: #992998;
-            --magenta-400: #cc36ca;
-            --magenta-500: #ff44fd;
-            --magenta-600: #ff7cfe;
-            --magenta-700: #ffabfe;
-            --orange-300: #994024;
-            --orange-400: #cc5530;
-            --orange-500: #ff6a3c;
-            --orange-600: #ff9776;
-            --orange-700: #ffbca7;
+            /* the dice page's paper, the glyph colour on the dice themselves, and its highlight */
+            --cream: ${CREAM};
+            --white: #ffffff;
+            /* ramps round the dice colours (500 is the die's own hex), darker and lighter
+               steps for states */
+            --cyan-300: #1a6f87;
+            --cyan-400: #2394b4;
+            --cyan-500: ${DICE.blue.hex};
+            --cyan-600: #80d5ed;
+            --cyan-700: #b5e6f4;
+            --magenta-300: #972f96;
+            --magenta-400: #ca3ec8;
+            --magenta-500: ${DICE.violet.hex};
+            --magenta-600: #fd83fc;
+            --magenta-700: #feaffd;
+            --orange-300: #97422b;
+            --orange-400: #ca5839;
+            --orange-500: ${DICE.orange.hex};
+            --orange-600: #fd9a7e;
+            --orange-700: #febeac;
             --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.24);
             --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.28);
             --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.36);
@@ -166,10 +171,6 @@ const RootLayout = () => {
             color: inherit;
             text-decoration: none;
           }
-
-          * {
-            box-sizing: border-box;
-          }
           dialog {
             width: 100vw;
             height: 100vh;
@@ -181,9 +182,6 @@ const RootLayout = () => {
             max-width: unset;
             max-height: unset;
             user-select: none;
-          }
-          body {
-            margin: 0;
           }
           /* Firefox: no way to pin an exact width; thin renders at 8px */
           * {

@@ -1,10 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 90 90">
+  <!-- inlined by components/Icon.tsx, so the faces are the die's palette ramp (RootLayout.tsx):
+       500 in front, 600 on top, 400 on the side, 300 for the outline -->
   <!-- the heavy outline lies wholly outside the faces (half of a 10 stroke), so the faces'
        thin edges meet at clean corners inside it -->
-  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="#380F38" stroke-width="10" stroke-linejoin="round"/>
-  <polygon points="0,16 16,0 80,0 64,16" fill="#FF85FE" stroke="#380F38" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="64,16 80,0 80,64 64,80" fill="#B230B1" stroke="#380F38" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="0,16 64,16 64,80 0,80" fill="#FF44FD" stroke="#380F38" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="33.5,27.0 40.4,43.5 58.2,44.9 44.6,56.6 48.8,74.0 33.5,64.7 18.2,74.0 22.4,56.6 8.8,44.9 26.6,43.5" fill="#380F38" opacity="0.4" stroke="#380F38" stroke-width="2.5" stroke-linejoin="round"/>
-  <polygon points="32.0,24.5 38.9,41.0 56.7,42.4 43.1,54.1 47.3,71.5 32.0,62.2 16.7,71.5 20.9,54.1 7.3,42.4 25.1,41.0" fill="#FFF4DC" stroke="#380F38" stroke-width="2.5" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="var(--magenta-300)" stroke-width="10" stroke-linejoin="round"/>
+  <polygon points="0,16 16,0 80,0 64,16" fill="var(--magenta-600)" stroke="var(--magenta-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="64,16 80,0 80,64 64,80" fill="var(--magenta-400)" stroke="var(--magenta-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <polygon points="0,16 64,16 64,80 0,80" fill="var(--magenta-500)" stroke="var(--magenta-300)" stroke-width="1.5" stroke-linejoin="round"/>
+  <!-- the die's burst mark (pages/dice/dice.ts) centred on the front face over a 1px outline of
+       its outside edge, as in the roll menu (the stroke is 2, half of it under the mark) -->
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z" fill="none" stroke="var(--neutral-0)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke" transform="translate(5.5 21.5) scale(0.53)"/>
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0ZM66.62,66.62A23.5,23.5 0 0,1 33.38,66.62A3.5,3.5 0 0,1 38.33,61.67A16.5,16.5 0 0,0 61.67,61.67A3.5,3.5 0 0,1 66.62,66.62ZM33.38,33.38A23.5,23.5 0 0,1 66.62,33.38A3.5,3.5 0 0,1 61.67,38.33A16.5,16.5 0 0,0 38.33,38.33A3.5,3.5 0 0,1 33.38,33.38Z" fill="var(--cream)" fill-rule="evenodd" stroke="none" transform="translate(5.5 21.5) scale(0.53)"/>
 </svg>

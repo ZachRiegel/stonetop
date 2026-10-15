@@ -11,11 +11,11 @@ import {
   type FaceIndex,
   FAIL_PATH,
   FRAME_STRIDE,
+  GLYPH_BOX,
+  HEX,
   reach,
   type RollResult,
   SPECIAL_PATH,
-  STAR_PATHS,
-  type StarPoints,
   SYMBOLS,
 } from "pages/dice/dice.ts";
 import Die from "pages/dice/Die.tsx";
@@ -30,40 +30,36 @@ import {
   Vector3,
 } from "three";
 
-const INK = "#1A1A1A";
 const FACE_PX = 512;
 
-// slot positions in face units (−1..1 of the safe half-width, y down) by item count, laid out so
-// the set's bounding box sits centred on the face
-const SAFE_HALF_WIDTH = 0.37;
+// The marks are laid out so that a hexagon is one size on every face of every die and the
+// gap between neighbours is one and a half ring bands (10.5 glyph units), flat edge to flat
+// edge: two on a diagonal, top left to bottom right like a die's two, pitched at 60° so a
+// slanted edge of each faces the other; three on an equilateral triangle (which, hexagons
+// tiling as they do, keeps every gap the same). A hexagon is 65.8 units wide and 76 tall,
+// so neighbouring centres sit 65.8 + 10.5 apart at the glyph scale, the triangle's rows
+// 0.866 of that, and the trio spans 142 × scale tall.
+const GLYPH_SCALE = 0.6;
 const SLOTS: Record<number, readonly (readonly [number, number])[]> = {
-  1: [[0, 0]],
+  1: [[50, 50]],
   2: [
-    [-0.5, -0.5],
-    [0.5, 0.5],
+    [38.6, 30.2],
+    [61.4, 69.8],
   ],
   3: [
-    [0, -0.6],
-    [-0.65, 0.48],
-    [0.65, 0.48],
+    [27.1, 30.2],
+    [72.9, 30.2],
+    [50, 69.8],
   ],
 };
-// glyph radius as a fraction of the face, the same whatever else shares the face (the
-// wrench is always alone on its face, so it gets more room)
-const SYMBOL_RADIUS: Record<DieSymbol, number> = { burst: 0.23, special: 0.19, skull: 0.3 };
-
-const drawGlyph = (ctx: CanvasRenderingContext2D, symbol: DieSymbol, points: StarPoints) => {
-  const glyph = new Path2D(
-    symbol === "burst" ? STAR_PATHS[points] : symbol === "special" ? SPECIAL_PATH : FAIL_PATH,
-  );
-  // drawn white and tinted by the material, so a face can glow whiter than cream
-  ctx.fillStyle = "#ffffff";
-  ctx.fill(glyph, "evenodd");
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = INK;
-  ctx.lineWidth = 0.9;
-  ctx.stroke(glyph);
-};
+// the hollow hex is drawn with its outer edge on the solid hexagon's outline (the sheet
+// centres its wall on it, which would close the gap to a neighbour), and the wrench,
+// always alone on its face, larger
+const SYMBOL_SCALE: Record<DieSymbol, number> = { burst: 1, special: 38 / 43.2, skull: 1.3 };
+// A burst's hexagon is outlined on its outside edge, as in the roll menu: the stroke is in
+// glyph units, half of it under the mark, so 2.5 units show, about 1px at a die's size on
+// screen. Black stays black under the material's tint.
+const OUTLINE = 5;
 
 // the glyphs of one face on a transparent ground; the face colour is the cube underneath
 const glyphTexture = (face: Face, colour: DieColour, anisotropy: number) => {
@@ -74,15 +70,28 @@ const glyphTexture = (face: Face, colour: DieColour, anisotropy: number) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("2D canvas is unavailable");
   const items = SYMBOLS.flatMap((symbol) => Array.from({ length: face[symbol] }, () => symbol));
+  // the marks are drawn white and tinted by the material, so a face can glow whiter than cream
+  ctx.fillStyle = "#ffffff";
+  ctx.scale(FACE_PX / GLYPH_BOX, FACE_PX / GLYPH_BOX);
   items.forEach((symbol, i) => {
-    const [sx, sy] = SLOTS[items.length]?.[i] ?? [0, 0];
+    const [cx, cy] = SLOTS[items.length]?.[i] ?? [50, 50];
+    const scale = GLYPH_SCALE * SYMBOL_SCALE[symbol];
+    const glyph = new Path2D(
+      symbol === "burst" ? DICE[colour].burst : symbol === "special" ? SPECIAL_PATH : FAIL_PATH,
+    );
     ctx.save();
-    ctx.translate(FACE_PX * (0.5 + sx * SAFE_HALF_WIDTH), FACE_PX * (0.5 + sy * SAFE_HALF_WIDTH));
-    // a special mark alone on its face gets the room a burst would have had
-    const radius = SYMBOL_RADIUS[symbol] * (symbol === "special" && items.length === 1 ? 1.25 : 1);
-    ctx.scale((FACE_PX * radius) / 11, (FACE_PX * radius) / 11);
-    ctx.translate(-12, -12);
-    drawGlyph(ctx, symbol, DICE[colour].points);
+    ctx.translate(cx - (GLYPH_BOX / 2) * scale, cy - (GLYPH_BOX / 2) * scale);
+    ctx.scale(scale, scale);
+    if (symbol === "burst") {
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = OUTLINE;
+      ctx.lineJoin = "round";
+      ctx.stroke(new Path2D(HEX));
+    }
+    // the bursts and the hollow hex cut their holes by evenodd; the wrench's jaws overlap
+    // its bar and would cancel there, so it is the one nonzero fill
+    if (symbol === "skull") ctx.fill(glyph);
+    else ctx.fill(glyph, "evenodd");
     ctx.restore();
   });
   const texture = new CanvasTexture(canvas);

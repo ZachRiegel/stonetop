@@ -124,7 +124,8 @@ const Die = ({
 
   return (
     <group ref={group} scale={size} visible={false}>
-      <mesh geometry={geometry} material={base} />
+      {/* only the cube casts: the glyph overlay is transparent and would cast a second, solid shadow */}
+      <mesh geometry={geometry} material={base} castShadow receiveShadow />
       <mesh geometry={geometry} material={overlays.current} scale={1.004} />
     </group>
   );
