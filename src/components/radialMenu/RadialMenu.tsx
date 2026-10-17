@@ -246,8 +246,9 @@ const RadialMenu = ({
   // the rounding, in px, at a run's ends and beside Spacers
   corner?: number;
   isOpen: boolean;
-  // the centre button was pressed
-  requestOpen: () => void;
+  // the centre button was pressed; left out, the button is its own (a click of the
+  // consumer's), and a press neither opens the menu nor starts a drag
+  requestOpen?: () => void;
   // Escape, a click outside, a click on the inert centre button, or a press released on
   // nothing or on the centre button (a press that never left the button is the click that
   // opened the menu, and keeps it open)
@@ -456,12 +457,16 @@ const RadialMenu = ({
         className={className}
         diameter={tree.centre.diameter}
         onPointerDown={(event) => {
-          if (event.button !== 0 || tree.centre.children.props.disabled || isOpen) return;
+          if (!requestOpen || event.button !== 0 || tree.centre.children.props.disabled || isOpen)
+            return;
           requestOpen();
           startPress(event, true);
         }}
       >
-        {cloneElement(tree.centre.children, { "aria-haspopup": "menu", "aria-expanded": isOpen })}
+        {cloneElement(tree.centre.children, {
+          "aria-haspopup": requestOpen && "menu",
+          "aria-expanded": requestOpen && isOpen,
+        })}
       </Anchor>
     </Menu>
   );

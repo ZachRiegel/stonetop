@@ -12,6 +12,7 @@ import {
   type MenuSpec,
   placedOf,
   segmentPath,
+  traced,
 } from "components/radialMenu/geometry.ts";
 import { describe, expect, test } from "vitest";
 
@@ -134,6 +135,22 @@ describe("radial menu geometry", () => {
     expect(second[0]).toBeGreaterThan(0);
     paths.forEach((d) => expect(commandsOf(d)).toBe(commandsOf(bubbleOf(null, FULL).d)));
     expect(commandsOf(bubbleOf(null, FULL).d)).toMatch(/^ML+Z$/);
+  });
+
+  test("traces a shape through as many points as asked, from straight up, clockwise", () => {
+    const disc = traced((x, y) => Math.hypot(x, y) <= 10, [50, 50], 20, 4);
+    expect(commandsOf(disc)).toBe("MLLLZ");
+    expect(pointsOf(disc).map((point) => point.map(Math.round))).toEqual([
+      [50, 40],
+      [60, 50],
+      [50, 60],
+      [40, 50],
+    ]);
+    // a shape with nothing inside closes to its centre, so pips can shut rather than vanish
+    expect(
+      pointsOf(traced(() => false, [50, 50], 20, 4)).map((point) => point.map(Math.round)),
+    ).toEqual(Array.from({ length: 4 }, () => [50, 50]));
+    expect(commandsOf(traced(() => true, [0, 0], 5))).toBe(`M${"L".repeat(71)}Z`);
   });
 
   test("finds what is under a point", () => {

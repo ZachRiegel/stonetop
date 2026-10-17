@@ -1,4 +1,3 @@
-import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { Canvas } from "@react-three/fiber";
 import Font from "components/Font.tsx";
@@ -11,17 +10,16 @@ import {
   EYE,
   FADE_SECONDS,
   FRAME_RATE,
-  LABELS,
   PLAYBACK_RATE,
-  PULSE_SECONDS,
   type RollResult,
-  SYMBOLS,
+  score,
 } from "pages/dice/dice.ts";
 import DiceScene from "pages/dice/DiceScene.tsx";
 import DiceSettingsModal from "pages/dice/DiceSettingsModal.tsx";
 import { take } from "pages/dice/rollCache.ts";
 import RollLog from "pages/dice/RollLog.tsx";
 import RollMenu from "pages/dice/rollMenu/RollMenu.tsx";
+import RollNotification from "pages/dice/RollNotification.tsx";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
 import { MathUtils } from "three";
@@ -67,63 +65,7 @@ const Hint = styled(Font.Italic16)`
   place-self: center;
 `;
 
-// placed by name: the menu shares its row, so auto-placement would push it to a new one
-const Footer = styled.div`
-  grid-area: 3 / 1;
-  display: grid;
-  padding: 16px 24px 24px;
-`;
-
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    translate: 0 8px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-`;
-
-// fades in as the rolled faces pulse (wall-clock; a stalled tab's playback is clamped
-// and may land a little after the numbers)
-const Readout = styled.div<{ delaySeconds: number }>`
-  display: grid;
-  grid-auto-flow: column;
-  justify-self: center;
-  align-items: center;
-  column-gap: 32px;
-  padding: 12px 24px;
-  border-radius: 16px;
-  background-color: rgb(0 0 0 / 0.3);
-  animation: ${fadeIn} ${PULSE_SECONDS}s ${({ delaySeconds }) => delaySeconds}s both;
-
-  @media (prefers-reduced-motion: reduce) {
-    animation-delay: 0ms;
-  }
-`;
-
-const Stat = styled.div`
-  display: grid;
-  justify-items: center;
-`;
-
-const Roller = styled.div`
-  display: grid;
-  grid-template-columns: max-content max-content;
-  align-items: center;
-  column-gap: 8px;
-`;
-
-const Avatar = styled.img`
-  width: 30px;
-  height: 30px;
-  border: 2px solid var(--neutral-0);
-  border-radius: 999px;
-  object-fit: cover;
-`;
-
-// in the footer's corner, leaving 8px between the page edge and the lowest (or rightmost)
+// in the page's corner, leaving 8px between the page edge and the lowest (or rightmost)
 // point of the count arc swung to blue (or orange), measured in the browser
 const Menu = styled(RollMenu)`
   grid-area: 3 / 1;
@@ -135,8 +77,10 @@ const Menu = styled(RollMenu)`
 // Every roll in the campaign plays here, whoever threw it: the campaign's next seed is
 // simulated ahead of time, the menu posts a roll message with it, and the message
 // comes back through the subscription to be played, on this screen and everyone else's.
-// The menu's log button opens a side panel of the campaign's recent rolls, its settings
-// button a modal with the page's settings.
+// Once the dice settle a notification blooms over the menu's button with the result; its X
+// clears this screen's table (the roll stays on everyone else's). The menu's log button
+// opens a side panel of the campaign's recent rolls, its settings button a modal with the
+// page's settings.
 const DiceRoller = () => {
   const { campaignId = "" } = useParams();
   const campaign = useQuery(api.campaigns.get, { campaignId });
@@ -147,6 +91,11 @@ const DiceRoller = () => {
   const log = useModal();
   const settings = useModal();
   const [result, setResult] = useState<RollResult>();
+  // the roll whose card is up, from its bloom (once the dice have settled) until the menu's
+  // button, an X meanwhile, takes it off this table; and a card the X took while a newer
+  // roll was still in the air, which wilts on its own and leaves the new roll be
+  const [arrived, setArrived] = useState<string>();
+  const [dismissed, setDismissed] = useState<string>();
   // the roll on the table (null for none), undefined until the first query result: the
   // roll already there when the page opened is drawn at rest, every later one is played
   const shown = useRef<string | null>(undefined);
@@ -169,6 +118,7 @@ const DiceRoller = () => {
           simulation,
           dice: latest.dice.map((colour, i) => ({ colour, face: latest.faces[i] ?? 0 })),
           author: latest.author,
+          time: latest._creationTime,
           settled,
         });
       },
@@ -193,34 +143,33 @@ const DiceRoller = () => {
           <Font.Title32 element="h1" text="Dice Roller" />
         </Toolbar>
         {latest === null ? <Hint element="div" text="Choose your dice, then roll" /> : <div />}
-        <Footer>
-          {result && latest?._id === result.id ? (
-            <Readout
-              key={result.id}
-              aria-live="polite"
-              delaySeconds={
-                result.settled
-                  ? 0
-                  : result.simulation.frameCount / FRAME_RATE / PLAYBACK_RATE + FADE_SECONDS
-              }
-            >
-              <Roller>
-                <Avatar src={result.author.picture} alt="" />
-                <Font.Bold16 element="div" text={result.author.displayName} />
-              </Roller>
-              {SYMBOLS.map((symbol) => (
-                <Stat key={symbol}>
-                  <Font.Title40 element="div" text={String(latest.totals[symbol])} />
-                  <Font.Bold16 element="div" text={LABELS[symbol]} />
-                </Stat>
-              ))}
-            </Readout>
-          ) : (
-            <div />
-          )}
-        </Footer>
+        {/* the roll on the table: a newer roll's card is laid over it once that roll has
+            played; the menu's button, over the card's edge, is an X meanwhile that takes the
+            roll off this table alone (`shown` still holds its id, so the subscription does
+            not play it again) */}
+        <RollNotification
+          isOpen={result !== undefined}
+          dismissed={dismissed}
+          onArrive={setArrived}
+          roll={
+            result && {
+              id: result.id,
+              author: result.author,
+              time: result.time,
+              dice: result.dice.map(({ colour }) => colour),
+              totals: score(result.dice),
+              // once the faces have settled and faded (wall-clock; a stalled tab's playback
+              // is clamped and may land a little after)
+              delaySeconds: result.settled
+                ? 0
+                : result.simulation.frameCount / FRAME_RATE / PLAYBACK_RATE + FADE_SECONDS,
+            }
+          }
+        />
         <Menu
           disabled={!campaign}
+          // a roll is in the air from its first frame until its card blooms
+          locked={result !== undefined && !result.settled && arrived !== result.id}
           onRoll={(dice) => {
             if (!campaign) return;
             // the roll comes back through the subscription; a seed another player's roll
@@ -234,6 +183,15 @@ const DiceRoller = () => {
           }}
           onLog={log.open}
           onSettings={settings.open}
+          onDismiss={
+            arrived === undefined
+              ? undefined
+              : () => {
+                  if (arrived === result?.id) setResult(undefined);
+                  else setDismissed(arrived);
+                  setArrived(undefined);
+                }
+          }
         />
         <RollLog isOpen={log.isOpen} requestClose={log.close} campaignId={campaignId} />
         <DiceSettingsModal isOpen={settings.isOpen} requestClose={settings.close} />

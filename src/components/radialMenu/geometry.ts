@@ -142,20 +142,22 @@ export const layoutOf = ({ centre, corner, rings }: MenuSpec): Layout => {
   };
 };
 
-// Every shape is traced the same way: SAMPLES points on its outline at equal angles round its
-// centre, clockwise from straight up, joined by lines. A CSS `d` transition then morphs any
-// shape into any other point for point along those rays, with no spin whichever way the
-// shapes face. The outline is found by bisection along each ray out to `bound`, so a shape
-// only needs an inside test; every shape here is star-shaped about its centre (spans stay
-// under 180°). At 5° a step the lines are within 0.15px of the true arcs.
+// Every shape is traced the same way: `samples` points on its outline at equal angles round
+// its centre, clockwise from straight up, joined by lines. A CSS `d` transition then morphs
+// any shape into any other traced with the same count point for point along those rays, with
+// no spin whichever way the shapes face. The outline is found by bisection along each ray
+// out to `bound`, so a shape only needs an inside test; every shape here is star-shaped about
+// its centre (spans stay under 180°). At 5° a step the lines are within 0.15px of the true
+// arcs. Also used by the die button's icon (pages/dice/rollMenu/DieOrClose.tsx).
 const SAMPLES = 72;
-const traced = (
+export const traced = (
   inside: (x: number, y: number) => boolean,
   [sx, sy]: readonly [number, number],
   bound: number,
+  samples = SAMPLES,
 ) => {
-  const points = Array.from({ length: SAMPLES }, (_, i) => {
-    const [ux, uy] = point(1, 90 - (i * 360) / SAMPLES);
+  const points = Array.from({ length: samples }, (_, i) => {
+    const [ux, uy] = point(1, 90 - (i * 360) / samples);
     const [r] = Array.from({ length: 16 }).reduce<[number, number]>(
       ([lo, hi]) => {
         const mid = (lo + hi) / 2;

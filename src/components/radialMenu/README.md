@@ -54,7 +54,8 @@ consumer.
   second `Centre`, throws. Fragments are not looked into
   (`Children.toArray` does not open them). An arc keeps its identity by its position among
   its siblings, as React children do, so a conditional arc needs no key.
-- Open state is the consumer's: `isOpen`, `requestOpen` (the centre button was pressed) and
+- Open state is the consumer's: `isOpen`, `requestOpen` (the centre button was pressed;
+  left out, the button is the consumer's own and a press neither opens nor drags) and
   `requestClose` (Escape, a click outside, a click on the inert centre button, or a press
   released on nothing or on the centre button). Each segment's `onActivate` decides whether
   to close. `onDragCentre` is a drag coming back inside the innermost ring.

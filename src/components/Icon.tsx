@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import book2Svg from "icons/book2.svg?raw";
 import chatSvg from "icons/chat.svg?raw";
+import closeSvg from "icons/close.svg?raw";
 import cogSvg from "icons/cog.svg?raw";
 import dieSvg from "icons/die.svg?raw";
 import dieBlueSvg from "icons/dieBlue.svg?raw";
@@ -9,12 +10,14 @@ import dieVioletSvg from "icons/dieViolet.svg?raw";
 import discordSvg from "icons/discordLogo.svg?raw";
 import libraryBooksSvg from "icons/libraryBooks.svg?raw";
 import plusSvg from "icons/plus.svg?raw";
+import type { DieColour } from "pages/dice/dice.ts";
 
 const IconSvgs = {
   Plus: plusSvg,
   Discord: discordSvg,
   Cog: cogSvg,
   Chat: chatSvg,
+  Close: closeSvg,
   Die: dieSvg,
   Book2: book2Svg,
   LibraryBooks: libraryBooksSvg,
@@ -58,5 +61,12 @@ const Icon = Object.fromEntries(
     (props: IconProps) => <StyledIcon icon={icon} {...props} />,
   ]),
 ) as Record<IconName, React.FC<{ className?: string }>>;
+
+// the die icons by colour, for a count beside its die
+export const DIE_ICONS: Record<DieColour, React.FC<{ className?: string }>> = {
+  blue: Icon.DieBlue,
+  violet: Icon.DieViolet,
+  orange: Icon.DieOrange,
+};
 
 export default Icon;

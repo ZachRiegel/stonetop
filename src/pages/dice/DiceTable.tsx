@@ -5,7 +5,6 @@ import {
   DICE,
   DIE_COLOURS,
   type DieColour,
-  type DieSymbol,
   type Face,
   FACE_NORMALS,
   type FaceIndex,
@@ -15,6 +14,7 @@ import {
   reach,
   type RollResult,
   SPECIAL_PATH,
+  SYMBOL_SCALE,
   SYMBOLS,
 } from "pages/dice/dice.ts";
 import Die from "pages/dice/Die.tsx";
@@ -54,10 +54,6 @@ const SLOTS: Record<number, readonly (readonly [number, number, number])[]> = {
     [50, 69.8, 0],
   ],
 };
-// the hollow hex is drawn with its outer edge on the solid hexagon's outline (the sheet
-// centres its wall on it, which would close the gap to a neighbour), and the wrench,
-// always alone on its face, larger
-const SYMBOL_SCALE: Record<DieSymbol, number> = { burst: 1, special: 38 / 43.2, skull: 1.3 };
 // Every mark is outlined on every edge, as the menu's are: a stroke of twice this (glyph
 // units) under the mark, so this much shows past the fill, inside the hollow hex included,
 // about 0.75px at a die's size on screen. Stroking under the fill is what keeps the wrench

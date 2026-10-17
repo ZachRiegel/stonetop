@@ -42,7 +42,8 @@ const face = (spec: string): Face => ({
 // is a pointy-top hexagon of circumradius 38 with a shape cut out of its middle, a circle,
 // a square or a triangle, which is what tells the dice apart.
 export const GLYPH_BOX = 100;
-const HEX = "M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z";
+// the solid hexagon every burst is cut from, and the mark for a burst when no die is meant
+export const HEX = "M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0Z";
 // a regular polygon of `sides` and circumradius `r` round the middle, a vertex straight up
 const polygon = (sides: number, r: number) =>
   Array.from({ length: sides }, (_, i) => {
@@ -82,6 +83,10 @@ export const SPECIAL_PATH =
   "M50.0,6.8L87.4,28.4L87.4,71.6L50.0,93.2L12.6,71.6L12.6,28.4ZM50.0,17.2L78.4,33.6L78.4,66.4L50.0,82.8L21.6,66.4L21.6,33.6Z";
 export const FAIL_PATH =
   "M22.07,70.15L70.15,22.07L77.93,29.85L29.85,77.93ZM11.6,78.5A15,15 0 1,1 21.5,88.4L30.91,78.99L21.01,69.09ZM88.4,21.5A15,15 0 1,1 78.5,11.6L69.09,21.01L78.99,30.91Z";
+// each mark's scale against the burst: the hollow hex is drawn with its outer edge on the
+// solid hexagon's outline (the sheet centres its wall on it, which on a face would close the
+// gap to a neighbour), and the wrench, always alone on its face, larger
+export const SYMBOL_SCALE: Record<DieSymbol, number> = { burst: 1, special: 38 / 43.2, skull: 1.3 };
 
 // the SVG transform that fits the glyph box into `size` pixels centred on (cx, cy)
 export const glyphTransform = (size: number, cx = 0, cy = 0) =>
@@ -285,5 +290,7 @@ export type RollResult = {
   simulation: Simulation;
   dice: Rolled[];
   author: { displayName: string; picture: string };
+  // when the roll was posted, in ms
+  time: number;
   settled: boolean;
 };

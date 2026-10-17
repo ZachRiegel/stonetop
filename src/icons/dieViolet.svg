@@ -1,13 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 -5 90 90">
-  <!-- inlined by components/Icon.tsx, so the faces are the die's palette ramp (RootLayout.tsx):
-       500 in front, 600 on top, 400 on the side, 300 for the outline -->
-  <!-- the heavy outline lies wholly outside the faces (half of a 10 stroke), so the faces'
-       thin edges meet at clean corners inside it -->
-  <polygon points="0,16 16,0 80,0 80,64 64,80 0,80" fill="none" stroke="var(--magenta-300)" stroke-width="10" stroke-linejoin="round"/>
-  <polygon points="0,16 16,0 80,0 64,16" fill="var(--magenta-600)" stroke="var(--magenta-300)" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="64,16 80,0 80,64 64,80" fill="var(--magenta-400)" stroke="var(--magenta-300)" stroke-width="1.5" stroke-linejoin="round"/>
-  <polygon points="0,16 64,16 64,80 0,80" fill="var(--magenta-500)" stroke="var(--magenta-300)" stroke-width="1.5" stroke-linejoin="round"/>
-  <!-- the die's burst mark (pages/dice/dice.ts) centred on the front face, with a finer hairline of black
-       round it than the roll menu's, the icon being a quarter the size -->
-  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0ZM50.0,33.0L67.0,50.0L50.0,67.0L33.0,50.0Z" fill="var(--cream)" fill-rule="evenodd" stroke="var(--neutral-0)" stroke-width="0.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" transform="translate(-0.5 15.5) scale(0.65)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 90 90">
+  <!-- written by a script from pages/dice/dice.ts: a square of the die's colour (its palette
+       ramp in RootLayout.tsx, inlined by components/Icon.tsx) with the die's burst mark on it,
+       cream with a finer hairline of black on every edge than the roll menu's, the icon being
+       a quarter the size -->
+  <rect width="90" height="90" rx="10" fill="var(--magenta-500)"/>
+  <path d="M50.0,12.0L82.9,31.0L82.9,69.0L50.0,88.0L17.1,69.0L17.1,31.0ZM50.0,33.0L67.0,50.0L50.0,67.0L33.0,50.0Z" fill="var(--cream)" fill-rule="evenodd" stroke="var(--neutral-0)" stroke-width="0.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" transform="translate(-5 -5)"/>
 </svg>
