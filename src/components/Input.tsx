@@ -1,12 +1,13 @@
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
-import type { HTMLInputTypeAttribute } from "react";
+import type { HTMLInputTypeAttribute, Ref } from "react";
 import * as React from "react";
 
 const InputInternals = ({
   value,
   onChange,
   onKeyDown,
+  inputRef,
   label,
   placeholder,
   type = "text",
@@ -15,6 +16,7 @@ const InputInternals = ({
   value: string;
   onChange: (value: string, event: React.ChangeEvent) => void;
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  inputRef?: Ref<HTMLInputElement>;
   label?: string;
   placeholder?: string;
   type?: HTMLInputTypeAttribute;
@@ -24,8 +26,8 @@ const InputInternals = ({
   const rootRef = React.useRef<HTMLDivElement>(null);
   const labelRef = React.useRef<HTMLLabelElement>(null);
 
-  // The border-notch mask lives on .frame and can't measure the sibling
-  // label from CSS, so its width is published as --label-width.
+  // The mask that cuts the label's gap out of the border lives on .frame::before and can't
+  // measure the sibling label from CSS, so its width is published as --label-width.
   React.useLayoutEffect(() => {
     const root = rootRef.current;
     const labelElement = labelRef.current;
@@ -42,6 +44,7 @@ const InputInternals = ({
       <div className="frame">
         <input
           id={id}
+          ref={inputRef}
           type={type}
           value={value}
           // A whitespace placeholder renders as nothing but keeps
@@ -60,7 +63,9 @@ const InputInternals = ({
   );
 };
 
-// noinspection CssInvalidFunction
+// The Glass look (chosen from src/holding/dropdownDrafts.html): a 12px-rounded 2px border,
+// grey at rest and cream with focus, the label standing on the border with its baseline on
+// the border's bottom edge and the border cut away behind it.
 const Input = styled(InputInternals)`
   position: relative;
   --animation-duration: 200ms;
@@ -69,53 +74,33 @@ const Input = styled(InputInternals)`
     position: relative;
     padding: 2px;
 
-    // The border is drawn on a pseudo-element so it can be clipped to a
-    // ring without also clipping the input: an outer octagon plus an inner
-    // octagon traced as an evenodd hole (the repeated 8px 0 / 8.83px 2px
-    // points bridge the two rings with a zero-width seam). The inner
-    // diagonal corners sit at 8px + 2*sqrt(2) - 2px = 8.83px so the
-    // diagonals are the same 2px thick as the straight edges.
+    // The border is drawn on a pseudo-element so the label's gap can be cut out of it with a
+    // mask without touching the input. It lies over the input, so clicks must pass through it
+    // (the old octagon clip-path limited hit-testing to the ring; a plain border does not).
     &::before {
       content: "";
       position: absolute;
       inset: 0;
-      background-color: var(--neutral-500);
-      transition: mask var(--animation-duration) allow-discrete;
-      clip-path: polygon(
-        evenodd,
-        8px 0,
-        calc(100% - 8px) 0,
-        100% 8px,
-        100% calc(100% - 8px),
-        calc(100% - 8px) 100%,
-        8px 100%,
-        0 calc(100% - 8px),
-        0 8px,
-        8px 0,
-        8.83px 2px,
-        calc(100% - 8.83px) 2px,
-        calc(100% - 2px) 8.83px,
-        calc(100% - 2px) calc(100% - 8.83px),
-        calc(100% - 8.83px) calc(100% - 2px),
-        8.83px calc(100% - 2px),
-        2px calc(100% - 8.83px),
-        2px 8.83px,
-        8.83px 2px
-      );
+      pointer-events: none;
+      border: 2px solid var(--neutral-500);
+      border-radius: 12px;
+      transition: border-color var(--animation-duration);
       mask:
         linear-gradient(to right, #000 14px, transparent 0 0, #000 0) 0 0 / 100% 2px no-repeat,
         linear-gradient(#000, #000) 0 2px / 100% calc(100%) no-repeat;
+    }
+    &:focus-within::before {
+      border-color: var(--cream);
     }
 
     & > input {
       width: 100%;
       padding: 12px;
       border: none;
-      //border: 1px solid var(--neutral-600);
       outline: none;
       // transparent beats the UA default (white-ish "field")
       background-color: transparent;
-      color: var(--neutral-700);
+      color: var(--neutral-900);
       ${FontCSS.Semibold16}
 
       &::placeholder {
@@ -124,15 +109,22 @@ const Input = styled(InputInternals)`
     }
   }
 
+  // The label stands on the border with its baseline on the border's bottom edge: with the
+  // line box the font's own height, the baseline sits 14.67px down (measured in the browser),
+  // and the border is 2px.
   & > label {
     position: absolute;
     left: 18px;
-    top: -17px;
+    top: -12.67px;
+    line-height: 1;
     pointer-events: none;
     white-space: nowrap;
     ${FontCSS.Semibold16}
     color: var(--neutral-500);
-    transition: top var(--animation-duration) ease-in-out;
+    transition: color var(--animation-duration);
+  }
+  &:focus-within > label {
+    color: var(--cream);
   }
 
   // Erase the border's top 2px behind the label (its 18px inset ± 4px).

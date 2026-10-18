@@ -77,8 +77,8 @@ const RootLayout = () => {
             /* the dice page's paper, the glyph colour on the dice themselves, and its highlight */
             --cream: ${CREAM};
             --white: #ffffff;
-            /* ramps round the dice colours (500 is the die's own hex), darker and lighter
-               steps for states */
+            /* ramps round the dice colours (500 is the die's own hex) and a green at the same
+               lightness, darker and lighter steps for states */
             --cyan-300: #1a6f87;
             --cyan-400: #2394b4;
             --cyan-500: ${DICE.blue.hex};
@@ -94,6 +94,11 @@ const RootLayout = () => {
             --orange-500: ${DICE.orange.hex};
             --orange-600: #fd9a7e;
             --orange-700: #febeac;
+            --green-300: #26732f;
+            --green-400: #32993e;
+            --green-500: #3fbf4e;
+            --green-600: #7ed488;
+            --green-700: #b2e5b8;
             --shadow-small: 0 1px 2px rgba(0, 0, 0, 0.24);
             --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.28);
             --shadow-large: 0 12px 24px rgba(0, 0, 0, 0.36);

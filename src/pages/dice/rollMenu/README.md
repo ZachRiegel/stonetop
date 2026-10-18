@@ -10,10 +10,10 @@ the menu knows nothing about rolling itself.
 ## What it declares
 
 - **The centre**: a `Button.Cream` (`components/Button.tsx`) with the die icon a size up,
-  in a 48px cell, labelled "Roll dice". Given `onDismiss`, the die morphs into an X
-  (`DieOrClose.tsx`: one path of points traced by `geometry.ts`'s `traced`, as the bubble's
-  shapes are, so a CSS `d` transition carries the square's outline onto the cross and closes
-  the pips; switched by `data-closing` on the button), the label becomes "Clear the dice",
+  in a 48px cell, labelled "Roll dice". Given `onDismiss`, the die crossfades into an X
+  (`DieOrClose.tsx`: the Die and Close material icons as two paths in one svg, each with an
+  opacity transition, switched by `data-closing` on the button), the label becomes "Clear
+  the dice",
   and a click calls `onDismiss`; the menu's `requestOpen` is withheld, so a press neither
   opens it nor starts a drag (one from the X could otherwise reach a count). While `locked`
   (the page passes it for a roll in the air) `requestOpen` is withheld the same way, the
@@ -48,7 +48,8 @@ the menu knows nothing about rolling itself.
 The die button's centre sits 113px from the page's bottom and right edges (an 89px margin on
 its 48px cell in `DiceRoller.tsx`), measured so the count arc swung to blue or orange clears
 the edge by 8px. The roll notification (`../RollNotification.tsx`) lays the middle of its
-right edge on that spot, under the button, which is the X until pressed.
+right edge on that spot, under the button, which is the X until pressed or until the page's clear timer
+(`../preferences.ts`, set in the settings modal) takes the roll off the table itself.
 
 ## Decisions
 

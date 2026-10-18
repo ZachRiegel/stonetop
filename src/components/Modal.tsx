@@ -21,21 +21,24 @@ const FadeOut = keyframes`
   }
 `;
 
+// the backdrop dims the page with the palette's black, as SidePanel.tsx does (a navy tint
+// read too blue); ::backdrop inherits the dialog's custom properties, which RootLayout.tsx
+// sets on dialog as well as :root
 const BackdropIn = keyframes`
   from {
-    background-color: rgb(0 0 20 / 0);
+    background-color: transparent;
   }
   to {
-    background-color: rgb(0 0 20 / 0.2);
+    background-color: color-mix(in srgb, var(--neutral-0) 20%, transparent);
   }
 `;
 
 const BackdropOut = keyframes`
   from {
-    background-color: rgb(0 0 20 / 0.2);
+    background-color: color-mix(in srgb, var(--neutral-0) 20%, transparent);
   }
   to {
-    background-color: rgb(0 0 20 / 0);
+    background-color: transparent;
   }
 `;
 
@@ -48,8 +51,12 @@ const Modal = styled(DialogInternals)<{ isOpen: boolean }>`
   padding-left: 64px;
   cursor: default;
 
+  /* the content's own corners, so the shadow follows them; deeper than --shadow-large, the
+     user wanting the modals to stand further off the dimmed page */
   & section {
     isolation: isolate;
+    border-radius: 16px;
+    box-shadow: 0 24px 48px rgb(0 0 0 / 0.6);
     animation: ${(props) => (props.isOpen ? FadeIn : FadeOut)} 300ms linear both;
   }
 

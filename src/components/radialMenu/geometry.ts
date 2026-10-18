@@ -148,7 +148,7 @@ export const layoutOf = ({ centre, corner, rings }: MenuSpec): Layout => {
 // no spin whichever way the shapes face. The outline is found by bisection along each ray
 // out to `bound`, so a shape only needs an inside test; every shape here is star-shaped about
 // its centre (spans stay under 180°). At 5° a step the lines are within 0.15px of the true
-// arcs. Also used by the die button's icon (pages/dice/rollMenu/DieOrClose.tsx).
+// arcs.
 const SAMPLES = 72;
 export const traced = (
   inside: (x: number, y: number) => boolean,

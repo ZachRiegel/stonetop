@@ -15,6 +15,7 @@ import knock2 from "assets/diceKnock2.wav";
 import knock3 from "assets/diceKnock3.wav";
 import knock4 from "assets/diceKnock4.wav";
 import type { Contact } from "pages/dice/dice.ts";
+import { preference } from "pages/dice/preferences.ts";
 
 // the loudest an impact plays; the user brought it down twice by ear (0.7, then 0.7 of that)
 const VOLUME = 0.49;
@@ -22,37 +23,11 @@ const URLS: Record<Contact["kind"], string[]> = {
   table: [knock0, knock1, knock2, knock3, knock4],
   dice: [clack0, clack1, clack2, clack3, clack4],
 };
-// a device preference, so storage here rather than a field on the user: only "off" is
-// stored, and storage that throws (a private window) makes the choice last the session
-const STORAGE_KEY = "dice-sounds";
-
-const stored = () => {
-  try {
-    return localStorage.getItem(STORAGE_KEY) !== "off";
-  } catch {
-    return true;
-  }
-};
-let enabled = stored();
-const listeners = new Set<() => void>();
-export const isEnabled = () => enabled;
-// for useSyncExternalStore
-export const subscribe = (listener: () => void) => {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-};
-export const setEnabled = (on: boolean) => {
-  enabled = on;
-  try {
-    if (on) localStorage.removeItem(STORAGE_KEY);
-    else localStorage.setItem(STORAGE_KEY, "off");
-  } catch {
-    // the choice lasts the session
-  }
-  listeners.forEach((listener) => listener());
-};
+// a device preference (preferences.ts); only "off" is stored
+const store = preference("dice-sounds");
+export const isEnabled = () => store.get() !== "off";
+export const subscribe = store.subscribe;
+export const setEnabled = (on: boolean) => store.set(on ? null : "off");
 
 // one context, made on first use
 let context: AudioContext | undefined;
@@ -98,7 +73,7 @@ export const unlock = async () => {
 // jittered a little on top so a clatter never repeats itself (audio only; nothing
 // deterministic reads it)
 export const play = ({ kind, strength }: Pick<Contact, "kind" | "strength">) => {
-  if (!enabled || !decoded) return;
+  if (!isEnabled() || !decoded) return;
   const context = contextOf();
   if (context.state !== "running") return;
   const takes = decoded[kind];

@@ -283,8 +283,7 @@ export const arrange = (
   });
 };
 
-// a roll on the table: the campaign's roll record paired with its simulation; one shown
-// as `settled` was already over when the page opened and is drawn at rest
+// a roll on the table: the campaign's roll record paired with its simulation
 export type RollResult = {
   id: string;
   simulation: Simulation;
@@ -292,5 +291,4 @@ export type RollResult = {
   author: { displayName: string; picture: string };
   // when the roll was posted, in ms
   time: number;
-  settled: boolean;
 };

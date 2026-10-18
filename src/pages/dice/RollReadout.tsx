@@ -33,8 +33,10 @@ export type Readout = {
   totals: Face;
 };
 
-// the name is cut to this, so a readout is one size whatever its owner typed
-const NAME_WIDTH = 120;
+// the name is cut to this, so a readout is one size whatever its owner typed: about 15
+// characters of the bold 20px face, which still leaves the log's narrower line room for the
+// counts of two dice colours
+const NAME_WIDTH = 160;
 
 // the totals' marks: a plain burst, since no one die is meant; and each mark's half extent
 // about the glyph box's middle once scaled, so its svg clips to it and the row's gaps are

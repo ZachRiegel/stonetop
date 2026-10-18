@@ -31,9 +31,9 @@ const WHITE = new Color("#ffffff");
 
 // Plays one die's slice of a recorded simulation: frames are in die units, interpolated
 // between steps, and `remap` is the fixed turn that puts the rolled face's art on the
-// face the physics left on top (the die was turned before the throw, in effect). A
-// `settled` die skips the throw and sits on its last frame from the start. When the
-// `shown` arena is not the `thrown` one, every frame is anchored to it, and `shift` (from
+// face the physics left on top (the die was turned before the throw, in effect). Under
+// reduced motion the die skips the throw and sits on its last frame from the start. When
+// the `shown` arena is not the `thrown` one, every frame is anchored to it, and `shift` (from
 // `arrange`) moves the whole flight to where the die found room to rest.
 const Die = ({
   geometry,
@@ -46,7 +46,6 @@ const Die = ({
   index,
   size,
   remap,
-  settled,
   thrown,
   shown,
   shift,
@@ -61,7 +60,6 @@ const Die = ({
   index: number;
   size: number;
   remap: Quaternion;
-  settled: boolean;
   thrown: Arena;
   shown: Arena;
   shift: readonly [number, number];
@@ -69,10 +67,7 @@ const Die = ({
   const group = useRef<Group>(null);
   const elapsed = useRef(0);
   const scratch = useRef({ from: new Quaternion(), to: new Quaternion() });
-  const reduced = useMemo(
-    () => settled || matchMedia("(prefers-reduced-motion: reduce)").matches,
-    [settled],
-  );
+  const reduced = useMemo(() => matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   // this die's own copies of the glyph overlays, so its faces fade and glow on their own
   const overlays = useRef<MeshStandardMaterial[]>(null);
   overlays.current ??= glyphs.map((material) => material.clone());
@@ -106,7 +101,7 @@ const Die = ({
     turn.multiply(remap);
     group.current.visible = true;
 
-    // seconds at rest; a settled die (or reduced motion) has faded and skips the pulse
+    // seconds at rest; under reduced motion the die has faded and skips the pulse
     const rest = reduced
       ? Infinity
       : Math.max(0, elapsed.current - last / FRAME_RATE / PLAYBACK_RATE);

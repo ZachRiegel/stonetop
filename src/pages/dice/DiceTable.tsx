@@ -227,7 +227,6 @@ const DiceTable = ({
           index={i}
           size={size}
           remap={remaps[i] ?? IDENTITY}
-          settled={result.settled}
           thrown={result.simulation.arena}
           shown={arena}
           shift={shifts[i] ?? [0, 0]}
