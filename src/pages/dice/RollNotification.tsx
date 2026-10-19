@@ -1,18 +1,20 @@
 // The roll notification: a glass scoreboard that blooms out of the die button once a roll
 // has settled, naming the thrower, their dice, and the totals as the dice's own marks. It
-// lies half over the die button, which shows an X meanwhile (rollMenu/RollMenu.tsx) that
-// fades it out and clears this screen's table, as the page's clear timer does on its own; a
-// line under the readout shows how long is left. A roll while one is up blooms in over it,
-// and the older card goes once the new one has bloomed. Chosen from the drafts in
-// src/holding/rollNotification.html (the glass row, laid down).
+// lies half over the die button and is itself the button that clears this screen's table
+// (the page's clear timer and the roll menu opening do the same); a line under the readout
+// shows how long the timer has left. A roll while one is up blooms in over it, and the older
+// card goes once the new one has bloomed. The die stayed a die and the card became the button
+// (2026-10-18) because a die that turned into an X made rolling again four clicks.
 import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
+import { FontCSS } from "components/Font.tsx";
 import AnimateInOut from "hoc/AnimateInOut.tsx";
+import { CELL, MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollReadout, { type Readout } from "pages/dice/RollReadout.tsx";
 import { useState } from "react";
 
 // a roll to announce
-export type Announced = Readout & {
+export type Announced = Omit<Readout, "time"> & {
   id: string;
   // seconds until the dice have settled, when the card blooms
   delaySeconds: number;
@@ -22,7 +24,7 @@ export type Announced = Readout & {
 
 // the die button sits half over the card's right edge; the card is one width whatever the
 // name (the readout cuts it), and its contents stop a side padding short of the button
-const BUTTON = 48;
+const BUTTON = CELL;
 const WIDTH = 396;
 const PADDING = 12;
 const RADIUS = 16;
@@ -108,15 +110,21 @@ const fadeOut = keyframes`
     opacity: 0;
   }
 `;
+// a card's arrival is its bloom, or under reduced motion its fade in
+const arriving = (animationName: string) =>
+  animationName === bloom.name || animationName === fadeIn.name;
 
-// the cards, over one another, the newest on top, under the die button
-const Stack = styled.div`
+// the cards, over one another, the newest on top, under the die button; hidden, not
+// unmounted, while the roll log lies over this corner, so a card still blooms (the page
+// hears it arrive, arms its timer, and dismisses it unseen) and a card that was already up
+// shows again if the log closes before it goes
+const Stack = styled.div<{ concealed: boolean }>`
+  visibility: ${({ concealed }) => (concealed ? "hidden" : "visible")};
   grid-area: 3 / 1;
   justify-self: end;
   align-self: end;
-  /* the middle of a card's right edge on the die button's centre, 113px from the page's
-     bottom and right edges (DiceRoller.tsx: an 89px margin on its 48px cell) */
-  margin: 0 113px 113px 0;
+  /* the middle of a card's right edge on the die button's centre */
+  margin: 0 ${MARGIN + BUTTON / 2}px ${MARGIN + BUTTON / 2}px 0;
   translate: 0 50%;
   display: grid;
 
@@ -182,11 +190,9 @@ const Ring = styled.div<{ delaySeconds: number }>`
   }
 `;
 
-// glass over the table, outlined in cream; the readout's time keeps to the corner, past the
-// padding kept clear for the button, since it sits below the button
+// glass over the table, outlined in cream
 const Board = styled.div`
   position: relative;
-  --time-shift: ${-(BUTTON / 2 + PADDING - 14)}px;
   padding: 8px ${BUTTON / 2 + PADDING}px 8px ${PADDING}px;
   border-radius: ${RADIUS}px;
   border: 2px solid var(--cream);
@@ -221,28 +227,62 @@ const Fuse = styled.div<{ seconds: number; delaySeconds: number }>`
     both;
 `;
 
+// the card's button: a transparent layer over the readout and the fuse, so a press anywhere
+// lands on it, named in the bottom-right corner (clear of the die button) only while pointed
+// at or focused, so the readout stays the card's face
+const Dismiss = styled.button`
+  ${FontCSS.Semibold14}
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: end;
+  justify-content: end;
+  padding: 0 14px 8px 0;
+  border: none;
+  border-radius: ${RADIUS}px;
+  background: none;
+  color: var(--cream);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
+`;
+
 const RollNotification = ({
   className,
   isOpen,
+  concealed = false,
   roll,
   dismissed,
   onArrive,
+  onDismiss,
 }: {
   className?: string;
   isOpen: boolean;
+  // the roll log is over the cards' corner
+  concealed?: boolean;
   roll?: Announced;
-  // a roll whose card is to wilt on its own, a newer roll being on its way
+  // a roll whose card is to wilt on its own: a newer roll is on its way, or it landed under
+  // the roll log
   dismissed?: string;
   // a roll's card has begun to bloom, the dice having settled
   onArrive?: (id: string) => void;
+  // the card has been pressed: the roll is to come off this table
+  onDismiss?: () => void;
 }) => {
   // the cards up, oldest first: a new roll is laid over the last, which goes once the new
   // one has bloomed. State, so the cards outlive the roll while they wilt (AnimateInOut
   // keeps this mounted until then).
   const [cards, setCards] = useState<Announced[]>([]);
-  if (roll && cards.at(-1)?.id !== roll.id) setCards([...cards.slice(-1), roll]);
+  // a dismissed roll's card is not laid again once it has wilted: the roll may still be up
+  if (roll && roll.id !== dismissed && cards.at(-1)?.id !== roll.id)
+    setCards([...cards.slice(-1), roll]);
   return (
-    <Stack className={className} aria-live="polite">
+    <Stack className={className} concealed={concealed} aria-live="polite">
       {cards.map((card, i) => (
         <Card
           key={card.id}
@@ -257,13 +297,13 @@ const RollNotification = ({
               `${Math.hypot(element.offsetWidth, element.offsetHeight / 2) + 8}px`,
             )
           }
-          // the card's own bloom, by name: the ring's and the cover's bubble up too
+          // the card's own arrival, by name: the ring's and the cover's bubble up too
           onAnimationStart={(event) => {
-            if (event.animationName === bloom.name) onArrive?.(card.id);
+            if (arriving(event.animationName)) onArrive?.(card.id);
           }}
           onAnimationEnd={(event) => {
-            // the newest has bloomed: the cards under it go; a dismissed one has faded
-            if (event.animationName === bloom.name && i === cards.length - 1) setCards([card]);
+            // the newest has arrived: the cards under it go; a dismissed one has faded
+            if (arriving(event.animationName) && i === cards.length - 1) setCards([card]);
             if (event.animationName === fadeOut.name && card.id === dismissed)
               setCards((shown) => shown.filter((other) => other !== card));
           }}
@@ -273,6 +313,9 @@ const RollNotification = ({
             {card.clearSeconds !== undefined && (
               <Fuse seconds={card.clearSeconds} delaySeconds={card.delaySeconds} />
             )}
+            <Dismiss type="button" onClick={onDismiss}>
+              Dismiss
+            </Dismiss>
           </Board>
           <Lens>
             <Ring delaySeconds={card.delaySeconds} />

@@ -18,8 +18,8 @@ import DiceScene from "pages/dice/DiceScene.tsx";
 import DiceSettingsModal from "pages/dice/DiceSettingsModal.tsx";
 import { clearAfter } from "pages/dice/preferences.ts";
 import { take } from "pages/dice/rollCache.ts";
-import RollLog from "pages/dice/RollLog.tsx";
-import RollMenu from "pages/dice/rollMenu/RollMenu.tsx";
+import RollLog, { type LogPhase } from "pages/dice/RollLog.tsx";
+import RollMenu, { MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollNotification from "pages/dice/RollNotification.tsx";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "react-router";
@@ -66,22 +66,22 @@ const Hint = styled(Font.Italic16)`
   place-self: center;
 `;
 
-// in the page's corner, leaving 8px between the page edge and the lowest (or rightmost)
-// point of the count arc swung to blue (or orange), measured in the browser
+// in the page's corner, by the menu's own measure
 const Menu = styled(RollMenu)`
   grid-area: 3 / 1;
   justify-self: end;
   align-self: end;
-  margin: 0 89px 89px 0;
+  margin: 0 ${MARGIN}px ${MARGIN}px 0;
 `;
 
 // Every roll in the campaign plays here, whoever threw it: the campaign's next seed is
 // simulated ahead of time, the menu posts a roll message with it, and the message
 // comes back through the subscription to be played, on this screen and everyone else's.
-// Once the dice settle a notification blooms over the menu's button with the result; its X
-// clears this screen's table (the roll stays on everyone else's), as does a timer set in the
-// page's settings. The menu's log button opens a side panel of the campaign's recent rolls,
-// its settings button a modal with the page's settings.
+// Once the dice settle a notification blooms over the menu's button with the result; a click
+// on it clears this screen's table (the roll stays on everyone else's), as does opening the
+// menu to roll again, or a timer set in the page's settings. The menu's log button opens
+// the campaign's recent rolls as a stack of cards over the button (a roll landing meanwhile
+// joins the stack and gets no card), its settings button a modal with the page's settings.
 const DiceRoller = () => {
   const { campaignId = "" } = useParams();
   const campaign = useQuery(api.campaigns.get, { campaignId });
@@ -89,11 +89,17 @@ const DiceRoller = () => {
   // narrowed to a roll, so the page still reads it as one once other kinds exist
   const latest = message && message.kind !== "roll" ? null : message;
   const roll = useMutation(api.messages.roll);
-  const log = useModal();
+  const [log, setLog] = useState<LogPhase>("closed");
   const settings = useModal();
   const [result, setResult] = useState<RollResult>();
+  // the last roll whose card bloomed, or the roll already over when the page opened; the
+  // latest roll is in the air until it is this one, and meanwhile the menu is locked and the
+  // log withholds it. Derived, not set from an effect, so the log withholds a roll in the
+  // very render its message arrives in rather than one render later.
+  const [bloomed, setBloomed] = useState<string>();
+  const flying = latest && latest._id !== bloomed ? latest._id : undefined;
   // the roll whose card is up, from its bloom (once the dice have settled; `at` is then) until
-  // the menu's button, an X meanwhile, or the clear timer takes it off this table; and a card
+  // a click on it, the menu opening or the clear timer takes it off this table; and a card
   // taken while a newer roll was still in the air, which wilts on its own and leaves the new
   // roll be
   const [arrived, setArrived] = useState<{ id: string; at: number }>();
@@ -110,6 +116,7 @@ const DiceRoller = () => {
     // the first result is only noted, so the roll already over is not played
     if (shown.current === undefined) {
       shown.current = latest && latest._id;
+      setBloomed(latest?._id);
       return;
     }
     if (latest === null || shown.current === latest._id) return;
@@ -123,7 +130,6 @@ const DiceRoller = () => {
           simulation,
           dice: latest.dice.map((colour, i) => ({ colour, face: latest.faces[i] ?? 0 })),
           author: latest.author,
-          time: latest._creationTime,
         });
       },
       // the page closed while it was waiting
@@ -131,7 +137,8 @@ const DiceRoller = () => {
     );
   }, [latest]);
 
-  // takes the arrived card's roll off this table, for the X and the timer alike
+  // takes the arrived card's roll off this table, for a click on it, the menu and the timer
+  // alike
   const dismiss = useCallback(() => {
     if (arrived === undefined) return;
     if (arrived.id === result?.id) setResult(undefined);
@@ -163,18 +170,24 @@ const DiceRoller = () => {
         </Toolbar>
         {latest === null ? <Hint element="div" text="Choose your dice, then roll" /> : <div />}
         {/* the roll on the table: a newer roll's card is laid over it once that roll has
-            played; the menu's button, over the card's edge, is an X meanwhile that takes the
-            roll off this table alone (`shown` still holds its id, so the subscription does
-            not play it again) */}
+            played; a click on the card takes the roll off this table alone (`shown` still
+            holds its id, so the subscription does not play it again) */}
         <RollNotification
           isOpen={result !== undefined}
+          concealed={log !== "closed"}
           dismissed={dismissed}
-          onArrive={(id) => setArrived({ id, at: Date.now() })}
+          onArrive={(id) => {
+            setArrived({ id, at: Date.now() });
+            setBloomed(id);
+            // a roll that lands while the log is up has joined the log instead: its card
+            // wilts unseen, rather than waiting under the log to show once it closes
+            if (log !== "closed") setDismissed(id);
+          }}
+          onDismiss={dismiss}
           roll={
             result && {
               id: result.id,
               author: result.author,
-              time: result.time,
               dice: result.dice.map(({ colour }) => colour),
               totals: score(result.dice),
               // once the faces have settled and faded (wall-clock; a stalled tab's playback
@@ -185,10 +198,10 @@ const DiceRoller = () => {
             }
           }
         />
+        <RollLog phase={log} onPhase={setLog} campaignId={campaignId} pending={flying} />
         <Menu
           disabled={!campaign}
-          // a roll is in the air from its first frame until its card blooms
-          locked={result !== undefined && arrived?.id !== result.id}
+          locked={flying !== undefined}
           onRoll={(dice) => {
             if (!campaign) return;
             // the roll comes back through the subscription; a seed another player's roll
@@ -200,11 +213,11 @@ const DiceRoller = () => {
               },
             );
           }}
-          onLog={log.open}
+          onLog={() => setLog("open")}
           onSettings={settings.open}
-          onDismiss={arrived === undefined ? undefined : dismiss}
+          // the card over the button's spot goes as the menu opens round it
+          onOpen={dismiss}
         />
-        <RollLog isOpen={log.isOpen} requestClose={log.close} campaignId={campaignId} />
         <DiceSettingsModal isOpen={settings.isOpen} requestClose={settings.close} />
       </Overlay>
     </Page>

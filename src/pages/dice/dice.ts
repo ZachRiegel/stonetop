@@ -289,6 +289,4 @@ export type RollResult = {
   simulation: Simulation;
   dice: Rolled[];
   author: { displayName: string; picture: string };
-  // when the roll was posted, in ms
-  time: number;
 };

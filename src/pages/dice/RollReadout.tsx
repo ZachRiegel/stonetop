@@ -1,9 +1,9 @@
 // A roll's readout: the thrower and their dice on one line, the totals beneath as the dice's
-// own marks, and the time at the end of that row, on their baseline. The roll notification draws
-// one on its glass card and the roll log one per entry, `condensed`; each sets the padding
-// and surface. The sizes are custom properties set once on the root (the text in the 20px
-// faces at --text), so the two versions differ only there; --time-shift lets a container
-// pull the time past its padding.
+// own marks, and, given a time, that at the end of the row on their baseline. The roll
+// notification draws one on its glass card (no time: the card is the roll just made) and the
+// roll log one per entry, `condensed`, with the time; each sets the padding and surface. The
+// sizes are custom properties set once on the root (the text in the 20px faces at --text),
+// so the two versions differ only there.
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import Font, { FontCSS } from "components/Font.tsx";
@@ -27,8 +27,8 @@ import { Fragment } from "react";
 // what a readout says of a roll
 export type Readout = {
   author: { displayName: string; picture: string };
-  // when the roll was posted, in ms
-  time: number;
+  // when the roll was posted, in ms, if it is to be shown
+  time?: number;
   dice: readonly DieColour[];
   totals: Face;
 };
@@ -137,7 +137,6 @@ const Count = styled.span`
 // totals row on the numerals' baseline
 const Time = styled(Font.Normal14)`
   justify-self: end;
-  margin-right: var(--time-shift, 0px);
   color: color-mix(in srgb, var(--cream) 55%, var(--neutral-500));
 `;
 
@@ -220,7 +219,7 @@ const RollReadout = ({
           </Mark>
         </Score>
       ))}
-      <Time element="div" text={timeOf.format(time)} />
+      {time !== undefined && <Time element="div" text={timeOf.format(time)} />}
     </Scores>
   </Rows>
 );

@@ -30,7 +30,7 @@ type IconName = keyof typeof IconSvgs;
 
 // the path data of a material-symbols icon, which is one path in a 24×24 box, for drawing
 // it inside another SVG
-export const iconPath = (icon: "Chat" | "Cog" | "Die" | "Close") =>
+export const iconPath = (icon: "Chat" | "Cog" | "Die") =>
   /\bd="([^"]+)"/.exec(IconSvgs[icon])?.[1] ?? "";
 
 type IconPropsInternal = { icon: IconName; className?: string; size: number };
