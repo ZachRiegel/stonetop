@@ -1,14 +1,28 @@
+// A text field with a card of choices under it. The card is portaled (components/TabPortal.tsx)
+// to the nearest dialog, or the page, so no ancestor's backdrop-filter, filter or transform
+// can make itself the card's containing block and pin it inside; it is anchored back to the
+// field by a per-field anchor name, and the portal's sentinels keep it in the Tab order.
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import Input from "components/Input.tsx";
 import DefaultItemRenderer from "components/internals/DefaultItemRenderer.tsx";
 import Loading from "components/Loading.tsx";
+import TabPortal from "components/TabPortal.tsx";
 import AnimateInOut from "hoc/AnimateInOut.tsx";
 import useFocusWithin from "hooks/useFocusWithin.ts";
 import useNavigationGroup from "hooks/useNavigationGroup.ts";
 import useNonNullable from "hooks/useNonNullable.ts";
-import * as React from "react";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 const fadeIn = keyframes`
   from {
@@ -23,14 +37,16 @@ const fadeOut = keyframes`
   }
 `;
 
-// The card under the field, anchored to it: glass ringed in cream, fading in from the grey of
-// the field's resting border as that border turns cream, and out the same way (AnimateInOut
-// keeps it mounted meanwhile).
+// The card under the field, anchored to it by the name in --dropdown-anchor (set inline on
+// the card too, since it lives outside the field): black ringed in cream (glass over the
+// page was dropped for an opaque card, 2026-10-18), fading in from the grey of the field's
+// resting border as that border turns cream, and out the same way (AnimateInOut keeps it
+// mounted meanwhile).
 const Card = AnimateInOut(
   "isOpen",
   styled.div<{ isOpen: boolean }>`
     position: fixed;
-    position-anchor: --dropdown-anchor;
+    position-anchor: var(--dropdown-anchor);
     position-area: bottom;
     position-try-fallbacks: flip-block;
     width: anchor-size(width);
@@ -43,8 +59,7 @@ const Card = AnimateInOut(
     padding: 6px;
     border: 2px solid var(--cream);
     border-radius: 12px;
-    background: rgb(0 0 0 / 0.55);
-    backdrop-filter: blur(6px);
+    background: var(--neutral-0);
     box-shadow: var(--shadow-medium);
     animation: ${({ isOpen }) => (isOpen ? fadeIn : fadeOut)} 200ms ease both;
   `,
@@ -79,6 +94,14 @@ const DropdownFieldInternals = <T, U>({
   placeholder?: string;
   className?: string;
 }) => {
+  // the anchor name is this field's own, so fields keep apart without an anchor-scope, which
+  // would hide the name from the portaled card (useId's punctuation is not a valid ident)
+  const id = useId();
+  const anchor = useMemo(
+    () =>
+      ({ "--dropdown-anchor": `--dropdown-${id.replace(/[^a-zA-Z0-9]/g, "")}` }) as CSSProperties,
+    [id],
+  );
   const itemToLabel = useCallback(
     (item: T): string => _itemToLabel?.(item) ?? (item as string),
     [_itemToLabel],
@@ -147,7 +170,7 @@ const DropdownFieldInternals = <T, U>({
   );
 
   const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
+    (event: KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "ArrowDown" || event.key === "ArrowUp") {
         // the group moves the highlight; this only brings back a dismissed card. The group
         // hears the key first (capture), before the card is back, so the press that reopens
@@ -173,16 +196,18 @@ const DropdownFieldInternals = <T, U>({
     [setQuery],
   );
 
-  // the keyboard way back to the text from a focused row
-  const onCardKeyDown = (event: React.KeyboardEvent) => {
+  // the keyboard way back to the text from a focused row; default prevented, or a dialog's
+  // close watcher hears the same Escape and closes the whole dialog
+  const onCardKeyDown = useCallback((event: KeyboardEvent) => {
     if (event.key !== "Escape") return;
+    event.preventDefault();
     setIsDismissed(true);
     input.current?.focus();
-  };
+  }, []);
 
   const isOpen = isFocused && !isDismissed;
   return (
-    <div className={className} ref={focusRef("root")}>
+    <div className={className} ref={focusRef("root")} style={anchor}>
       <Input
         inputRef={inputRef}
         value={query}
@@ -202,10 +227,13 @@ const DropdownFieldInternals = <T, U>({
       >
         <path d="M5 8l5 5 5-5" />
       </svg>
-      {/* the card leaves the DOM once its fade is over, so the group's rows go with it */}
-      <Card isOpen={isOpen} onKeyDown={onCardKeyDown}>
-        {isOpen &&
-          (isLoading ? (
+      {/* the card keeps its rows while it fades out, inert so none of them can be focused or
+          clicked meanwhile, and leaves the DOM once the fade is over, taking the group's rows
+          with it; the portal's wrapper is a focus area of the field's, so a sentinel holding
+          focus for a moment keeps the field focused */}
+      <TabPortal active={isOpen} portalRef={focusRef("card")}>
+        <Card isOpen={isOpen} inert={!isOpen} onKeyDown={onCardKeyDown} style={anchor}>
+          {isLoading ? (
             <Loading.Small />
           ) : filtered.length === 0 ? (
             emptyState
@@ -223,18 +251,18 @@ const DropdownFieldInternals = <T, U>({
                 itemToLabel={itemToLabel}
               />
             ))
-          ))}
-      </Card>
+          )}
+        </Card>
+      </TabPortal>
     </div>
   );
 };
 
 const DropdownField = styled(DropdownFieldInternals)`
   position: relative;
-  anchor-scope: --dropdown-anchor;
 
   & > ${Input} {
-    anchor-name: --dropdown-anchor;
+    anchor-name: var(--dropdown-anchor);
 
     input {
       padding-right: 44px;

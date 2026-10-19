@@ -294,13 +294,12 @@ const Rule = styled.div`
   );
 `;
 
-// the X, the die button over again with the close icon at the menu's icon size, rimmed in
-// black to stand off the cards and the rule; it fades in over the inert die first as the log
-// opens and out last as it closes, so the die reads as crossfading
+// the X, the die button over again with the close icon at the menu's icon size (a black rim
+// to stand it off the cards was tried and dropped, 2026-10-18); it fades in over the inert
+// die first as the log opens and out last as it closes, so the die reads as crossfading
 const Close = styled(Button.Cream)`
   --icon-size: 28px;
   z-index: 3;
-  border-color: var(--neutral-0);
 `;
 
 const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;

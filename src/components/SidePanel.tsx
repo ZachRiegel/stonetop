@@ -56,7 +56,7 @@ const SidePanel = styled(DialogInternals)<{ isOpen: boolean }>`
   overflow: clip;
   cursor: default;
 
-  & section {
+  & > section {
     isolation: isolate;
     overflow: hidden;
     border-radius: 12px;

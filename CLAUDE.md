@@ -26,6 +26,11 @@ const thirtyMinutesInSeconds = 30 * 60
 func(thirtyMinutesInSeconds)
 ```
 
+Memoization is mandatory, not a nicety. A function or object handed to a child, a DOM element
+(event handlers, refs), a context, or an effect's dependencies keeps one identity for the life of
+the component: `useCallback`/`useMemo` with honest dependencies, or define it outside the
+component and pass what it needs as arguments. Never pass a freshly made function down the tree.
+
 Before working on a file, look for a README.md in its folder (and the folders above it, up to
 `src/` or `convex/`) and read it first: a feature's design, decisions and verification notes
 live there, next to the code, not in this file.

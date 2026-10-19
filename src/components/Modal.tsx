@@ -53,7 +53,7 @@ const Modal = styled(DialogInternals)<{ isOpen: boolean }>`
 
   /* the content's own corners, so the shadow follows them; deeper than --shadow-large, the
      user wanting the modals to stand further off the dimmed page */
-  & section {
+  & > section {
     isolation: isolate;
     border-radius: 16px;
     box-shadow: 0 24px 48px rgb(0 0 0 / 0.6);
