@@ -189,21 +189,25 @@ const Swung = styled.g`
   }
 `;
 
-// a segment's shape and its content dim together, by class
+// a segment's shape and its content dim together, by class; `hovered` is set on both too,
+// so a segment's content can lift with its fill (the roll menu's pill glyphs do)
 const dimmable = css`
   &:where(.dimmed) {
     opacity: 0.45;
   }
 `;
 
-// a segment, outlined so neighbours read apart; its fill lifts under the pointer
-const Shape = styled.path<{ paint: string }>`
+// a segment, outlined in black so neighbours read apart (grey until 2026-10-19, when the
+// dice page's cards had settled on hard dark edges), or in its own fill when not outlined;
+// the fill lifts under the pointer, and an unoutlined border with it
+const Shape = styled.path<{ paint: string; outlined: boolean }>`
   fill: ${({ paint }) => paint};
-  stroke: var(--neutral-200);
+  stroke: ${({ paint, outlined }) => (outlined ? "var(--neutral-0)" : paint)};
   stroke-width: ${BORDER}px;
   outline: none;
   transition:
     fill 150ms ease-out,
+    stroke 150ms ease-out,
     opacity 200ms ease-out;
   ${dimmable}
 
@@ -354,19 +358,25 @@ const RadialMenu = ({
   // the arcs: each drawn at home and turned into place, its segments' shapes first and
   // their content over them
   const under = drawn?.shown && drawn.on?.kind === "segment" ? drawn.on.segment : null;
+  const isHovered = (segment: SegmentLayout) => hovered !== null && sameSegment(hovered, segment);
   const art = layout.rings.map((ring, r) =>
     ring.arcs.map((arc, a) => {
       const described = tree.rings[r]?.arcs[a];
       if (!described) return null;
-      const dimmed = (segment: SegmentLayout, { dimmed }: SegmentProps) =>
-        dimmed ||
-        (described.props.dimOthersUnderDrag &&
-          under !== null &&
-          under.ring === r &&
-          under.arc === a &&
-          under.index !== segment.index)
-          ? "dimmed"
-          : undefined;
+      const classes = (segment: SegmentLayout, { dimmed }: SegmentProps) =>
+        [
+          dimmed ||
+          (described.props.dimOthersUnderDrag &&
+            under !== null &&
+            under.ring === r &&
+            under.arc === a &&
+            under.index !== segment.index)
+            ? "dimmed"
+            : undefined,
+          isHovered(segment) ? "hovered" : undefined,
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined;
       // each laid-out segment with its description
       const segments = arc.segments.flatMap((segment) => {
         const props = described.segments[segment.index]?.props;
@@ -378,12 +388,9 @@ const RadialMenu = ({
             <Shape
               key={segment.index}
               d={segmentPath(segment)}
-              paint={
-                hovered && sameSegment(hovered, segment)
-                  ? (props.hoverFill ?? props.fill)
-                  : props.fill
-              }
-              className={dimmed(segment, props)}
+              paint={isHovered(segment) ? (props.hoverFill ?? props.fill) : props.fill}
+              outlined={props.outlined ?? true}
+              className={classes(segment, props)}
               role="menuitem"
               tabIndex={0}
               aria-label={props.label}
@@ -399,7 +406,7 @@ const RadialMenu = ({
             return (
               props.children && (
                 <g key={segment.index} transform={`translate(${x} ${y})`}>
-                  <Content className={dimmed(segment, props)} style={{ rotate: `${arc.turn}deg` }}>
+                  <Content className={classes(segment, props)} style={{ rotate: `${arc.turn}deg` }}>
                     {props.children}
                   </Content>
                 </g>

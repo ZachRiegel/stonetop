@@ -15,7 +15,7 @@ import {
   score,
 } from "pages/dice/dice.ts";
 import DiceScene from "pages/dice/DiceScene.tsx";
-import DiceSettingsModal from "pages/dice/DiceSettingsModal.tsx";
+import DiceSettings from "pages/dice/DiceSettings.tsx";
 import { clearAfter } from "pages/dice/preferences.ts";
 import { take } from "pages/dice/rollCache.ts";
 import RollLog, { type LogPhase } from "pages/dice/RollLog.tsx";
@@ -81,7 +81,8 @@ const Menu = styled(RollMenu)`
 // on it clears this screen's table (the roll stays on everyone else's), as does opening the
 // menu to roll again, or a timer set in the page's settings. The menu's log button opens
 // the campaign's recent rolls as a stack of cards over the button (a roll landing meanwhile
-// joins the stack and gets no card), its settings button a modal with the page's settings.
+// joins the stack and gets no card), its settings button a card off the die with the page's
+// settings.
 const DiceRoller = () => {
   const { campaignId = "" } = useParams();
   const campaign = useQuery(api.campaigns.get, { campaignId });
@@ -90,8 +91,16 @@ const DiceRoller = () => {
   const latest = message && message.kind !== "roll" ? null : message;
   const roll = useMutation(api.messages.roll);
   const [log, setLog] = useState<LogPhase>("closed");
-  const settings = useModal();
-  const [result, setResult] = useState<RollResult>();
+  const { isOpen: settingsOpen, open: openSettings, close: _closeSettings } = useModal();
+  // the roll playing on the table and when it began playing; its card blooms once the dice
+  // have settled, unless the settings were up then (no results while they are, user
+  // 2026-10-19): the card is laid as they close, so when they last closed is kept too
+  const [result, setResult] = useState<RollResult & { at: number }>();
+  const [settingsClosedAt, setSettingsClosedAt] = useState(0);
+  const closeSettings = useCallback(() => {
+    _closeSettings();
+    setSettingsClosedAt(Date.now());
+  }, [_closeSettings]);
   // the last roll whose card bloomed, or the roll already over when the page opened; the
   // latest roll is in the air until it is this one, and meanwhile the menu is locked and the
   // log withholds it. Derived, not set from an effect, so the log withholds a roll in the
@@ -126,6 +135,7 @@ const DiceRoller = () => {
         // a simulation that lands after a newer roll has replaced this one is left unplayed
         if (shown.current !== latest._id) return;
         setResult({
+          at: Date.now(),
           id: latest._id,
           simulation,
           dice: latest.dice.map((colour, i) => ({ colour, face: latest.faces[i] ?? 0 })),
@@ -184,18 +194,28 @@ const DiceRoller = () => {
             if (log !== "closed") setDismissed(id);
           }}
           onDismiss={dismiss}
+          // withheld while the settings card is up over this corner, and laid as it closes
+          // with whatever wait is left (the notification reads the wait once, as it lays
+          // the card)
           roll={
-            result && {
-              id: result.id,
-              author: result.author,
-              dice: result.dice.map(({ colour }) => colour),
-              totals: score(result.dice),
-              // once the faces have settled and faded (wall-clock; a stalled tab's playback
-              // is clamped and may land a little after)
-              delaySeconds:
-                result.simulation.frameCount / FRAME_RATE / PLAYBACK_RATE + FADE_SECONDS,
-              clearSeconds,
-            }
+            settingsOpen
+              ? undefined
+              : result && {
+                  id: result.id,
+                  author: result.author,
+                  dice: result.dice.map(({ colour }) => colour),
+                  totals: score(result.dice),
+                  // once the faces have settled and faded (wall-clock; a stalled tab's
+                  // playback is clamped and may land a little after), less the time the
+                  // settings held it back
+                  delaySeconds: Math.max(
+                    0,
+                    result.simulation.frameCount / FRAME_RATE / PLAYBACK_RATE +
+                      FADE_SECONDS -
+                      Math.max(0, settingsClosedAt - result.at) / 1000,
+                  ),
+                  clearSeconds,
+                }
           }
         />
         <RollLog phase={log} onPhase={setLog} campaignId={campaignId} pending={flying} />
@@ -214,11 +234,11 @@ const DiceRoller = () => {
             );
           }}
           onLog={() => setLog("open")}
-          onSettings={settings.open}
+          onSettings={openSettings}
           // the card over the button's spot goes as the menu opens round it
           onOpen={dismiss}
         />
-        <DiceSettingsModal isOpen={settings.isOpen} requestClose={settings.close} />
+        <DiceSettings isOpen={settingsOpen} requestClose={closeSettings} />
       </Overlay>
     </Page>
   );

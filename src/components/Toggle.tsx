@@ -1,8 +1,10 @@
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
+import type { ReactNode } from "react";
 
 // A labelled switch: a native checkbox, so Space and the label click come free, drawn as a
-// pill with a sliding knob.
+// pill with a sliding knob. The label may be a node (pages/dice/DiceSettings.tsx hands it a
+// row of words).
 const ToggleInternals = ({
   checked,
   onChange,
@@ -11,7 +13,7 @@ const ToggleInternals = ({
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label: string;
+  label: ReactNode;
   className?: string;
 }) => (
   <label className={className}>

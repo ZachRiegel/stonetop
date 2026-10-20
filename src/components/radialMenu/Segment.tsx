@@ -8,6 +8,9 @@ export type SegmentProps = {
   fill: string;
   // the fill while the pointer is over it; `fill` when not given
   hoverFill?: string;
+  // whether it has the menu's black border (the default); without one the border is
+  // painted in the fill, so the segment keeps its size with no visible edge
+  outlined?: boolean;
   dimmed?: boolean;
   // a click, a drag released on it, or Enter or Space while it is focused
   onActivate: () => void;

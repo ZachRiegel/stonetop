@@ -49,6 +49,15 @@ const Numeral = styled.text`
 const Glyph = styled.path`
   fill: var(--cream);
 `;
+// a pill's icon lifts to white with the pill under the pointer (the user, 2026-10-19: the
+// whole pill lifts, not the fill alone); the dice marks stay cream on their lifted fills
+const PillGlyph = styled(Glyph)`
+  transition: fill 150ms ease-out;
+
+  .hovered > & {
+    fill: var(--white);
+  }
+`;
 // a die's mark: a hairline of black round it, whatever the glyph's scale
 const Mark = styled(Glyph)`
   stroke: var(--neutral-0);
@@ -59,7 +68,7 @@ const Mark = styled(Glyph)`
 // the dice marks' size in the menu, in px
 const MARK_SIZE = 30;
 const glyph = (name: "Chat" | "Cog") => (
-  <Glyph
+  <PillGlyph
     d={iconPath(name)}
     transform={`translate(${-ICON_SIZE / 2} ${-ICON_SIZE / 2}) scale(${ICON_SIZE / 24})`}
   />
@@ -110,8 +119,9 @@ const RollMenu = ({
     <Segment
       span={70}
       label={label}
-      fill="var(--neutral-200)"
-      hoverFill="var(--neutral-300)"
+      fill="var(--neutral-150)"
+      hoverFill="var(--neutral-250)"
+      outlined={false}
       onActivate={then(act)}
       onDragEnter={() => setColour(null)}
     >

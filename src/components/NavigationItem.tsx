@@ -41,6 +41,8 @@ const BaseNavigationItem = styled.label`
   }
 `;
 
+// the phone panel's neutrals (navigation/README.md): a card a shade up from the sidebar,
+// rows flat with the open one a shade up and a shade further under the pointer
 const NavigationItem = {
   Solid: styled(BaseNavigationItem)`
     @container navigation style(--open: true) {
@@ -50,22 +52,29 @@ const NavigationItem = {
   `,
   Transparent: styled(BaseNavigationItem)`
     &:hover {
-      background-color: var(--neutral-75);
+      background-color: var(--neutral-150);
     }
   `,
   TransparentLink: styled(BaseNavigationItem.withComponent(ReactRouterLink))`
     color: var(--neutral-700);
     text-decoration: none;
 
+    /* the open section, once there is room for the row to read as one */
+    @container navigation style(--open: true) {
+      &[aria-current="page"] {
+        --custom-background-color: var(--neutral-100);
+        color: var(--neutral-800);
+      }
+    }
+
     &:hover {
-      background-color: var(--neutral-75);
-      text-decoration: underline;
+      background-color: var(--neutral-150);
+      color: var(--neutral-800);
     }
 
     &:focus-visible {
       outline: 2px solid var(--neutral-700);
       outline-offset: -2px;
-      text-decoration: underline;
     }
   `,
 };

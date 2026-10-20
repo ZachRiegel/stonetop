@@ -45,10 +45,11 @@ consumer.
   (degrees, 0 to the right and 90 up). Segments beside one another share a square edge; a
   run's ends, and the segments either side of a `Spacer`, are rounded by `corner` (6px by
   default). There is no gap prop: a gap on a ring is a `Spacer`, or two arcs.
-- **Segments** take an angular `span`, an accessible `label`, a `fill` and `hoverFill`, a
-  `dimmed` flag, and SVG `children` drawn at the segment's centre and kept upright as the
-  arc turns. `onActivate` fires on a click, on a drag released on it, and on Enter or Space
-  while it is focused; `onDragEnter` when the drag's bubble arrives on it.
+- **Segments** take an angular `span`, an accessible `label`, a `fill` and `hoverFill`, an
+  `outlined` flag (on by default), a `dimmed` flag, and SVG `children` drawn at the segment's
+  centre and kept upright as the arc turns. `onActivate` fires on a click, on a drag released
+  on it, and on Enter or Space while it is focused; `onDragEnter` when the drag's bubble
+  arrives on it.
 - Only one `Centre` and `Ring`s may appear in the menu, `Arc`s in a ring and `Segment`s and
   `Spacer`s in an arc, as elements, arrays of them and `null`/`false`; anything else, or a
   second `Centre`, throws. Fragments are not looked into
@@ -149,9 +150,11 @@ paths (`iconPath` in `components/Icon.tsx`) rather than foreign objects.
 ## Colour and states
 
 The centre item's look is its own (the roll menu passes `Button.Cream`). Segments carry a
-2px `--neutral-200` border, so the drawing is sized to include it; a segment's `fill` lifts
-to `hoverFill` under the pointer. `dimmed` fades a segment to 45%, and an arc with
-`dimOthersUnderDrag` fades its other segments while a drag sits on one.
+2px `--neutral-0` border, so the drawing is sized to include it; a segment with
+`outlined={false}` paints that border in its fill instead, so it keeps its size with no
+visible edge. Under the pointer a segment's `fill` lifts to `hoverFill`, and its shape and
+content carry a `hovered` class so the content can lift too. `dimmed` fades a segment to
+45%, and an arc with `dimOthersUnderDrag` fades its other segments while a drag sits on one.
 
 ## Animation
 
@@ -183,7 +186,8 @@ records them:
   floating beside the ring.
 - A plain white hover bubble became the glass lens; its displacement was then reduced and
   confined to the rim after it distorted the numerals.
-- Borders went thicker and lighter, then 2px `--neutral-200`.
+- Borders went thicker and lighter, then 2px `--neutral-200`, then black (2026-10-19), as
+  the dice page's cards had settled on dark surfaces with hard edges.
 - The lens was first a second render of the menu inside a `<pattern>`; Firefox ignores CSS
   transforms in pattern content, so it showed a turned arc unturned. A `<use>` of the live
   menu replaced it: one definition, and the clone inherits the live menu's transitions.

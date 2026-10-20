@@ -23,7 +23,11 @@ the menu knows nothing about rolling itself.
   swings it round. It has `dimOthersUnderDrag`: while a drag sits on a count the others dim.
 - Dice fill from the 300–700 ramps round each die colour in `RootLayout.tsx` (`--cyan`,
   `--magenta`, `--orange`; 500 is the die's own colour, 600 the hover); counts are `--cream`
-  and hover `--white`; the pills are `--neutral-200` and hover `--neutral-300`. A chosen die
+  and hover `--white`; the pills are `--neutral-150` grey with a cream glyph and no border
+  (`outlined={false}`), a shade under the secondary button's `--neutral-200`, which read too
+  light; under the pointer the fill lifts to `--neutral-250` and the glyph to `--white` (black
+  pills were tried for a day, 2026-10-19, and six other looks drafted in
+  `src/holding/pillDrafts.html`; the user kept the grey, darker and borderless). A chosen die
   dims the other two.
 - Content: each die's burst mark (`DICE[colour].burst` from `dice.ts`, 30px, fitted by
   `glyphTransform`) with a 0.75px black outline, so the solid cream does not glare on a
@@ -37,8 +41,9 @@ the menu knows nothing about rolling itself.
   the menu stays open.
 - Clicking or releasing on a count rolls that many dice of the colour and closes.
 - Log opens the page's roll log (`../RollLog.tsx`), a stack of cards over the button in a
-  modal dialog whose own X lies over this one; settings opens the page's settings modal
-  (`../DiceSettingsModal.tsx`); both close the menu. Dragging onto either drops the chosen
+  modal dialog whose own X lies over this one; settings opens the page's settings card
+  (`../DiceSettings.tsx`), a glass card off this button with its own X over it; both close
+  the menu. Dragging onto either drops the chosen
   colour, as does dragging back into the centre zone.
 - A release on nothing, Escape, or a click outside closes and forgets the colour.
 
@@ -47,7 +52,7 @@ its 48px cell in `DiceRoller.tsx`), measured so the count arc swung to blue or o
 the edge by 8px. The roll notification (`../RollNotification.tsx`) lays the middle of its
 right edge on that spot, under the button; the card is itself the button that takes the roll
 off the table, as does the menu opening or the page's clear timer (`../preferences.ts`, set
-in the settings modal).
+in the settings card).
 
 ## Decisions
 

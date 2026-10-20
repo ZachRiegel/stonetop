@@ -3,22 +3,27 @@ import type { FC } from "react";
 
 // Either a white-on-black PNG painted through a luminance mask, or an inline SVG
 // icon that keeps its own colours (the mask would paint it grey).
-type Glyph = { src: string; Icon?: never } | { Icon: FC<{ className?: string }>; src?: never };
+export type Glyph =
+  { src: string; Icon?: never } | { Icon: FC<{ className?: string }>; src?: never };
 
+// `size` is the box (40 by default, the sidebar's); a PNG is painted `color`, the sidebar's
+// grey unless the icon sits in text that should colour it ("currentColor")
 const NavigationIcon = ({
   src,
   Icon,
   inverted,
+  size = 40,
+  color = "var(--neutral-500)",
   className,
-}: Glyph & { inverted?: boolean; className?: string }) => (
+}: Glyph & { inverted?: boolean; size?: number; color?: string; className?: string }) => (
   <div
     className={className}
     css={css`
-      width: 40px;
-      height: 40px;
+      width: ${size}px;
+      height: ${size}px;
       display: grid;
       place-items: center;
-      --icon-size: 36px;
+      --icon-size: ${size - 4}px;
 
       ${
         inverted &&
@@ -34,9 +39,9 @@ const NavigationIcon = ({
     ) : (
       <div
         css={css`
-          width: 40px;
-          height: 40px;
-          background-color: ${inverted ? "var(--neutral-0)" : "var(--neutral-500)"};
+          width: ${size}px;
+          height: ${size}px;
+          background-color: ${inverted ? "var(--neutral-0)" : color};
           mask-image: url("${src}");
           mask-mode: luminance;
           mask-position: center;
