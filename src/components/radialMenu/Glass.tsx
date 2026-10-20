@@ -80,7 +80,10 @@ const Magnified = styled.use`
   transform: translate(var(--radial-menu-x), var(--radial-menu-y)) scale(${ZOOM})
     translate(calc(-1 * var(--radial-menu-x)), calc(-1 * var(--radial-menu-y)));
 `;
-// the glass's layers share one place and one morphing shape
+// the glass's layers share one place and one morphing shape. The shape is the CSS `d`,
+// which transitions, over the same path as the `d` attribute, which WebKit draws instead
+// (its CSS `d` was behind a flag as of iOS 18, WebKit bug 234227): no morph there, but a
+// bubble.
 const placedAt = css`
   translate: var(--radial-menu-x) var(--radial-menu-y);
 `;
@@ -94,8 +97,13 @@ const morphing = css`
 const Placed = styled.g`
   ${placedAt}
 `;
+// the lens's clip is drawn at the origin and carried to the glass's place by the group it
+// clips, whose content is moved back: a transform on a clipPath's own child is less trodden
+// ground than one on a clipped group
+const Unplaced = styled.g`
+  translate: calc(-1 * var(--radial-menu-x)) calc(-1 * var(--radial-menu-y));
+`;
 const Clip = styled.path`
-  ${placedAt}
   ${morphing}
 `;
 const Sheen = styled.path<{ ids: string }>`
@@ -112,8 +120,8 @@ const Rim = styled.path<{ ids: string }>`
 // Drawn inside the menu's SVG over the arcs group, whose element id is `${id}-arcs`; the
 // defs are prefixed by `id` too, so menus on one page keep apart.
 const Glass = ({ id, drawn }: { id: string; drawn: Drawn }) => {
-  // the shape, and the place for the Bubble's variables (custom properties are not in
-  // React's style type, hence the cast)
+  // the shape as CSS (the attribute is set beside it), and the place for the Bubble's
+  // variables (custom properties are not in React's style type, hence the cast)
   const shape = { d: `path("${drawn.d}")` };
   const place = {
     "--radial-menu-placed-x": `${drawn.placed[0]}px`,
@@ -126,7 +134,7 @@ const Glass = ({ id, drawn }: { id: string; drawn: Drawn }) => {
     <Bubble className={drawn.on && !drawn.hop ? "arriving" : undefined} style={place} aria-hidden>
       <defs>
         <clipPath id={`${id}-glass`}>
-          <Clip style={shape} />
+          <Clip d={drawn.d} style={shape} />
         </clipPath>
         {/* Refraction in a band at the rim: the glass's blurred silhouette is a height map
             whose slope (Sobel kernels; feConvolveMatrix applies them flipped) pulls the
@@ -206,13 +214,15 @@ const Glass = ({ id, drawn }: { id: string; drawn: Drawn }) => {
         {/* clipped before the filter sees it, so the silhouette the rim is bent from is the
             glass's own */}
         <Lens ids={id}>
-          <g clipPath={`url(#${id}-glass)`}>
-            <Magnified href={`#${id}-arcs`} />
-          </g>
+          <Placed clipPath={`url(#${id}-glass)`}>
+            <Unplaced>
+              <Magnified href={`#${id}-arcs`} />
+            </Unplaced>
+          </Placed>
         </Lens>
         <Placed>
-          <Sheen ids={id} style={shape} />
-          <Rim ids={id} style={shape} />
+          <Sheen ids={id} d={drawn.d} style={shape} />
+          <Rim ids={id} d={drawn.d} style={shape} />
         </Placed>
       </Pane>
     </Bubble>

@@ -131,7 +131,12 @@ fringe, softened by a small blur and cut back to the silhouette. The defs are pr
 `useId`, so menus on one page keep apart.
 
 The bubble's shape and its place are separate. The shape (`d`) always morphs over 200ms; the
-free circle is one constant path, so it never restarts the morph. The place is CSS: three
+free circle is one constant path, so it never restarts the morph. The shape is set twice on
+each path: as the CSS `d`, which is what transitions, and as the `d` attribute, which is what
+WebKit draws (its CSS `d` was behind a flag as of iOS 18, WebKit bug 234227, so until
+2026-10-19 iOS Safari showed no bubble at all); there the shape changes without a morph. The
+lens's clip is drawn at the origin and carried to the bubble's place by the clipped group,
+whose content is moved back, rather than by a transform on the clipPath's own child. The place is CSS: three
 registered custom properties (`@property --radial-menu-*` in `RootLayout.tsx`, so they
 interpolate) hold the point it is placed on (the last segment's centre, kept after leaving
 it), the held pointer, and a 0–1 slider; the bubble sits at
@@ -171,8 +176,13 @@ Space. The lens's copy of the menu is `aria-hidden` and outside the tab order.
 
 ## Verifying in the browser
 
-Use the Claude in Chrome tools against the dev server. A hidden tab freezes CSS animations and
-transitions: the menu stays at its opening scale, a closed dialog lingers until a screenshot
+Use the Claude in Chrome tools against the dev server. `src/holding/rollMenuTouch.html`
+(gitignored, like the rest of `holding/`) mounts the roll menu alone, with no sign-in, and
+logs every pointer event and activation on the page, so a phone on the LAN (`yarn dev
+--host`) or headless Chromium driven with CDP touch events can try the drag; touch drags and
+taps were verified that way on 2026-10-19. WebKit's rendering cannot be checked here: Chrome
+with the CSS `d` stripped from the bubble's paths is the nearest stand-in. A hidden tab
+freezes CSS animations and transitions: the menu stays at its opening scale, a closed dialog lingers until a screenshot
 advances a frame, and morphs show only their end states, so read shapes from the DOM
 (`style.d`, `style.rotate`) rather than from screenshots. Synthetic `PointerEvent`s must use
 `pointerId: 1` or `setPointerCapture` throws.
