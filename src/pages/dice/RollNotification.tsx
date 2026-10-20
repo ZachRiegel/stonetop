@@ -120,7 +120,7 @@ const arriving = (animationName: string) =>
 // shows again if the log closes before it goes
 const Stack = styled.div<{ concealed: boolean }>`
   visibility: ${({ concealed }) => (concealed ? "hidden" : "visible")};
-  grid-area: 3 / 1;
+  grid-area: 2 / 1;
   justify-self: end;
   align-self: end;
   /* the middle of a card's right edge on the die button's centre */

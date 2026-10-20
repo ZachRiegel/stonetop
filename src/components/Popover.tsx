@@ -38,6 +38,8 @@ const Popover = styled(PopoverInternals)<{
   gap?: number;
   verticalAlignment: "top" | "bottom" | "span-top" | "span-all" | "span-bottom";
   horizontalAlignment: "left" | "right" | "span-left" | "span-right" | "span-all";
+  // the anchor's width unless given (a menu off a small round button needs its own)
+  width?: string;
 }>`
   cursor: default;
   display: contents;
@@ -69,7 +71,7 @@ const Popover = styled(PopoverInternals)<{
           }px ${verticalAlignment === "top" ? gap : 0}px ${
             horizontalAlignment === "right" ? gap : 0
           }px`};
-        width: anchor-size(width);
+        width: ${({ width = "anchor-size(width)" }) => width};
         isolation: isolate;
         position-anchor: --this-anchor;
         position: fixed;

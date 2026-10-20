@@ -15,10 +15,11 @@ const Pulse = keyframes`
   }
 `;
 
+// the hourglass is white on transparent (converted from white on black, 2026-10-19: a
+// screen-blended image left its black square on the flat ground), so it needs no blend
 const BaseLoading = styled(LoadingInternal)`
   display: block;
   width: auto;
-  mix-blend-mode: screen;
   animation: ${Pulse} 2s linear alternate-reverse infinite;
   object-fit: contain;
   margin: auto;

@@ -6,16 +6,14 @@ import type { FC } from "react";
 export type Glyph =
   { src: string; Icon?: never } | { Icon: FC<{ className?: string }>; src?: never };
 
-// `size` is the box (40 by default, the sidebar's); a PNG is painted `color`, the sidebar's
-// grey unless the icon sits in text that should colour it ("currentColor")
+// `size` is the box; a PNG is painted in the text's colour, an SVG icon draws itself at
+// --icon-size, which the text around it may set
 const NavigationIcon = ({
   src,
   Icon,
-  inverted,
-  size = 40,
-  color = "var(--neutral-500)",
+  size,
   className,
-}: Glyph & { inverted?: boolean; size?: number; color?: string; className?: string }) => (
+}: Glyph & { size: number; className?: string }) => (
   <div
     className={className}
     css={css`
@@ -23,15 +21,7 @@ const NavigationIcon = ({
       height: ${size}px;
       display: grid;
       place-items: center;
-      --icon-size: ${size - 4}px;
-
-      ${
-        inverted &&
-        css`
-          background-color: rgb(255 255 255 / 0.8);
-          border-radius: 999px;
-        `
-      }
+      flex: none;
     `}
   >
     {Icon ? (
@@ -41,7 +31,7 @@ const NavigationIcon = ({
         css={css`
           width: ${size}px;
           height: ${size}px;
-          background-color: ${inverted ? "var(--neutral-0)" : color};
+          background-color: currentColor;
           mask-image: url("${src}");
           mask-mode: luminance;
           mask-position: center;

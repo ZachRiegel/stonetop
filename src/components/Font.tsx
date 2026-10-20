@@ -23,6 +23,15 @@ const BaseText = styled(TextInternals)`
   white-space: pre-line;
 `;
 
+// the poster titles' and tabs' type: the title face in caps, sized where it is used
+// (components/Poster.tsx, components/TabRow.tsx)
+export const TITLE_CAPS = css`
+  font-family: "clarendon-wide-sketch", serif;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+`;
+
 export const FontCSS = {
   Normal14: css`
     font-family: "faustina", serif;

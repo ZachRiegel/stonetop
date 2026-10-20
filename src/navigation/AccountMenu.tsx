@@ -1,8 +1,6 @@
 import styled from "@emotion/styled";
 import Button from "components/Button.tsx";
 import Font from "components/Font.tsx";
-import Icon from "components/Icon.tsx";
-import NavigationItem from "components/NavigationItem.tsx";
 import Popover from "components/Popover.tsx";
 import type { Doc } from "convex/_generated/dataModel";
 import useModal from "hooks/useModal.ts";
@@ -10,25 +8,39 @@ import { authClient } from "lib/auth-client.ts";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 
+// the account as a pill at the strip's end: picture and name in a dark round with a grey
+// rim; compact, the picture alone
+const Pill = styled.button<{ compact: boolean }>`
+  display: grid;
+  grid-template-columns: max-content max-content;
+  column-gap: 10px;
+  align-items: center;
+  padding: ${({ compact }) => (compact ? 0 : "5px 14px 5px 6px")};
+  border: ${({ compact }) => (compact ? "none" : "1.5px solid var(--neutral-200)")};
+  border-radius: 999px;
+  background: ${({ compact }) => (compact ? "transparent" : "rgb(0 0 0 / 0.4)")};
+  color: var(--neutral-800);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--neutral-300);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--neutral-700);
+    outline-offset: 2px;
+  }
+`;
+
 const Avatar = styled.img`
-  width: 40px;
-  height: 40px;
-  aspect-ratio: 1 / 1;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   object-fit: cover;
 `;
 
-// the panel's row on a phone or tablet: the sidebar's item in the panel's neutrals, raised
-// a shade from the panel
-const PanelRow = styled.div`
-  display: grid;
-  grid-template-columns: max-content 1fr max-content;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background-color: var(--neutral-100);
-  box-shadow: var(--shadow-small);
+const Name = styled(Font.Semibold14)`
+  color: inherit;
+  line-height: 1.2;
 `;
 
 const MenuCard = styled.div`
@@ -39,15 +51,15 @@ const MenuCard = styled.div`
   box-shadow: var(--shadow-medium);
 `;
 
-// The account and its menu (sign out): the account's picture, name and cog as a row, with
-// the menu above it. In the sidebar the row is the sidebar's own item (which needs the
-// sidebar's container query); in the phone and tablet panel it is a plain raised row.
+// The account and its menu (sign out): a pill with the account's picture and name at the
+// strip's end, which opens the menu beneath it. `compact` shows the picture alone, for a
+// phone's strip.
 const AccountMenu = ({
   user,
-  variant = "sidebar",
+  compact = false,
 }: {
   user: Pick<Doc<"users">, "picture" | "displayName">;
-  variant?: "sidebar" | "panel";
+  compact?: boolean;
 }) => {
   const navigate = useNavigate();
   const menu = useModal();
@@ -55,11 +67,11 @@ const AccountMenu = ({
     () => authClient.signOut().then(() => navigate("/login", { replace: true })),
     [navigate],
   );
-  const Row = variant === "sidebar" ? NavigationItem.Solid : PanelRow;
   return (
     <Popover
-      verticalAlignment="top"
+      verticalAlignment="bottom"
       horizontalAlignment="span-left"
+      width="max(anchor-size(width), 160px)"
       isOpen={menu.isOpen}
       requestClose={menu.close}
       content={
@@ -68,11 +80,10 @@ const AccountMenu = ({
         </MenuCard>
       }
     >
-      <Row>
-        <Avatar src={user.picture} alt={user.displayName} />
-        <Font.Bold16 element="div" text={user.displayName} />
-        <Button.Transparent Icon={Icon.Cog} onClick={menu.open} />
-      </Row>
+      <Pill compact={compact} aria-label="Account" title={user.displayName} onClick={menu.open}>
+        <Avatar src={user.picture} alt="" />
+        {!compact && <Name element="span" text={user.displayName} />}
+      </Pill>
     </Popover>
   );
 };

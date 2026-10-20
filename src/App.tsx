@@ -6,7 +6,9 @@ import { useConvexAuth } from "convex/react";
 import { ConvexError } from "convex/values";
 import { authClient } from "lib/auth-client.ts";
 import LoggedInUserNavigationLayout from "LoggedInUserNavigationLayout.tsx";
+import Overview from "pages/campaign/Overview.tsx";
 import Campaigns from "pages/campaigns/Campaigns.tsx";
+import Home from "pages/home/Home.tsx";
 import Login from "pages/landing/Login.tsx";
 import Players from "pages/players/Players.tsx";
 import { useEffect } from "react";
@@ -127,8 +129,9 @@ const router = createBrowserRouter([
               {
                 element: <LoggedInUserNavigationLayout />,
                 children: [
-                  { index: true, element: <Campaigns /> },
-                  { path: "characters", element: null },
+                  { index: true, element: <Home /> },
+                  { path: "campaigns", element: <Campaigns /> },
+                  { path: "rules", element: null },
                   { path: "about", element: null },
                 ],
               },
@@ -136,13 +139,13 @@ const router = createBrowserRouter([
                 element: <CampaignNavigationLayout />,
                 path: "campaign/:campaignId",
                 children: [
+                  { index: true, element: <Overview /> },
+                  // the table has no page yet (user, 2026-10-19: empty, not a copy of the dice page)
+                  { path: "dice", element: null },
                   {
-                    index: true,
-                    loader: ({ params }) => redirect(`/campaign/${params.campaignId}/dice`),
-                  },
-                  {
-                    // three.js and react-three-fiber only load with this route
-                    path: "dice",
+                    // the dice page stands in for the character sheet for now; three.js and
+                    // react-three-fiber only load with this route
+                    path: "character",
                     lazy: {
                       Component: () =>
                         import("pages/dice/DiceRoller.tsx").then((module) => module.default),

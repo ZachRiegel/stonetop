@@ -70,6 +70,8 @@ const FLAT = 0.98;
 // how far inside every wall a die's centre must stay for the throw to count: less than
 // half a die, since a fast hit may sink into a wall a little before it is pushed back
 const MARGIN = 0.3;
+// how far inside every wall a die's centre must come to rest (see settledIn)
+const REST_MARGIN = Math.SQRT1_2;
 const MAX_TRIES = 8;
 // a one-way wall stays open until the die is this far inside, i.e. clear of the wall's
 // slab: closing it any sooner would push the die (and count as its first bounce)
@@ -373,9 +375,18 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   const stayedIn = Array.from({ length: frameCount * count }, (_, k) => k * FRAME_STRIDE).every(
     (at) => inside(frames[at] ?? 0, frames[at + 1] ?? 0, frames[at + 2] ?? 0),
   );
+  // at rest, every die whole on screen: its centre a corner's reach (√½, at any yaw) inside
+  // each wall's leaning face, since a hard hit can leave a die sunk into a wall a little and
+  // the walls' faces are the screen's edges (user, 2026-10-19: dice clipped the left edge;
+  // insetting the walls instead read as dice stopping short of the edge)
   const settledIn = dice.every(({ body }) => {
     const { x, y, z } = body.translation();
-    return x <= half.x - z * lean.x - MARGIN && y >= -half.y + z * lean.y + MARGIN;
+    return (
+      x >= -half.x + z * lean.x + REST_MARGIN &&
+      x <= half.x - z * lean.x - REST_MARGIN &&
+      y >= -half.y + z * lean.y + REST_MARGIN &&
+      y <= half.y - z * lean.y - REST_MARGIN
+    );
   });
   events.free();
   world.free();

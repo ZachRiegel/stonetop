@@ -121,6 +121,9 @@ const RootLayout = () => {
             }
           }
           body {
+            /* every page's ground: one flat dark neutral (user, 2026-10-19: no texture), a
+               shade under the cards' neutral-75 so they still stand off it */
+            background-color: var(--neutral-50);
             /* 4. Increase line-height */
             line-height: 1.5;
             /* 5. Improve text rendering */

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import {
   drawFaces,
+  EYE,
   FACE_NORMALS,
   FRAME_RATE,
   FRAME_STRIDE,
@@ -138,10 +139,16 @@ describe("physics worker", () => {
         expect(simulation.landed).toHaveLength(count);
         Array.from({ length: count }, (_, die) => die).forEach((die) => {
           const { position, rotation } = poseAt(simulation, simulation.frameCount - 1, die);
-          expect(Math.abs(position.x)).toBeLessThan(ARENA.width / 2);
-          expect(Math.abs(position.y)).toBeLessThan(ARENA.height / 2);
-          // resting on the floor: the centre of a unit cube sits half a die up
-          expect(position.z).toBeCloseTo(0.5, 1);
+          // the whole die, not just its centre: its corners (√½ out, at any yaw) inside the
+          // frustum at its top's height, where the screen's edge has leaned in half / EYE
+          // per die of height
+          const onScreen = (at: number, half: number) =>
+            Math.abs(at) + Math.SQRT1_2 < half - ((position.z + 0.5) * half) / EYE;
+          expect(onScreen(position.x, ARENA.width / 2)).toBe(true);
+          expect(onScreen(position.y, ARENA.height / 2)).toBe(true);
+          // resting on the floor: the centre of a unit cube sits half a die up, or a touch
+          // more when a corner of a neighbour jammed beside it props it (still flat by FLAT)
+          expect(Math.abs(position.z - 0.5)).toBeLessThan(0.1);
           const landed = simulation.landed[die];
           if (landed === undefined) throw new Error("no landed face");
           const up = new Vector3(...FACE_NORMALS[landed]).applyQuaternion(rotation).z;

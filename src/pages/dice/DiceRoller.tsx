@@ -37,11 +37,13 @@ const CAMERA = {
   far: 100,
 };
 
-// one cell: the transparent render floats over the page's dark grey, the UI on top of both
+// one cell: the transparent render floats over the page's ground, the UI on top of both. A
+// faint rule along the top marks where the table starts under the strip, since the dice
+// bounce off that edge (user, 2026-10-19).
 const Page = styled.div`
   height: 100%;
   overflow: hidden;
-  background-color: var(--neutral-100);
+  border-top: 1px solid var(--neutral-100);
   display: grid;
 
   & > * {
@@ -55,11 +57,7 @@ const Page = styled.div`
 const Overlay = styled.div`
   position: relative;
   display: grid;
-  grid-template-rows: max-content 1fr max-content;
-`;
-
-const Toolbar = styled.div`
-  padding: 16px 24px;
+  grid-template-rows: 1fr max-content;
 `;
 
 const Hint = styled(Font.Italic16)`
@@ -68,7 +66,7 @@ const Hint = styled(Font.Italic16)`
 
 // in the page's corner, by the menu's own measure
 const Menu = styled(RollMenu)`
-  grid-area: 3 / 1;
+  grid-area: 2 / 1;
   justify-self: end;
   align-self: end;
   margin: 0 ${MARGIN}px ${MARGIN}px 0;
@@ -175,9 +173,6 @@ const DiceRoller = () => {
         <DiceScene result={result} seed={campaign?.rollSeed} />
       </Canvas>
       <Overlay>
-        <Toolbar>
-          <Font.Title32 element="h1" text="Dice Roller" />
-        </Toolbar>
         {latest === null ? <Hint element="div" text="Choose your dice, then roll" /> : <div />}
         {/* the roll on the table: a newer roll's card is laid over it once that roll has
             played; a click on the card takes the roll off this table alone (`shown` still

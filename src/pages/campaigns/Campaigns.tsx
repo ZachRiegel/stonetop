@@ -1,215 +1,213 @@
 import styled from "@emotion/styled";
-import Button from "components/Button.tsx";
-import Font from "components/Font.tsx";
+import Font, { TITLE_CAPS } from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import Loading from "components/Loading.tsx";
+import Poster from "components/Poster.tsx";
+import { GROUND } from "components/PosterWall.tsx";
 import { api } from "convex/_generated/api";
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
 import useModal from "hooks/useModal.ts";
+import { MEDIA } from "hooks/useResponsiveSize.ts";
+import { artOf, count, facesOf, othersOf, roleOf } from "pages/campaigns/card.ts";
 import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
-import footer from "pages/campaigns/footer.png";
-import misc from "pages/campaigns/misc.png";
-import { useEffect, useMemo, useRef } from "react";
-import { Link as ReactRouterLink, useNavigate, useSearchParams } from "react-router";
+import landscape from "pages/campaigns/footer.png";
+import { useSearchParams } from "react-router";
 
 const Page = styled.div`
+  ${GROUND}
   position: relative;
   width: 100%;
   height: 100%;
-  max-height: 100%;
   overflow: hidden;
-
-  display: grid;
-  grid-template-rows: 1fr max-content 1fr;
-  justify-content: center;
 `;
 
-const Footer = styled.img`
+// the landscape screened over the whole page behind the cards, dimmed well down and faded
+// in under the strip; its own image rather than the wall's hero, whose box cropped the wide
+// woodcut to its right third (user, 2026-10-19). Blends onto the page's GROUND.
+const Hero = styled.img`
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -32px;
-  width: 100vw;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  object-position: top;
-  aspect-ratio: 2301 / 844;
   mix-blend-mode: screen;
-  max-height: 600px;
-  opacity: 0.7;
+  opacity: 0.3;
+  pointer-events: none;
+  mask-image: linear-gradient(transparent, #000 20%);
 `;
 
-const Card = styled.div`
-  grid-row: 2;
-  display: flex;
-  flex-direction: column;
-  width: min(360px, calc(100vw - 32px));
-  border-radius: 16px;
-  background-color: var(--neutral-75);
-  overflow: hidden;
-  box-shadow: 8px 8px 12px 12px rgba(0 0 0 / 0.3);
-  isolation: isolate;
-`;
-
-const CardHeader = styled.div`
-  padding: 12px 20px;
-`;
-
-const ScrollArea = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 340px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* 8px scrollbar gutter (styled globally in RootLayout) + 12px right
-     padding = 20px, matching CardBottom */
-  padding: 12px 12px 12px 20px;
-  scrollbar-gutter: stable;
-  border-top: 2px solid var(--neutral-100);
-  border-bottom: 2px solid var(--neutral-100);
-`;
-
-const EmptyState = styled.div`
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
+const Notice = styled(Font.Italic16)`
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 16px;
+  right: 16px;
   text-align: center;
+`;
 
-  img {
-    height: 232px;
-    aspect-ratio: 648 / 828;
-    mix-blend-mode: screen;
+// One row of campaigns in slate, colour being kept for the home wall. On a desktop wide,
+// short cards from the page's left gutter (user, 2026-10-19; centred came first), scrolling
+// sideways once they outgrow it; on a phone a row that scrolls sideways and snaps card to
+// card, a 4px spacer and the 12px gap putting the first and last cards 16px from the edges,
+// where the scroll padding snaps them. Flex on the phone for those spacers: a scroller's
+// trailing padding is not reliably scrollable.
+const Row = styled.div`
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  &::before,
+  &::after {
+    content: "";
+    flex: 0 0 4px;
+  }
+  /* rounder than the walls' posters; the slate paper itself cuts them out of the landscape */
+  & > * {
+    flex: 0 0 76%;
+    height: 300px;
+    scroll-snap-align: center;
+    --poster-title: 22px;
+    --poster-radius: 12px;
+  }
+
+  @media ${MEDIA.desktop} {
+    display: grid;
+    grid-auto-flow: column;
+    /* 250 by 320 at 1280 wide, scaling with the page from a phone's card up (user: the cards
+       should scale with the screen) */
+    grid-auto-columns: clamp(220px, 19.5vw, 520px);
+    grid-template-rows: clamp(280px, 25vw, 665px);
+    justify-content: start;
+    align-content: center;
+    align-items: stretch;
+    gap: 16px;
+    padding: 0 36px;
+    scroll-snap-type: none;
+
+    &::before,
+    &::after {
+      content: none;
+    }
+    & > * {
+      height: auto;
+      --poster-title: clamp(18px, 1.7vw, 44px);
+    }
   }
 `;
 
-const CardBottom = styled.div`
-  display: flex;
-  padding: 16px 20px;
-`;
-
-const CampaignLabel = styled(ReactRouterLink)`
-  color: inherit;
-  text-decoration: none;
+const Centred = styled.div`
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 1fr max-content;
-  grid-auto-rows: max-content;
-  column-gap: 16px;
-  align-items: center;
-  row-gap: 2px;
-  padding: 12px 12px 12px 16px;
-  border-radius: 16px;
-  background-color: var(--neutral-25);
-  box-shadow: var(--shadow-medium);
-  cursor: pointer;
+  place-items: center;
+  height: 100%;
+  padding: 0 36px;
+  text-align: center;
 `;
 
-const AvatarRow = styled.div`
+// a cream pill at the page's bottom right, the one light thing on the page; sized in ems so
+// it scales with its type, 13px at 1280 wide and gently up with the screen on a desktop
+// (user, 2026-10-19: 24px on a wide screen was too large)
+const NewButton = styled.button`
+  ${TITLE_CAPS}
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: 24px;
   display: grid;
   grid-auto-flow: column;
-  justify-content: start;
-  margin-top: 4px;
-`;
-
-const AvatarContainer = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  overflow: visible;
-  width: 15px;
-  height: 30px;
-`;
-
-const Avatar = styled.img`
-  min-width: 30px;
-  min-height: 30px;
-  border: 2px solid var(--neutral-0);
+  align-items: center;
+  column-gap: 0.4em;
+  padding: 0.7em 1.5em 0.7em 1em;
+  border: none;
   border-radius: 999px;
-  object-fit: cover;
+  background: var(--cream);
+  color: var(--neutral-0);
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  box-shadow: var(--shadow-medium);
+  cursor: pointer;
+  --icon-size: 1.7em;
+  transition: background 120ms linear;
+
+  &:hover {
+    background: var(--white);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--neutral-700);
+    outline-offset: 2px;
+  }
+
+  @media ${MEDIA.desktop} {
+    right: clamp(36px, 2.8vw, 72px);
+    bottom: clamp(28px, 2.2vw, 56px);
+    font-size: clamp(13px, 0.75vw, 18px);
+  }
 `;
 
 const Campaigns = () => {
   const campaigns = useQuery(api.campaigns.list);
-  const join = useMutation(api.campaigns.join);
-  const navigate = useNavigate();
+  const me = useQuery(api.users.me);
   const createModal = useModal();
   const [searchParams] = useSearchParams();
-  const joined = useRef(false);
-
-  // Use a pending invite once, on mount. The token arrives in the URL, or in
-  // sessionStorage when the sign-in redirect dropped it from the URL.
-  useEffect(() => {
-    const inviteToken = searchParams.get("inviteLinkId") ?? sessionStorage.getItem("inviteLinkId");
-    sessionStorage.removeItem("inviteLinkId");
-    if (!inviteToken || joined.current) return;
-    joined.current = true;
-    join({ inviteToken }).then(
-      (campaignId) => navigate(`/campaign/${campaignId}`, { replace: true }),
-      () => navigate("/?invite=invalid", { replace: true }),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot on mount; re-running on later renders would join/navigate again
-  }, []);
-
   const isLoading = useMinimumLoading(!campaigns);
-
-  const campaignEntries = useMemo(
-    () =>
-      campaigns?.map((campaign) => (
-        <CampaignLabel key={campaign._id} to={`/campaign/${campaign._id}`}>
-          <Font.Bold20 text={campaign.name} />
-          <AvatarRow>
-            {campaign.members.map((member) => (
-              <AvatarContainer key={member._id}>
-                <Avatar src={member.picture} alt={member.displayName} />
-              </AvatarContainer>
-            ))}
-          </AvatarRow>
-          <Font.Italic16
-            element="div"
-            text={
-              campaign.isOwner ? "Game Master" : (campaign.myCharacter?.name ?? "No character yet")
-            }
-          />
-        </CampaignLabel>
-      )),
-    [campaigns],
-  );
 
   return (
     <Page>
-      <Footer src={footer} />
-      <Card>
-        <CardHeader>
-          <Font.Bold32 element="h1" text="Campaigns" />
-          {searchParams.get("invite") === "invalid" && (
-            <Font.Italic16
-              element="div"
-              text="That invite link is no longer valid. Ask your Game Master for a new one."
-            />
-          )}
-        </CardHeader>
-        <ScrollArea>
-          {isLoading || !campaigns ? (
-            <Loading.Medium />
-          ) : campaigns.length === 0 ? (
-            <EmptyState>
-              <img src={misc} alt="" />
-              <Font.Italic16
-                element="div"
-                text={`You aren't a member of any campaigns yet.
+      {searchParams.get("invite") === "invalid" && (
+        <Notice
+          element="div"
+          text="That invite link is no longer valid. Ask your Game Master for a new one."
+        />
+      )}
+      {isLoading || !campaigns ? (
+        <Centred>
+          <Loading.Medium />
+        </Centred>
+      ) : campaigns.length === 0 ? (
+        <Centred>
+          <Font.Italic16
+            element="div"
+            text={`You aren't a member of any campaigns yet.
 Ask your Game Master to invite you or create one.`}
+          />
+        </Centred>
+      ) : (
+        <Row>
+          {campaigns.map((campaign) => {
+            const others = othersOf(campaign, me);
+            return (
+              <Poster
+                key={campaign._id}
+                to={`/campaign/${campaign._id}`}
+                paper="slate"
+                art={artOf(campaign._id)}
+                title={campaign.name}
+                caption={`${roleOf(campaign)} · ${count(others.length, campaign.isOwner ? "player" : "other")}`}
+                people={facesOf(others)}
               />
-            </EmptyState>
-          ) : (
-            campaignEntries
-          )}
-        </ScrollArea>
-        <CardBottom>
-          <Button.Primary Icon={Icon.Plus} text="Create campaign" onClick={createModal.open} />
-        </CardBottom>
-      </Card>
+            );
+          })}
+        </Row>
+      )}
+      <NewButton onClick={createModal.open}>
+        <Icon.Plus />
+        New campaign
+      </NewButton>
+      <Hero src={landscape} alt="" />
       <CreateCampaignDialog isOpen={createModal.isOpen} requestClose={createModal.close} />
     </Page>
   );

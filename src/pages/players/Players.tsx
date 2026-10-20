@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import Font from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
+import { GROUND } from "components/PosterWall.tsx";
 import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
@@ -9,7 +10,9 @@ import misc from "pages/campaigns/misc.png";
 import InvitePlayers from "pages/players/InvitePlayers.tsx";
 import { useParams } from "react-router";
 
+// paints its own ground and isolates, so the landscape's screen blend meets it (see GROUND)
 const Page = styled.div`
+  ${GROUND}
   position: relative;
   width: 100%;
   height: 100%;
@@ -117,7 +120,7 @@ const Players = () => {
 
   return (
     <Page>
-      <Footer src={footer} />
+      <Footer src={footer} alt="" />
       <Card>
         <CardHeader>
           <Font.Bold32 element="h1" text="Players" />
