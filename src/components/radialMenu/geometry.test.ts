@@ -11,6 +11,8 @@ import {
   layoutOf,
   type MenuSpec,
   placedOf,
+  sameSegment,
+  segmentOf,
   segmentPath,
   traced,
 } from "components/radialMenu/geometry.ts";
@@ -175,6 +177,18 @@ describe("radial menu geometry", () => {
     // the gap between the rings, and past the outer ring
     expect(hit(-82, 0, FULL)).toBeNull();
     expect(hit(-FULL.extent - 10, 0, FULL)).toBeNull();
+  });
+
+  test("tells segments apart by their place, not their identity, and none from one", () => {
+    const one = segmentAt(FULL, 0, 0, 1);
+    expect(sameSegment(one, segmentAt(BARE, 0, 0, 1))).toBe(true);
+    expect(sameSegment(one, segmentAt(FULL, 0, 0, 2))).toBe(false);
+    expect(sameSegment(null, null)).toBe(true);
+    expect(sameSegment(one, null)).toBe(false);
+    expect(sameSegment(null, one)).toBe(false);
+    expect(segmentOf(hit(...one.centre, FULL))).toMatchObject({ ring: 0, arc: 0, index: 1 });
+    expect(segmentOf(hit(0, 0, FULL))).toBeNull();
+    expect(segmentOf(null)).toBeNull();
   });
 
   test("counts a segment to its square-cut end but not the gap beside it", () => {

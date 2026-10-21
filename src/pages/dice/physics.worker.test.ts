@@ -79,7 +79,7 @@ describe("physics worker", () => {
       tuning: { throwAngleSpread: 0, throwTarget: 0.25 },
     });
     const target = new Vector3(-ARENA.width / 8, ARENA.height / 8, 0);
-    Array.from({ length: 5 }, (_, die) => die).forEach((die) => {
+    [...Array(5).keys()].forEach((die) => {
       const toTarget = target.clone().sub(poseAt(simulation, 0, die).position.setZ(0));
       expect(parallel(heading(simulation, die), toTarget)).toBe(true);
     });
@@ -92,14 +92,14 @@ describe("physics worker", () => {
       arena: { width: 6, height: 13 },
       tuning: { throwAngleSpread: 0 },
     });
-    Array.from({ length: 5 }, (_, die) => die).forEach((die) =>
+    [...Array(5).keys()].forEach((die) =>
       expect(parallel(heading(simulation, die), new Vector3(-6, 13, 0))).toBe(true),
     );
   });
 
   test("queues the dice far enough apart to start clear of each other", async () => {
     const simulation = await simulate({ count: 5, seed: 42, arena: ARENA });
-    Array.from({ length: 4 }, (_, die) => die).forEach((die) =>
+    [...Array(4).keys()].forEach((die) =>
       expect(
         poseAt(simulation, 0, die).position.distanceTo(poseAt(simulation, 0, die + 1).position),
       ).toBeGreaterThan(1.6),
@@ -137,7 +137,7 @@ describe("physics worker", () => {
         expect(simulation.frameCount).toBeGreaterThan(1);
         expect(simulation.frameCount).toBeLessThanOrEqual(MAX_SECONDS * FRAME_RATE);
         expect(simulation.landed).toHaveLength(count);
-        Array.from({ length: count }, (_, die) => die).forEach((die) => {
+        [...Array(count).keys()].forEach((die) => {
           const { position, rotation } = poseAt(simulation, simulation.frameCount - 1, die);
           // the whole die, not just its centre: its corners (√½ out, at any yaw) inside the
           // frustum at its top's height, where the screen's edge has leaned in half / EYE

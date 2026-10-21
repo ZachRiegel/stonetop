@@ -5,6 +5,7 @@ import { GROUND } from "components/PosterWall.tsx";
 import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
+import { roleOf } from "pages/campaigns/card.ts";
 import footer from "pages/campaigns/footer.png";
 import misc from "pages/campaigns/misc.png";
 import InvitePlayers from "pages/players/InvitePlayers.tsx";
@@ -16,7 +17,6 @@ const Page = styled.div`
   position: relative;
   width: 100%;
   height: 100%;
-  max-height: 100%;
   overflow: hidden;
 
   display: grid;
@@ -138,12 +138,7 @@ const Players = () => {
               <PlayerLabel key={player._id}>
                 <Avatar src={player.picture} alt={player.displayName} />
                 <Font.Bold20 text={player.displayName} />
-                <Font.Italic16
-                  element="div"
-                  text={
-                    player.isOwner ? "Game Master" : (player.character?.name ?? "No character yet")
-                  }
-                />
+                <Font.Italic16 element="div" text={roleOf(player.isOwner, player.character)} />
               </PlayerLabel>
             ))
           )}

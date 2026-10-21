@@ -1,4 +1,5 @@
 import { useFrame } from "@react-three/fiber";
+import prefersReducedMotion from "lib/prefersReducedMotion.ts";
 import {
   anchor,
   type Arena,
@@ -6,12 +7,14 @@ import {
   type FaceIndex,
   FADE_SECONDS,
   FRAME_RATE,
-  FRAME_STRIDE,
+  frameAt,
+  MAX_DELTA,
   PLAYBACK_RATE,
   PULSE_SECONDS,
   reach,
+  secondsAt,
 } from "pages/dice/dice.ts";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type BufferGeometry,
   Color,
@@ -67,7 +70,7 @@ const Die = ({
   const group = useRef<Group>(null);
   const elapsed = useRef(0);
   const scratch = useRef({ from: new Quaternion(), to: new Quaternion() });
-  const reduced = useMemo(() => matchMedia("(prefers-reduced-motion: reduce)").matches, []);
+  const [reduced] = useState(prefersReducedMotion);
   // this die's own copies of the glyph overlays, so its faces fade and glow on their own
   const overlays = useRef<MeshStandardMaterial[]>(null);
   overlays.current ??= glyphs.map((material) => material.clone());
@@ -75,36 +78,30 @@ const Die = ({
 
   useFrame((_, delta) => {
     if (!group.current || !overlays.current) return;
-    // clamp so a backgrounded tab does not skip the whole roll on return
-    elapsed.current += Math.min(delta, 0.1);
+    elapsed.current += Math.min(delta, MAX_DELTA);
     const last = frameCount - 1;
     const at = reduced ? last : Math.min(elapsed.current * FRAME_RATE * PLAYBACK_RATE, last);
     const a = Math.floor(at);
     const b = Math.min(a + 1, last);
     const t = at - a;
-    const read = (frame: number, offset: number) =>
-      frames[(frame * count + index) * FRAME_STRIDE + offset] ?? 0;
+    // the position's x, y or z between the two frames
+    const lerp = (axis: number) =>
+      MathUtils.lerp(
+        frames[frameAt(a, index, count) + axis] ?? 0,
+        frames[frameAt(b, index, count) + axis] ?? 0,
+        t,
+      );
     const { from, to } = scratch.current;
-    from.set(read(a, 3), read(a, 4), read(a, 5), read(a, 6));
-    to.set(read(b, 3), read(b, 4), read(b, 5), read(b, 6));
+    from.fromArray(frames, frameAt(a, index, count) + 3);
+    to.fromArray(frames, frameAt(b, index, count) + 3);
     const turn = group.current.quaternion.copy(from).slerp(to, t);
-    const [x, y] = anchor(
-      MathUtils.lerp(read(a, 0), read(b, 0), t),
-      MathUtils.lerp(read(a, 1), read(b, 1), t),
-      reach(turn.x, turn.y, turn.z, turn.w),
-      thrown,
-      shown,
-    );
-    group.current.position
-      .set(x + shift[0], y + shift[1], MathUtils.lerp(read(a, 2), read(b, 2), t))
-      .multiplyScalar(size);
+    const [x, y] = anchor(lerp(0), lerp(1), reach(turn.x, turn.y, turn.z, turn.w), thrown, shown);
+    group.current.position.set(x + shift[0], y + shift[1], lerp(2)).multiplyScalar(size);
     turn.multiply(remap);
     group.current.visible = true;
 
     // seconds at rest; under reduced motion the die has faded and skips the pulse
-    const rest = reduced
-      ? Infinity
-      : Math.max(0, elapsed.current - last / FRAME_RATE / PLAYBACK_RATE);
+    const rest = reduced ? Infinity : Math.max(0, elapsed.current - secondsAt(last));
     const fade = Math.min(1, rest / FADE_SECONDS);
     const pulse = Math.sin(Math.PI * MathUtils.clamp((rest - FADE_SECONDS) / PULSE_SECONDS, 0, 1));
     overlays.current.forEach((material, f) => {

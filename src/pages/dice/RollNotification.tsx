@@ -11,7 +11,7 @@ import { FontCSS } from "components/Font.tsx";
 import AnimateInOut from "hoc/AnimateInOut.tsx";
 import { CELL, MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollReadout, { type Readout } from "pages/dice/RollReadout.tsx";
-import { useState } from "react";
+import { type AnimationEvent, useCallback, useState } from "react";
 
 // a roll to announce
 export type Announced = Omit<Readout, "time"> & {
@@ -22,9 +22,8 @@ export type Announced = Omit<Readout, "time"> & {
   clearSeconds?: number;
 };
 
-// the die button sits half over the card's right edge; the card is one width whatever the
-// name (the readout cuts it), and its contents stop a side padding short of the button
-const BUTTON = CELL;
+// the die button (CELL) sits half over the card's right edge; the card is one width whatever
+// the name (the readout cuts it), and its contents stop a side padding short of the button
 const WIDTH = 396;
 const PADDING = 12;
 const RADIUS = 16;
@@ -34,46 +33,34 @@ const RADIUS = 16;
 const BLOOM_MS = 250;
 const FADE_MS = 200;
 const LIFT = 1.06;
-const SEED = BUTTON / 2 - 3;
+const SEED = CELL / 2 - 3;
 
 // Laid down: the card is revealed by a circle growing from the button while it settles
 // onto the table from a little above it. --origin is the button's centre and --reach the
 // distance from it to the far corner. Closing just fades the card: the bloom played
 // backwards was jarring in practice.
-const seeded = css`
-  clip-path: circle(${SEED}px at var(--origin));
-  scale: ${LIFT};
-  filter: drop-shadow(0 16px 20px rgb(0 0 0 / 0.45));
-`;
-const spread = css`
-  clip-path: circle(var(--reach) at var(--origin));
-  scale: 1;
-  filter: drop-shadow(0 0 0 rgb(0 0 0 / 0));
-`;
 const bloom = keyframes`
   from {
-    ${seeded}
+    clip-path: circle(${SEED}px at var(--origin));
+    scale: ${LIFT};
+    filter: drop-shadow(0 16px 20px rgb(0 0 0 / 0.45));
   }
   to {
-    ${spread}
+    clip-path: circle(var(--reach) at var(--origin));
+    scale: 1;
+    filter: drop-shadow(0 0 0 rgb(0 0 0 / 0));
   }
 `;
 // a cream ring riding the bloom's edge, drawn inside the clipped card so its inner half
 // shows: the edge of the card coming in, or crossing the card it covers
-const ringSeeded = css`
-  width: ${2 * SEED}px;
-  height: ${2 * SEED}px;
-`;
-const ringSpread = css`
-  width: calc(2 * var(--reach));
-  height: calc(2 * var(--reach));
-`;
 const ripple = keyframes`
   from {
-    ${ringSeeded}
+    width: ${2 * SEED}px;
+    height: ${2 * SEED}px;
   }
   to {
-    ${ringSpread}
+    width: calc(2 * var(--reach));
+    height: calc(2 * var(--reach));
   }
 `;
 // The card beneath a blooming one is glass, so the old would show through the new: the same
@@ -113,6 +100,13 @@ const fadeOut = keyframes`
 // a card's arrival is its bloom, or under reduced motion its fade in
 const arriving = (animationName: string) =>
   animationName === bloom.name || animationName === fadeIn.name;
+// the bloom's reach, set as each card mounts: from the button's centre to the far top-left
+// corner, and a little past
+const measureReach = (element: HTMLElement | null) =>
+  element?.style.setProperty(
+    "--reach",
+    `${Math.hypot(element.offsetWidth, element.offsetHeight / 2) + 8}px`,
+  );
 
 // the cards, over one another, the newest on top, under the die button; hidden, not
 // unmounted, while the roll log lies over this corner, so a card still blooms (the page
@@ -124,7 +118,7 @@ const Stack = styled.div<{ concealed: boolean }>`
   justify-self: end;
   align-self: end;
   /* the middle of a card's right edge on the die button's centre */
-  margin: 0 ${MARGIN + BUTTON / 2}px ${MARGIN + BUTTON / 2}px 0;
+  margin: 0 ${MARGIN + CELL / 2}px ${MARGIN + CELL / 2}px 0;
   translate: 0 50%;
   display: grid;
 
@@ -193,7 +187,7 @@ const Ring = styled.div<{ delaySeconds: number }>`
 // glass over the table, outlined in cream
 const Board = styled.div`
   position: relative;
-  padding: 8px ${BUTTON / 2 + PADDING}px 8px ${PADDING}px;
+  padding: 8px ${CELL / 2 + PADDING}px 8px ${PADDING}px;
   border-radius: ${RADIUS}px;
   border: 2px solid var(--cream);
   background: rgb(0 0 0 / 0.55);
@@ -216,7 +210,7 @@ const drain = keyframes`
 const Fuse = styled.div<{ seconds: number; delaySeconds: number }>`
   position: absolute;
   left: ${PADDING}px;
-  right: ${BUTTON / 2 + PADDING}px;
+  right: ${CELL / 2 + PADDING}px;
   bottom: 4px;
   height: 2px;
   border-radius: 999px;
@@ -253,7 +247,6 @@ const Dismiss = styled.button`
 `;
 
 const RollNotification = ({
-  className,
   isOpen,
   concealed = false,
   roll,
@@ -261,7 +254,6 @@ const RollNotification = ({
   onArrive,
   onDismiss,
 }: {
-  className?: string;
   isOpen: boolean;
   // the roll log is over the cards' corner
   concealed?: boolean;
@@ -281,32 +273,38 @@ const RollNotification = ({
   // a dismissed roll's card is not laid again once it has wilted: the roll may still be up
   if (roll && roll.id !== dismissed && cards.at(-1)?.id !== roll.id)
     setCards([...cards.slice(-1), roll]);
+  // the card's own arrival, by name: the ring's and the cover's bubble up too; a card is
+  // known by the id it carries
+  const onAnimationStart = useCallback(
+    (event: AnimationEvent<HTMLElement>) => {
+      const { id } = event.currentTarget.dataset;
+      if (id && arriving(event.animationName)) onArrive?.(id);
+    },
+    [onArrive],
+  );
+  // the newest has arrived: the cards under it go; a dismissed one has faded
+  const onAnimationEnd = useCallback(
+    (event: AnimationEvent<HTMLElement>) => {
+      const { id } = event.currentTarget.dataset;
+      if (arriving(event.animationName) && id === cards.at(-1)?.id)
+        setCards((shown) => shown.filter((card) => card.id === id));
+      if (event.animationName === fadeOut.name && id === dismissed)
+        setCards((shown) => shown.filter((card) => card.id !== id));
+    },
+    [cards, dismissed],
+  );
   return (
-    <Stack className={className} concealed={concealed} aria-live="polite">
+    <Stack concealed={concealed} aria-live="polite">
       {cards.map((card, i) => (
         <Card
           key={card.id}
           leaving={!isOpen || card.id === dismissed}
           delaySeconds={card.delaySeconds}
           covered={i < cards.length - 1 ? cards[cards.length - 1]?.delaySeconds : undefined}
-          // the bloom's reach: from the button's centre to the far top-left corner, and a
-          // little past
-          ref={(element) =>
-            element?.style.setProperty(
-              "--reach",
-              `${Math.hypot(element.offsetWidth, element.offsetHeight / 2) + 8}px`,
-            )
-          }
-          // the card's own arrival, by name: the ring's and the cover's bubble up too
-          onAnimationStart={(event) => {
-            if (arriving(event.animationName)) onArrive?.(card.id);
-          }}
-          onAnimationEnd={(event) => {
-            // the newest has arrived: the cards under it go; a dismissed one has faded
-            if (arriving(event.animationName) && i === cards.length - 1) setCards([card]);
-            if (event.animationName === fadeOut.name && card.id === dismissed)
-              setCards((shown) => shown.filter((other) => other !== card));
-          }}
+          data-id={card.id}
+          ref={measureReach}
+          onAnimationStart={onAnimationStart}
+          onAnimationEnd={onAnimationEnd}
         >
           <Board>
             <RollReadout {...card} />

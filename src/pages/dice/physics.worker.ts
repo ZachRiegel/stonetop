@@ -20,6 +20,7 @@ import {
   type FaceIndex,
   FRAME_RATE,
   FRAME_STRIDE,
+  frameAt,
   MAX_SECONDS,
   mulberry32,
   type SimulateRequest,
@@ -82,6 +83,10 @@ const GATE_DEPTH = 6;
 // the floor, ceiling and side walls extend this far past the arena so the off-screen
 // throw start (up to about 15 dice out) is boxed in too
 const APRON = 16;
+// the walls' and the ceiling's grip, where the floor's is a feel
+const FIXTURE_FRICTION = 0.55;
+// a body at rest, or a contact with no speed noted
+const STILL = { x: 0, y: 0, z: 0 };
 const MAX_FRAMES = MAX_SECONDS * FRAME_RATE;
 const FACE_INDICES: FaceIndex[] = [0, 1, 2, 3, 4, 5];
 
@@ -102,10 +107,7 @@ const spread = (random: () => number, sigma: number, sigmas = 3) => {
 
 // a uniformly random orientation: a normal draw per component, normalised
 const randomRotation = (random: () => number): Rotation => {
-  const x = spread(random, 1);
-  const y = spread(random, 1);
-  const z = spread(random, 1);
-  const w = spread(random, 1);
+  const [x = 0, y = 0, z = 0, w = 0] = Array.from({ length: 4 }, () => spread(random, 1));
   const length = Math.sqrt(x * x + y * y + z * z + w * w) || 1;
   return { x: x / length, y: y / length, z: z / length, w: w / length };
 };
@@ -152,19 +154,16 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
         .setFriction(friction)
         .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Max),
     );
-  // floor (its top is z = 0) and ceiling; the floor reports its collisions for the sounds
+  // floor (its top is z = 0) and ceiling, slabs centred at `z` past the walls by the apron;
+  // the floor reports its collisions for the sounds
+  const plate = (z: number) =>
+    RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1).setTranslation(0, 0, z);
   const floor = fixture(
-    RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1)
-      .setTranslation(0, 0, -1)
-      .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
+    plate(-1).setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
     feel.floorRestitution,
     feel.floorFriction,
   ).handle;
-  fixture(
-    RAPIER.ColliderDesc.cuboid(half.x + APRON, half.y + APRON, 1).setTranslation(0, 0, CEILING + 1),
-    0.2,
-    0.55,
-  );
+  fixture(plate(CEILING + 1), 0.2, FIXTURE_FRICTION);
   // The walls lean inward along the camera's frustum: each one's inner face is the plane
   // through the eye (0, 0, EYE) and the wall's floor edge, so a die kept inside the walls
   // is inside the screen at any height. The lean is worked out with square roots alone,
@@ -172,6 +171,9 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   type Axis = "x" | "y";
   // the tangent of each wall's lean from the vertical, by the axis it faces along
   const lean = { x: half.x / EYE, y: half.y / EYE };
+  // how far from the middle along `axis` a point at height `z` may be and stay `margin`
+  // inside the leaning walls across that axis
+  const inset = (axis: Axis, z: number, margin: number) => half[axis] - z * lean[axis] - margin;
   // a slab `depth` thick whose inner face runs through the arena's floor edge `sign` way
   // along `axis`, leaning inward, long enough to reach from under the floor past the ceiling
   const slab = (axis: Axis, sign: 1 | -1, depth: number) => {
@@ -197,7 +199,11 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   // its damping (passing through a one-way wall is no collision, so it does not count)
   const walls = new Set<number>();
   const wall = (desc: ColliderDesc) =>
-    fixture(desc.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS), feel.wallRestitution, 0.55);
+    fixture(
+      desc.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS),
+      feel.wallRestitution,
+      FIXTURE_FRICTION,
+    );
   // left and top walls
   walls.add(wall(slab("x", -1, 2)).handle);
   walls.add(wall(slab("y", 1, 2)).handle);
@@ -210,8 +216,8 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
     return [handle, { isInside, closedFor: new Set<number>() }] as const;
   };
   const gates = new Map([
-    gate(slab("x", 1, GATE_DEPTH), ({ x, z }) => x < half.x - z * lean.x - CLEARANCE),
-    gate(slab("y", -1, GATE_DEPTH), ({ y, z }) => y > -half.y + z * lean.y + CLEARANCE),
+    gate(slab("x", 1, GATE_DEPTH), ({ x, z }) => x < inset("x", z, CLEARANCE)),
+    gate(slab("y", -1, GATE_DEPTH), ({ y, z }) => y > -inset("y", z, CLEARANCE)),
   ]);
   // the hooks only reach the solver when an event queue is passed along with them, and
   // they must not call back into Rapier (that leaves a borrow dangling and the world can
@@ -308,8 +314,8 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
       const kind = first && second ? "dice" : walls.has(other) || other === floor ? "table" : null;
       if (!started || !die || !kind) return;
       if (walls.has(other) && !bounced.has(die.handle)) bounced.set(die.handle, frame);
-      const a = approaching.get(die.handle) ?? { x: 0, y: 0, z: 0 };
-      const b = (second && first && approaching.get(second.handle)) || { x: 0, y: 0, z: 0 };
+      const a = approaching.get(die.handle) ?? STILL;
+      const b = (first && second && approaching.get(second.handle)) || STILL;
       const relative = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
       // the speed along the contact's normal: a die skimming the floor at throw speed is
       // a graze, not a thump (the full speed, if the manifold is gone); arithmetic and a
@@ -339,7 +345,7 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
     dice.forEach(({ body }, i) => {
       const { x, y, z } = body.translation();
       const q = body.rotation();
-      frames.set([x, y, z, q.x, q.y, q.z, q.w], (frame * count + i) * FRAME_STRIDE);
+      frames.set([x, y, z, q.x, q.y, q.z, q.w], frameAt(frame, i, count));
     });
   const prepare = () =>
     dice.forEach(({ body }) => {
@@ -368,8 +374,8 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   // never past the solid walls (left, top, floor, ceiling), measured from the leaning
   // faces at the die's height; the gates are checked at rest
   const inside = (x: number, y: number, z: number) =>
-    x >= -half.x + z * lean.x + MARGIN &&
-    y <= half.y - z * lean.y - MARGIN &&
+    x >= -inset("x", z, MARGIN) &&
+    y <= inset("y", z, MARGIN) &&
     z >= MARGIN &&
     z <= CEILING - MARGIN;
   const stayedIn = Array.from({ length: frameCount * count }, (_, k) => k * FRAME_STRIDE).every(
@@ -381,12 +387,7 @@ const attempt = (count: number, seed: number, { width, height }: Arena, feel: Fe
   // insetting the walls instead read as dice stopping short of the edge)
   const settledIn = dice.every(({ body }) => {
     const { x, y, z } = body.translation();
-    return (
-      x >= -half.x + z * lean.x + REST_MARGIN &&
-      x <= half.x - z * lean.x - REST_MARGIN &&
-      y >= -half.y + z * lean.y + REST_MARGIN &&
-      y <= half.y - z * lean.y - REST_MARGIN
-    );
+    return Math.abs(x) <= inset("x", z, REST_MARGIN) && Math.abs(y) <= inset("y", z, REST_MARGIN);
   });
   events.free();
   world.free();

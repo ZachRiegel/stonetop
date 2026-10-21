@@ -1,19 +1,8 @@
-/// <reference types="vite/client" />
 import { api } from "_generated/api";
 import type { Id } from "_generated/dataModel";
-import { convexTest, type TestConvex } from "convex-test";
-import { DICE, drawFaces, mulberry32 } from "pages/dice/dice";
-import schema from "schema";
+import { DICE, type DieColour, drawFaces, mulberry32 } from "pages/dice/dice";
+import { setup as campaignSetup, type T } from "testing.setup";
 import { describe, expect, test } from "vitest";
-
-const modules = import.meta.glob("./**/*.ts");
-
-type T = TestConvex<typeof schema>;
-
-const seedUser = (t: T, authId: string, displayName: string) =>
-  t.run((ctx) =>
-    ctx.db.insert("users", { authId, displayName, picture: `https://cdn.example/${authId}.png` }),
-  );
 
 // the campaign's feed in order
 const messagesOf = (t: T, campaignId: Id<"campaigns">) =>
@@ -33,29 +22,16 @@ const seedOf = async (t: T, campaignId: Id<"campaigns">) => {
 const sequenceOf = async (t: T, campaignId: Id<"campaigns">) =>
   (await t.run((ctx) => ctx.db.get(campaignId)))?.messageSequence;
 
-// A Game Master running a campaign, a player in it, and an outsider
+// the shared campaign, and the seed its next roll is to use
 const setup = async () => {
-  const t = convexTest(schema, modules);
-  const gmId = await seedUser(t, "auth-gm", "Gwendolyn");
-  const asGm = t.withIdentity({ subject: "auth-gm" });
-  const campaignId = await asGm.mutation(api.campaigns.create, { name: "Stonetop" });
-  const playerId = await seedUser(t, "auth-player", "Pat");
-  await t.run((ctx) =>
-    ctx.db.insert("campaignMembers", { campaignId, userId: playerId, isOwner: false }),
-  );
-  await seedUser(t, "auth-outsider", "Olive");
+  const base = await campaignSetup();
+  const { t, asGm, campaignId } = base;
   const card = await asGm.query(api.campaigns.get, { campaignId });
   if (!card) throw new Error("no card");
-  return {
-    t,
-    gmId,
-    asGm,
-    campaignId,
-    playerId,
-    asPlayer: t.withIdentity({ subject: "auth-player" }),
-    asOutsider: t.withIdentity({ subject: "auth-outsider" }),
-    seed: card.rollSeed,
-  };
+  // a roll with the campaign's current seed, as the dice page makes one
+  const rollNext = async (as: ReturnType<T["withIdentity"]>, dice: DieColour[]) =>
+    as.mutation(api.messages.roll, { campaignId, seed: await seedOf(t, campaignId), dice });
+  return { ...base, seed: card.rollSeed, rollNext };
 };
 
 describe("campaigns.get", () => {
@@ -147,19 +123,11 @@ describe("messages.roll", () => {
 
 describe("messages.post", () => {
   test("numbers a campaign's messages in order, whoever sends them, and keeps the latest on the campaign", async () => {
-    const { t, asGm, asPlayer, campaignId, gmId, playerId, seed } = await setup();
+    const { t, asGm, asPlayer, campaignId, gmId, playerId, rollNext } = await setup();
     expect(await sequenceOf(t, campaignId)).toBeUndefined();
-    await asGm.mutation(api.messages.roll, { campaignId, seed, dice: ["blue"] });
-    await asPlayer.mutation(api.messages.roll, {
-      campaignId,
-      seed: await seedOf(t, campaignId),
-      dice: ["blue"],
-    });
-    await asGm.mutation(api.messages.roll, {
-      campaignId,
-      seed: await seedOf(t, campaignId),
-      dice: ["blue"],
-    });
+    await rollNext(asGm, ["blue"]);
+    await rollNext(asPlayer, ["blue"]);
+    await rollNext(asGm, ["blue"]);
     expect(await messagesOf(t, campaignId)).toMatchObject([
       { sequence: 1, userId: gmId },
       { sequence: 2, userId: playerId },
@@ -169,16 +137,12 @@ describe("messages.post", () => {
   });
 
   test("leaves no gap after a declined post", async () => {
-    const { t, asGm, asPlayer, campaignId, seed } = await setup();
+    const { t, asGm, asPlayer, campaignId, seed, rollNext } = await setup();
     await asGm.mutation(api.messages.roll, { campaignId, seed, dice: ["blue"] });
     await expect(
       asPlayer.mutation(api.messages.roll, { campaignId, seed, dice: ["blue"] }),
     ).rejects.toMatchObject({ data: { code: "SEED_CONFLICT" } });
-    await asPlayer.mutation(api.messages.roll, {
-      campaignId,
-      seed: await seedOf(t, campaignId),
-      dice: ["blue"],
-    });
+    await rollNext(asPlayer, ["blue"]);
     expect((await messagesOf(t, campaignId)).map(({ sequence }) => sequence)).toEqual([1, 2]);
     expect(await sequenceOf(t, campaignId)).toBe(2);
   });
@@ -232,27 +196,16 @@ describe("messages.recent", () => {
   });
 
   test("lists the newest rolls first, each with who threw it, at most 20 of them", async () => {
-    const { t, asGm, asPlayer, campaignId, seed } = await setup();
-    await asGm.mutation(api.messages.roll, { campaignId, seed, dice: ["blue"] });
-    await asPlayer.mutation(api.messages.roll, {
-      campaignId,
-      seed: await seedOf(t, campaignId),
-      dice: ["orange", "violet"],
-    });
+    const { asGm, asPlayer, rollNext, campaignId } = await setup();
+    await rollNext(asGm, ["blue"]);
+    await rollNext(asPlayer, ["orange", "violet"]);
     expect(await asGm.query(api.messages.recent, { campaignId })).toMatchObject([
       { sequence: 2, dice: ["orange", "violet"], author: { displayName: "Pat" } },
       { sequence: 1, dice: ["blue"], author: { displayName: "Gwendolyn" } },
     ]);
     // 19 more, one after another since each needs the seed the last one left
     await Array.from({ length: 19 }).reduce<Promise<unknown>>(
-      (previous) =>
-        previous.then(async () =>
-          asGm.mutation(api.messages.roll, {
-            campaignId,
-            seed: await seedOf(t, campaignId),
-            dice: ["violet"],
-          }),
-        ),
+      (previous) => previous.then(() => rollNext(asGm, ["violet"])),
       Promise.resolve(),
     );
     const rolls = await asGm.query(api.messages.recent, { campaignId });

@@ -6,7 +6,6 @@ import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import Input from "components/Input.tsx";
 import DefaultItemRenderer from "components/internals/DefaultItemRenderer.tsx";
-import Loading from "components/Loading.tsx";
 import TabPortal from "components/TabPortal.tsx";
 import AnimateInOut from "hoc/AnimateInOut.tsx";
 import useFocusWithin from "hooks/useFocusWithin.ts";
@@ -70,11 +69,9 @@ const DropdownFieldInternals = <T, U>({
   selectedItem,
   itemToValue: _itemToValue,
   itemToLabel: _itemToLabel,
-  ItemRenderer = DefaultItemRenderer,
   setSelectedItem,
   query,
   setQuery,
-  isLoading,
   emptyState,
   label,
   placeholder,
@@ -85,10 +82,8 @@ const DropdownFieldInternals = <T, U>({
   setSelectedItem: (item: U) => void;
   itemToLabel: (T extends string ? undefined : never) | ((item: T) => string);
   itemToValue: (T extends U ? undefined : never) | ((item: T) => U);
-  ItemRenderer?: typeof DefaultItemRenderer<T>;
   query: string;
   setQuery: (query: string) => void;
-  isLoading?: boolean;
   emptyState: ReactNode;
   label?: string;
   placeholder?: string;
@@ -233,25 +228,20 @@ const DropdownFieldInternals = <T, U>({
           focus for a moment keeps the field focused */}
       <TabPortal active={isOpen} portalRef={focusRef("card")}>
         <Card isOpen={isOpen} inert={!isOpen} onKeyDown={onCardKeyDown} style={anchor}>
-          {isLoading ? (
-            <Loading.Small />
-          ) : filtered.length === 0 ? (
-            emptyState
-          ) : (
-            rows.map(({ item, subscription, selected, tabIndex, highlighted }, index) => (
-              <ItemRenderer
-                key={index}
-                item={item}
-                isSelected={selected}
-                isHighlighted={highlighted}
-                tabIndex={tabIndex}
-                subscription={subscription}
-                query={query}
-                select={select}
-                itemToLabel={itemToLabel}
-              />
-            ))
-          )}
+          {filtered.length === 0
+            ? emptyState
+            : rows.map(({ item, subscription, selected, tabIndex, highlighted }, index) => (
+                <DefaultItemRenderer
+                  key={index}
+                  item={item}
+                  isSelected={selected}
+                  isHighlighted={highlighted}
+                  tabIndex={tabIndex}
+                  subscription={subscription}
+                  select={select}
+                  itemToLabel={itemToLabel}
+                />
+              ))}
         </Card>
       </TabPortal>
     </div>

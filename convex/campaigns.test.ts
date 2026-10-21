@@ -1,23 +1,7 @@
-/// <reference types="vite/client" />
 import { api } from "_generated/api";
 import type { Id } from "_generated/dataModel";
-import { convexTest, type TestConvex } from "convex-test";
-import schema from "schema";
+import { seedMember, seedUser, setup as campaignSetup, type T } from "testing.setup";
 import { describe, expect, test } from "vitest";
-
-const modules = import.meta.glob("./**/*.ts");
-
-type T = TestConvex<typeof schema>;
-
-// Profiles normally arrive through the Better Auth triggers; tests seed them
-// directly and act as a user by presenting their authId as the JWT subject
-const seedUser = (t: T, authId: string, displayName: string) =>
-  t.run((ctx) =>
-    ctx.db.insert("users", { authId, displayName, picture: `https://cdn.example/${authId}.png` }),
-  );
-
-const seedMember = (t: T, campaignId: Id<"campaigns">, userId: Id<"users">) =>
-  t.run((ctx) => ctx.db.insert("campaignMembers", { campaignId, userId, isOwner: false }));
 
 const seedCharacter = (t: T, campaignId: Id<"campaigns">, userId: Id<"users">, name: string) =>
   t.run((ctx) =>
@@ -38,27 +22,10 @@ const tokenOf = async (t: T, campaignId: Id<"campaigns">) => {
   return campaign.inviteToken;
 };
 
-// A Game Master running a campaign, a player already in it, and an outsider
-// who holds the invite token but has not used it
+// the shared campaign, and the invite token the outsider holds but has not used
 const setup = async () => {
-  const t = convexTest(schema, modules);
-  const gmId = await seedUser(t, "auth-gm", "Gwendolyn");
-  const asGm = t.withIdentity({ subject: "auth-gm" });
-  const campaignId = await asGm.mutation(api.campaigns.create, { name: "Stonetop" });
-  const playerId = await seedUser(t, "auth-player", "Pat");
-  await seedMember(t, campaignId, playerId);
-  const outsiderId = await seedUser(t, "auth-outsider", "Olive");
-  return {
-    t,
-    gmId,
-    asGm,
-    campaignId,
-    playerId,
-    asPlayer: t.withIdentity({ subject: "auth-player" }),
-    outsiderId,
-    asOutsider: t.withIdentity({ subject: "auth-outsider" }),
-    inviteToken: await tokenOf(t, campaignId),
-  };
+  const base = await campaignSetup();
+  return { ...base, inviteToken: await tokenOf(base.t, base.campaignId) };
 };
 
 describe("campaigns.create", () => {
@@ -89,7 +56,7 @@ describe("campaigns.create", () => {
   });
 
   test("throws when signed out", async () => {
-    const t = convexTest(schema, modules);
+    const { t } = await setup();
     await expect(t.mutation(api.campaigns.create, { name: "Stonetop" })).rejects.toThrow(
       "UNAUTHENTICATED",
     );

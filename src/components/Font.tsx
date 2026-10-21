@@ -1,9 +1,9 @@
 import { css } from "@emotion/react";
-import styled from "@emotion/styled";
+import styled, { type StyledComponent } from "@emotion/styled";
 
 // an HTML tag name, not React.ElementType: react-three-fiber adds its own elements to
 // JSX.IntrinsicElements and a tag typed as any element no longer accepts text children
-export type FontProps = {
+type FontProps = {
   text: string;
   className?: string;
   element?: keyof HTMLElementTagNameMap;
@@ -171,33 +171,9 @@ export const FontCSS = {
   `,
 };
 
-const Font = {
-  Normal14: styled(BaseText)(FontCSS.Normal14),
-  Semibold14: styled(BaseText)(FontCSS.Semibold14),
-  Italic14: styled(BaseText)(FontCSS.Italic14),
-
-  Normal16: styled(BaseText)(FontCSS.Normal16),
-  Italic16: styled(BaseText)(FontCSS.Italic16),
-  Semibold16: styled(BaseText)(FontCSS.Semibold16),
-  SemiboldItalic16: styled(BaseText)(FontCSS.SemiboldItalic16),
-  Bold16: styled(BaseText)(FontCSS.Bold16),
-  BoldItalic16: styled(BaseText)(FontCSS.BoldItalic16),
-
-  Normal20: styled(BaseText)(FontCSS.Normal20),
-  Semibold20: styled(BaseText)(FontCSS.Semibold20),
-  Bold20: styled(BaseText)(FontCSS.Bold20),
-
-  Normal24: styled(BaseText)(FontCSS.Normal24),
-  Bold24: styled(BaseText)(FontCSS.Bold24),
-  Bold32: styled(BaseText)(FontCSS.Bold32),
-
-  Title20: styled(BaseText)(FontCSS.Title20),
-  Title24: styled(BaseText)(FontCSS.Title24),
-  Title32: styled(BaseText)(FontCSS.Title32),
-  Title40: styled(BaseText)(FontCSS.Title40),
-  Title48: styled(BaseText)(FontCSS.Title48),
-  Title64: styled(BaseText)(FontCSS.Title64),
-  Title80: styled(BaseText)(FontCSS.Title80),
-};
+// one text component per FontCSS entry, e.g. <Font.Bold20 text="…" />
+const Font = Object.fromEntries(
+  Object.entries(FontCSS).map(([name, style]) => [name, styled(BaseText)(style)]),
+) as Record<keyof typeof FontCSS, StyledComponent<FontProps>>;
 
 export default Font;

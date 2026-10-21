@@ -1,6 +1,6 @@
 import AnimateInOut from "hoc/AnimateInOut.tsx";
 import type { FC, ReactNode, RefObject } from "react";
-import { createElement, useEffect, useRef } from "react";
+import { createElement, useCallback, useEffect, useRef } from "react";
 
 type DialogComponent = FC<{
   isOpen: boolean;
@@ -9,17 +9,10 @@ type DialogComponent = FC<{
   dialogRef: RefObject<HTMLDialogElement | null>;
 }>;
 
-// Sample call pattern for
-// const SomeDialogContent = ({isOpen}: {isOpen: boolean}) => {
-//   return (
-//     <Card>
-//       <Font.Bold32 element={"h2"} text={`Modal is ${isOpen ? open : close}`} />
-//       <Font.Normal16 text={"words words words"} />
-//     </Card>
-//   );
-// }
-//
-// export default MakeDialog("isOpen", SomeDialogContent, Modal);
+// Wraps dialog content in a dialog shell (Modal, DialogInternals) opened by its `key` prop:
+//   const Content = ({ isOpen }: { isOpen: boolean; requestClose: () => void }) => <Card … />;
+//   export default MakeDialog("isOpen", Content, Modal);
+// The dialog opens modally, plays its exit before unmounting and returns focus to the opener.
 
 const MakeDialog = <
   K extends string,
@@ -35,6 +28,7 @@ const MakeDialog = <
     const isOpen = Boolean(props[key]);
     const dialogRef = useRef<HTMLDialogElement>(null);
     const openerRef = useRef<HTMLElement>(null);
+    const afterUnmount = useCallback(() => openerRef.current?.focus(), []);
 
     useEffect(() => {
       const dialog = dialogRef.current;
@@ -50,7 +44,7 @@ const MakeDialog = <
         isOpen={isOpen}
         requestClose={props.requestClose}
         dialogRef={dialogRef}
-        afterUnmount={() => openerRef.current?.focus()}
+        afterUnmount={afterUnmount}
       >
         {/* rendered as a component (createElement: JSX cannot type a generic one), so its
             hooks and state live only while the dialog is mounted; called as a function they

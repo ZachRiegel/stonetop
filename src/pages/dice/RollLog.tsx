@@ -16,15 +16,14 @@ import Font from "components/Font.tsx";
 import Icon from "components/Icon.tsx";
 import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
+import prefersReducedMotion from "lib/prefersReducedMotion.ts";
 import { CELL, MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollReadout from "pages/dice/RollReadout.tsx";
-import { useLayoutEffect, useRef, useState } from "react";
+import { type UIEvent, useCallback, useLayoutEffect, useRef, useState } from "react";
 
 // closed; open, or opening; or closing, the cards sweeping out
 export type LogPhase = "closed" | "open" | "closing";
 
-// the die button's cell, which the page sets MARGIN in from its corner, the viewport's
-const BUTTON = CELL;
 const WIDTH = 320;
 // The least gap between cards and the least room above them for the pile; fit() sets
 // --shown, --gap, --h (the pitch) and --room on the log so whole cards fill the height
@@ -48,10 +47,10 @@ const RULE = 20;
 // button. REACH widens the box past the cards' right edge, as padding under the X, since a
 // scroller clips both axes at its padding edge and the sweep's cards travel 64px to the
 // right, shadow included.
-const FOOT = BUTTON / 2;
+const FOOT = CELL / 2;
 const REACH = 80;
 // how far past its resting place a card travels before it is fully under the rule
-const DROP_OVER = (BUTTON - RULE) / 2 + CARD;
+const DROP_OVER = (CELL - RULE) / 2 + CARD;
 
 const rim = "2px solid color-mix(in srgb, var(--cream) 35%, transparent)";
 
@@ -70,8 +69,8 @@ const Dialog = styled(DialogInternals)`
     position: fixed;
     right: ${MARGIN}px;
     bottom: ${MARGIN}px;
-    width: ${BUTTON}px;
-    height: ${BUTTON}px;
+    width: ${CELL}px;
+    height: ${CELL}px;
     display: grid;
   }
 `;
@@ -83,14 +82,16 @@ const Dialog = styled(DialogInternals)`
 // the wheel handler). Snapping to whole cards, so a wheel tick moves one card.
 const Log = styled.div<{ count: number }>`
   --n: ${({ count }) => count};
+  /* the scroll range: the cards past the shown ones, a pitch each */
+  --max: max(0px, calc((var(--n) - var(--shown)) * var(--h)));
   position: absolute;
   z-index: 1;
   right: ${-REACH}px;
   bottom: ${FOOT}px;
   width: ${WIDTH + REACH}px;
   padding-right: ${REACH}px;
-  height: calc(var(--shown) * var(--h) + var(--room) + ${BUTTON - FOOT}px);
-  padding-bottom: calc(${BUTTON - FOOT}px + var(--gap));
+  height: calc(var(--shown) * var(--h) + var(--room) + ${CELL - FOOT}px);
+  padding-bottom: calc(${CELL - FOOT}px + var(--gap));
   overflow-y: auto;
   scrollbar-width: none;
   overscroll-behavior: contain;
@@ -146,9 +147,10 @@ const Empty = styled(Font.Italic16)`
 // the pile shows as a fan of edges in the room above. Cover: as the next card slides over
 // it, the card fades out and its edge fades in, keeping pace with that card's top edge, so
 // under the next card only the edge shows. Bury: a card a pitch past its full sink lies
-// exactly under the one sunk after it, so both go to nothing. Drop is the foot's, forward
-// since the card goes down as the offset grows: from its resting place (--rest) over
-// DROP_OVER, held whole for the first half, then fading and receding on scale.
+// exactly under the one sunk after it, so both go to nothing (cover's fade over its own
+// range). Drop is the foot's, forward since the card goes down as the offset grows: from its
+// resting place (--rest) over DROP_OVER, held whole for the first half, then fading and
+// receding on scale.
 const pin = keyframes`
   from {
     translate: 0 max(0px, var(--stick));
@@ -163,7 +165,8 @@ const sink = keyframes`
     opacity: 0.55;
   }
 `;
-// cover, uncover and bury each from the value the sink leaves, so the fan's edges keep its fade
+// cover (which buries too), and uncover, each from the value the sink leaves, so the fan's
+// edges keep its fade
 const cover = keyframes`
   to {
     opacity: 0;
@@ -171,11 +174,6 @@ const cover = keyframes`
 `;
 const uncover = keyframes`
   from {
-    opacity: 0;
-  }
-`;
-const bury = keyframes`
-  to {
     opacity: 0;
   }
 `;
@@ -204,20 +202,43 @@ const Entry = styled.div<{ index: number }>`
 
   & > * {
     transform-origin: 50% 0;
-    animation:
-      ${pin} linear both,
-      ${sink} linear both reverse,
-      ${cover} linear both reverse,
-      ${bury} linear both reverse,
-      ${drop} linear both;
-    animation-timeline: scroll(), scroll(), scroll(), scroll(), scroll();
-    animation-range:
-      0px max(0px, var(--stick)),
-      calc(var(--stick) - ${DEPTH} * var(--h)) var(--stick),
-      calc(var(--stick) - var(--gap) - ${CARD - STRIP}px) calc(var(--stick) - var(--gap)),
-      calc(var(--stick) - ${DEPTH + 1} * var(--h) - 1px)
-        calc(var(--stick) - ${DEPTH + 1} * var(--h)),
-      var(--rest) calc(var(--rest) + var(--gap) + ${DROP_OVER}px);
+  }
+
+  /* Without scroll timelines (iOS before Safari 26) the animations would run on time, over
+     no time, and leave every card at the end of its drop, faded out: the cards then just
+     scroll, with no pile. */
+  @supports (animation-timeline: scroll()) {
+    & > * {
+      animation:
+        ${pin} linear both,
+        ${sink} linear both reverse,
+        ${cover} linear both reverse,
+        ${cover} linear both reverse,
+        ${drop} linear both;
+      animation-timeline: scroll(), scroll(), scroll(), scroll(), scroll();
+      animation-range:
+        0px max(0px, var(--stick)),
+        calc(var(--stick) - ${DEPTH} * var(--h)) var(--stick),
+        calc(var(--stick) - var(--gap) - ${CARD - STRIP}px) calc(var(--stick) - var(--gap)),
+        calc(var(--stick) - ${DEPTH + 1} * var(--h) - 1px)
+          calc(var(--stick) - ${DEPTH + 1} * var(--h)),
+        var(--rest) calc(var(--rest) + var(--gap) + ${DROP_OVER}px);
+    }
+
+    /* WebKit runs this scroller's timeline from its top rather than from its foot, the
+       scroll origin (Chrome), so there every range is mirrored about the scroll range and
+       every animation runs the other way (fit() marks the log) */
+    [data-timeline="top"] & > * {
+      animation-direction: reverse, normal, normal, normal, reverse;
+      animation-range:
+        calc(var(--max) - max(0px, var(--stick))) var(--max),
+        calc(var(--max) - var(--stick)) calc(var(--max) - var(--stick) + ${DEPTH} * var(--h)),
+        calc(var(--max) - var(--stick) + var(--gap))
+          calc(var(--max) - var(--stick) + var(--gap) + ${CARD - STRIP}px),
+        calc(var(--max) - var(--stick) + ${DEPTH + 1} * var(--h))
+          calc(var(--max) - var(--stick) + ${DEPTH + 1} * var(--h) + 1px),
+        calc(var(--max) - var(--rest) - var(--gap) - ${DROP_OVER}px) calc(var(--max) - var(--rest));
+    }
   }
 `;
 
@@ -266,7 +287,7 @@ const Edge = styled.div`
 
   /* doubled, to outweigh the entry's child rule whatever order emotion inserted them in */
   && {
-    animation-name: ${pin}, ${sink}, ${uncover}, ${bury}, ${drop};
+    animation-name: ${pin}, ${sink}, ${uncover}, ${cover}, ${drop};
   }
 `;
 
@@ -274,14 +295,14 @@ const Edge = styled.div`
 // the stack's left edge to the X's centre on the X's midline, so it reads as the X's stem
 // and the cards slip under it. Its box runs to the X's centre but it is cut to an arc a hair
 // inside the X's edge: run under the X, it showed on the die as the X faded out over the
-// closing sweep. At rest the newest card sits (BUTTON - RULE) / 2 + the gap above it, more
+// closing sweep. At rest the newest card sits (CELL - RULE) / 2 + the gap above it, more
 // than a card gap: the foot's air, as the pile's room is the top's.
 const Rule = styled.div`
   position: absolute;
   z-index: 2;
-  right: ${BUTTON / 2}px;
-  bottom: ${(BUTTON - RULE) / 2}px;
-  width: ${WIDTH - BUTTON / 2}px;
+  right: ${CELL / 2}px;
+  bottom: ${(CELL - RULE) / 2}px;
+  width: ${WIDTH - CELL / 2}px;
   height: ${RULE}px;
   background: var(--neutral-0);
   border: ${rim};
@@ -289,8 +310,8 @@ const Rule = styled.div`
   box-shadow: var(--shadow-small);
   mask-image: radial-gradient(
     circle at 100% 50%,
-    transparent ${BUTTON / 2 - 1}px,
-    #000 ${BUTTON / 2 - 0.5}px
+    transparent ${CELL / 2 - 1}px,
+    #000 ${CELL / 2 - 0.5}px
   );
 `;
 
@@ -302,7 +323,25 @@ const Close = styled(Button.Cream)`
   z-index: 3;
 `;
 
-const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Whether this engine runs a column-reverse scroller's scroll() timeline from the scroller's
+// top, as WebKit does, rather than from its foot, the scroll origin, as Chrome does: a fresh
+// probe at its origin reads 100% in WebKit and 0% (or, before a frame, null) in Chrome.
+// Probed once; engines without scroll timelines never use the answer.
+let fromTop: boolean | undefined;
+const timelineFromTop = () => {
+  if (fromTop !== undefined || typeof ScrollTimeline === "undefined") return fromTop ?? false;
+  const probe = document.createElement("div");
+  probe.style.cssText =
+    "position: fixed; width: 10px; height: 10px; opacity: 0; pointer-events: none; overflow: auto; display: flex; flex-direction: column-reverse";
+  probe.innerHTML = '<div style="flex: none; height: 20px"></div>';
+  document.body.append(probe);
+  const progress = new ScrollTimeline({ source: probe }).currentTime;
+  probe.remove();
+  return (fromTop = progress instanceof CSSUnitValue && progress.value > 50);
+};
+
+// a wheel listener's whole job (see the log's onWheel): to ask for a frame
+const askForFrame = () => requestAnimationFrame(() => undefined);
 
 // The stack fills the viewport's height less the button's margin at both ends, with the
 // room above and the button below: as many whole cards as fit at the least gap, the gaps
@@ -313,7 +352,8 @@ const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").match
 // fit, every stop at the top) put the oldest card in view instead of the newest.
 const fit = (log: HTMLElement) => {
   log.style.scrollSnapType = "none";
-  const span = innerHeight - 2 * MARGIN - BUTTON - LEAST_ROOM;
+  if (timelineFromTop()) log.dataset.timeline = "top";
+  const span = innerHeight - 2 * MARGIN - CELL - LEAST_ROOM;
   const shown = Math.max(1, Math.floor(span / (CARD + GAP)));
   const gap = Math.floor(span / shown - CARD);
   log.style.setProperty("--shown", String(shown));
@@ -355,31 +395,32 @@ const sweepIn = (log: HTMLElement, rule: HTMLElement, close: HTMLElement) => {
         (rect.bottom > port.top && rect.top < port.bottom && getComputedStyle(card).opacity !== "0")
       );
     });
-  const total = 300 + Math.min(40 + (entries.length - 1) * 15, 500);
+  const delayOf = (j: number) => Math.min(40 + j * 15, 500);
+  const total = 300 + delayOf(entries.length - 1);
+  // padded with endDelay to the shared length
+  const timing = (duration: number, easing: string, delay = 0): KeyframeAnimationOptions => ({
+    duration,
+    delay,
+    endDelay: total - delay - duration,
+    easing,
+    fill: "both",
+  });
   return [
-    close.animate([{ opacity: 0 }, { opacity: 1 }], {
-      duration: 200,
-      endDelay: total - 200,
-      easing: "ease-out",
-      fill: "both",
-    }),
-    rule.animate([{ clipPath: "inset(-4px -4px -4px 100%)" }, { clipPath: "inset(-4px)" }], {
-      duration: 220,
-      endDelay: total - 220,
-      easing: ease,
-      fill: "both",
-    }),
-    ...entries.map((entry, j) => {
-      const delay = Math.min(40 + j * 15, 500);
-      return entry.animate(
+    close.animate([{ opacity: 0 }, { opacity: 1 }], timing(200, "ease-out")),
+    rule.animate(
+      [{ clipPath: "inset(-4px -4px -4px 100%)" }, { clipPath: "inset(-4px)" }],
+      timing(220, ease),
+    ),
+    ...entries.map((entry, j) =>
+      entry.animate(
         [
           { translate: "64px 0", opacity: 0, filter: "blur(8px)" },
           { opacity: 0.35, offset: 0.5 },
           { translate: "0 0", opacity: 1, filter: "blur(0px)" },
         ],
-        { duration: 300, delay, endDelay: total - delay - 300, easing: ease, fill: "both" },
-      );
-    }),
+        timing(300, ease, delayOf(j)),
+      ),
+    ),
   ];
 };
 
@@ -439,7 +480,7 @@ const RollLog = ({
     if (log && previous.current !== undefined && newest !== previous.current) {
       setFresh(newest);
       log.scrollTop = resting.current - parseFloat(log.style.getPropertyValue("--h"));
-      log.scrollTo({ top: 0, behavior: reducedMotion() ? "instant" : "smooth" });
+      log.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "instant" : "smooth" });
     }
     previous.current = newest;
   }, [newest]);
@@ -465,7 +506,7 @@ const RollLog = ({
       dialog.showModal();
     }
     const open = phase === "open";
-    if (reducedMotion()) {
+    if (prefersReducedMotion()) {
       if (!open) latest.current.onPhase("closed");
       return;
     }
@@ -488,9 +529,20 @@ const RollLog = ({
     );
   }, [phase]);
 
+  // Escape and a click outside close; the X closes, or turns a close round mid-flight
+  const requestClose = useCallback(() => onPhase("closing"), [onPhase]);
+  const toggle = useCallback(
+    () => onPhase(phase === "open" ? "closing" : "open"),
+    [onPhase, phase],
+  );
+  const onScroll = useCallback(
+    (event: UIEvent<HTMLDivElement>) => (resting.current = event.currentTarget.scrollTop),
+    [],
+  );
+
   if (phase === "closed") return null;
   return (
-    <Dialog isOpen={phase === "open"} requestClose={() => onPhase("closing")} dialogRef={dialogRef}>
+    <Dialog isOpen={phase === "open"} requestClose={requestClose} dialogRef={dialogRef}>
       <Log
         ref={logRef}
         role="log"
@@ -501,45 +553,35 @@ const RollLog = ({
         // working and the main thread idle: the compositor, which handles the wheel alone
         // when nothing listens, waits on a main-thread frame nothing has asked for. A
         // passive listener that only asks for one frees it (an empty one does not).
-        onWheel={() => requestAnimationFrame(() => undefined)}
-        onScroll={(event) => (resting.current = event.currentTarget.scrollTop)}
+        onWheel={askForFrame}
+        onScroll={onScroll}
       >
         <Cards>
           {rolls?.length === 0 && <Empty element="div" text="No rolls yet" />}
-          {listed.map((roll, i) => (
-            <Entry key={roll._id} index={i} data-entry>
-              <Edge aria-hidden="true">
-                <RollReadout
-                  condensed
-                  author={roll.author}
-                  time={roll._creationTime}
-                  dice={roll.dice}
-                  totals={roll.totals}
-                />
-              </Edge>
-              <Card fresh={roll._id === fresh}>
-                <RollReadout
-                  condensed
-                  author={roll.author}
-                  time={roll._creationTime}
-                  dice={roll.dice}
-                  totals={roll.totals}
-                />
-              </Card>
-            </Entry>
-          ))}
+          {listed.map((roll, i) => {
+            const readout = (
+              <RollReadout
+                condensed
+                author={roll.author}
+                time={roll._creationTime}
+                dice={roll.dice}
+                totals={roll.totals}
+              />
+            );
+            return (
+              <Entry key={roll._id} index={i} data-entry>
+                <Edge aria-hidden="true">{readout}</Edge>
+                <Card fresh={roll._id === fresh}>{readout}</Card>
+              </Entry>
+            );
+          })}
           {listed.map((roll, i) => (
             <Stop key={roll._id} index={i} />
           ))}
         </Cards>
       </Log>
       <Rule ref={ruleRef} />
-      <Close
-        ref={closeRef}
-        Icon={Icon.Close}
-        aria-label="Close the log"
-        onClick={() => onPhase(phase === "open" ? "closing" : "open")}
-      />
+      <Close ref={closeRef} Icon={Icon.Close} aria-label="Close the log" onClick={toggle} />
     </Dialog>
   );
 };

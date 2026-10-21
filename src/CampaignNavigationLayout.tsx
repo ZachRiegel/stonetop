@@ -16,33 +16,23 @@ const CampaignNavigationLayout = () => {
   const name = campaign?.name ?? "";
 
   useNavigation(
-    useMemo(
-      (): Navigation => ({
+    useMemo((): Navigation => {
+      const base = `/campaign/${campaignId}`;
+      return {
         campaign: { name },
         sections: [
-          { to: `/campaign/${campaignId}`, text: "Overview", glyph: { src: knotworkPng } },
+          { to: base, text: "Overview", glyph: { src: knotworkPng } },
+          { to: `${base}/dice`, text: "Table", glyph: { Icon: Icon.Die }, paper: "blue" },
           {
-            to: `/campaign/${campaignId}/dice`,
-            text: "Table",
-            glyph: { Icon: Icon.Die },
-            paper: "blue",
-          },
-          {
-            to: `/campaign/${campaignId}/character`,
+            to: `${base}/character`,
             text: "Character",
             glyph: { src: playbooksPng },
             paper: "purple",
           },
-          {
-            to: `/campaign/${campaignId}/players`,
-            text: "Players",
-            glyph: { src: treePng },
-            paper: "orange",
-          },
+          { to: `${base}/players`, text: "Players", glyph: { src: treePng }, paper: "orange" },
         ],
-      }),
-      [campaignId, name],
-    ),
+      };
+    }, [campaignId, name]),
   );
 
   return <Outlet />;

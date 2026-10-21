@@ -6,7 +6,7 @@ export type ResponsiveSize = "mobile" | "tablet" | "desktop";
 // than a tablet is a phone. Width alone, so a phone turned sideways reads as a tablet: the
 // two share a layout (the row header in place of the sidebar), and it is the width that
 // decides whether the sidebar has room.
-export const BREAKPOINTS = { tablet: 600, desktop: 1024 } as const;
+const BREAKPOINTS = { tablet: 600, desktop: 1024 } as const;
 
 // the same thresholds as media queries, for `@media ${MEDIA.mobile}` in styles, so a rule
 // and the hook never disagree on where a size begins
@@ -20,11 +20,9 @@ export const MEDIA = {
 // without a window); each reports a change as the viewport crosses its edge
 let lists: Record<ResponsiveSize, MediaQueryList> | undefined;
 const listsOf = () =>
-  (lists ??= {
-    mobile: window.matchMedia(MEDIA.mobile),
-    tablet: window.matchMedia(MEDIA.tablet),
-    desktop: window.matchMedia(MEDIA.desktop),
-  });
+  (lists ??= Object.fromEntries(
+    Object.entries(MEDIA).map(([size, query]) => [size, window.matchMedia(query)]),
+  ) as Record<ResponsiveSize, MediaQueryList>);
 
 const sizeOf = (): ResponsiveSize =>
   (Object.entries(listsOf()) as [ResponsiveSize, MediaQueryList][]).find(

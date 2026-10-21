@@ -25,7 +25,7 @@ const Wall = styled.div`
 
 // a woodcut (white on black) screened onto the ground and faded into it: the right of the
 // page on a desktop, behind the posters' top on a phone
-export const Hero = styled.img`
+const Hero = styled.img`
   position: absolute;
   z-index: 0;
   pointer-events: none;
@@ -59,7 +59,9 @@ const Posters = styled.div`
   grid-template-columns: 1fr 1fr;
   grid-template-rows: minmax(0, 1.7fr) minmax(0, 1fr);
   gap: 12px;
-  padding: 4px 16px 14px;
+  /* the top keeps clear of the wall's clipping edge by the hover's 2px lift and the focus
+     ring's 6px reach */
+  padding: 6px 16px 14px;
 
   & > :first-of-type {
     grid-column: 1 / 3;
@@ -74,10 +76,10 @@ const Posters = styled.div`
      the wall should read as about half the screen at any width) */
   @media ${MEDIA.desktop} {
     position: absolute;
-    top: 0;
+    top: 6px;
     left: 36px;
     width: calc(50% - 36px);
-    height: calc(100% - 68px);
+    height: calc(100% - 74px);
     grid-template-columns: 1.3fr 1fr;
     grid-template-rows: 1fr 1fr;
     gap: 14px;

@@ -25,6 +25,10 @@ const InputInternals = ({
   const id = React.useId();
   const rootRef = React.useRef<HTMLDivElement>(null);
   const labelRef = React.useRef<HTMLLabelElement>(null);
+  const onInputChange = React.useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value, event),
+    [onChange],
+  );
 
   // The mask that cuts the label's gap out of the border lives on .frame::before and can't
   // measure the sibling label from CSS, so its width is published as --label-width.
@@ -50,7 +54,7 @@ const InputInternals = ({
           // A whitespace placeholder renders as nothing but keeps
           // :placeholder-shown usable as the "input is empty" test.
           placeholder={placeholder || " "}
-          onChange={(event) => onChange(event.target.value, event)}
+          onChange={onInputChange}
           onKeyDown={onKeyDown}
         />
       </div>
@@ -86,8 +90,9 @@ const Input = styled(InputInternals)`
       border-radius: 12px;
       transition: border-color var(--animation-duration);
       mask:
-        linear-gradient(to right, #000 14px, transparent 0 0, #000 0) 0 0 / 100% 2px no-repeat,
-        linear-gradient(#000, #000) 0 2px / 100% calc(100%) no-repeat;
+        linear-gradient(to right, #000 14px, transparent 0 var(--gap-end, 0), #000 0) 0 0 / 100% 2px
+          no-repeat,
+        linear-gradient(#000, #000) 0 2px / 100% 100% no-repeat;
     }
     &:focus-within::before {
       border-color: var(--cream);
@@ -129,12 +134,9 @@ const Input = styled(InputInternals)`
 
   // Erase the border's top 2px behind the label (its 18px inset ± 4px).
   // Gated on a label existing: --label-width's registered initial is 0px,
-  // so an ungated mask would cut an empty 14-22px hole in label-less inputs.
+  // so an ungated gap would cut an empty 14-22px hole in label-less inputs.
   &:has(> label) > .frame::before {
-    mask:
-      linear-gradient(to right, #000 14px, transparent 0 calc(22px + var(--label-width)), #000 0) 0
-        0 / 100% 2px no-repeat,
-      linear-gradient(#000, #000) 0 2px / 100% calc(100%) no-repeat;
+    --gap-end: calc(22px + var(--label-width));
   }
 `;
 

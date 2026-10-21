@@ -29,6 +29,12 @@ const FullPageLoading = styled.div`
   place-items: center;
   min-height: 100vh;
 `;
+// the one spinner every wait here shows, a single element reused
+const spinner = (
+  <FullPageLoading>
+    <Loading.Medium />
+  </FullPageLoading>
+);
 
 // Queries throw UNAUTHENTICATED when the session has no account behind it,
 // e.g. a profile row deleted while the browser kept a valid token. The only
@@ -44,11 +50,7 @@ const SessionBoundary = () => {
   }, [isStaleSession, navigate]);
 
   if (!isStaleSession) throw error;
-  return (
-    <FullPageLoading>
-      <Loading.Medium />
-    </FullPageLoading>
-  );
+  return spinner;
 };
 
 const RequireAuth = () => {
@@ -86,24 +88,14 @@ const RequireAuth = () => {
     return () => clearTimeout(timer);
   }, [isExchangingToken, setSearchParams]);
 
-  if (isLoading || isExchangingToken)
-    return (
-      <FullPageLoading>
-        <Loading.Medium />
-      </FullPageLoading>
-    );
+  if (isLoading || isExchangingToken) return spinner;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <Outlet />;
 };
 
 const LoginGate = () => {
   const { isLoading, isAuthenticated } = useConvexAuth();
-  if (isLoading)
-    return (
-      <FullPageLoading>
-        <Loading.Medium />
-      </FullPageLoading>
-    );
+  if (isLoading) return spinner;
   return isAuthenticated ? <Navigate to="/" replace /> : <Login />;
 };
 
@@ -117,11 +109,7 @@ const router = createBrowserRouter([
         errorElement: <SessionBoundary />,
         // a direct load of the lazy dice route renders nothing until its chunk arrives;
         // sitting below RootLayout keeps its global styles around the spinner
-        hydrateFallbackElement: (
-          <FullPageLoading>
-            <Loading.Medium />
-          </FullPageLoading>
-        ),
+        hydrateFallbackElement: spinner,
         children: [
           {
             element: <AuthenticatedLayout />,
@@ -165,5 +153,3 @@ const router = createBrowserRouter([
 ]);
 
 export const App = () => <RouterProvider router={router} />;
-
-export default App;

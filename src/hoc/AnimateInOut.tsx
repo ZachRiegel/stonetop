@@ -1,13 +1,14 @@
 import styled from "@emotion/styled";
 import type { FC, SyntheticEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const Wrapper = styled.div`
   display: contents;
 `;
 
-const runningAnimationsIn = (wrapper: HTMLElement) =>
-  wrapper.getAnimations({ subtree: true }).filter((animation) => {
+// whether an animation still runs on the wrapped element or one of its children
+const isAnimating = (wrapper: HTMLElement) =>
+  wrapper.getAnimations({ subtree: true }).some((animation) => {
     if (animation.playState !== "running") return false;
     const target = animation.effect instanceof KeyframeEffect ? animation.effect.target : null;
     const parent = target?.parentElement ?? null;
@@ -35,14 +36,17 @@ const AnimateInOut = <K extends keyof P, P extends object>(
       if (isOpen) return;
       const frame = requestAnimationFrame(() => {
         const wrapper = wrapperRef.current;
-        if (wrapper && runningAnimationsIn(wrapper).length === 0) setMounted(false);
+        if (wrapper && !isAnimating(wrapper)) setMounted(false);
       });
       return () => cancelAnimationFrame(frame);
     }, [isOpen]);
 
-    const onEnd = (event: SyntheticEvent<HTMLElement>) => {
-      if (!isOpen && runningAnimationsIn(event.currentTarget).length === 0) setMounted(false);
-    };
+    const onEnd = useCallback(
+      (event: SyntheticEvent<HTMLElement>) => {
+        if (!isOpen && !isAnimating(event.currentTarget)) setMounted(false);
+      },
+      [isOpen],
+    );
 
     return mounted ? (
       <Wrapper

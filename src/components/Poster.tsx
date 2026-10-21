@@ -58,7 +58,7 @@ const Sheet = styled(Link, { shouldForwardProp: (prop) => prop !== "paper" })<{ 
   align-content: end;
   overflow: hidden;
   padding: var(--poster-padding, 16px);
-  border: var(--rim-width, 2px) solid var(--rim, transparent);
+  border: var(--rim-width, 0) solid var(--rim, transparent);
   border-radius: var(--poster-radius, 6px);
   background: var(--paper);
   color: var(--cream);

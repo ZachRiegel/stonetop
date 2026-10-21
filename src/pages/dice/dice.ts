@@ -87,12 +87,28 @@ export const FAIL_PATH =
 // solid hexagon's outline (the sheet centres its wall on it, which on a face would close the
 // gap to a neighbour), and the wrench, always alone on its face, larger
 export const SYMBOL_SCALE: Record<DieSymbol, number> = { burst: 1, special: 38 / 43.2, skull: 1.3 };
+// a mark's path: the burst is a die's own, or the plain hexagon when no one die is meant
+export const pathOf = (symbol: DieSymbol, burst = HEX) =>
+  ({ burst, special: SPECIAL_PATH, skull: FAIL_PATH })[symbol];
+// the hollow hex cuts its hole by evenodd; the wrench's jaws overlap its bar and would cancel
+// there, so it is the one nonzero fill
+export const FILL_RULE: Record<DieSymbol, CanvasFillRule> = {
+  burst: "evenodd",
+  special: "evenodd",
+  skull: "nonzero",
+};
 
 // the SVG transform that fits the glyph box into `size` pixels centred on (cx, cy)
 export const glyphTransform = (size: number, cx = 0, cy = 0) =>
   `translate(${cx - size / 2} ${cy - size / 2}) scale(${size / GLYPH_BOX})`;
 
 export type Rolled = { colour: DieColour; face: FaceIndex };
+// a roll's dice paired with the faces drawn for them
+export const rolledOf = (dice: readonly DieColour[], faces: readonly FaceIndex[]): Rolled[] =>
+  dice.map((colour, i) => ({ colour, face: faces[i] ?? 0 }));
+// one value per die colour
+export const byColour = <T>(make: (colour: DieColour) => T) =>
+  Object.fromEntries(DIE_COLOURS.map((colour) => [colour, make(colour)])) as Record<DieColour, T>;
 
 export const score = (rolled: Rolled[]): Face =>
   rolled
@@ -142,6 +158,14 @@ export const PLAYBACK_RATE = 1;
 export const MAX_SECONDS = 6;
 // one die in one frame: x y z qx qy qz qw
 export const FRAME_STRIDE = 7;
+// where a die's numbers start in a frame of a recording of `count` dice
+export const frameAt = (frame: number, die: number, count: number) =>
+  (frame * count + die) * FRAME_STRIDE;
+// how far into the playback a recorded frame plays, in seconds
+export const secondsAt = (frame: number) => frame / FRAME_RATE / PLAYBACK_RATE;
+// the most the playback clock moves in one rendered frame, so a backgrounded tab does not
+// skip the whole roll on return; the dice and their sounds share it, so a stall delays both
+export const MAX_DELTA = 0.1;
 // An impact's closing speed along the contact's normal (die units per second) below which
 // it is too soft to hear, cutting the patter of a die settling, and the speed that plays at
 // full volume. Measured over 12 seeds: a five-die roll then sounds 20–30 impacts and a lone
@@ -253,10 +277,10 @@ export const arrange = (
   shown: Arena,
 ): [number, number][] => {
   const anchored = rests.map(({ x, y, reach }) => anchor(x, y, reach, thrown, shown));
+  // pushed by an edge: anchored anywhere but its kept distance from the corner
+  const [dx, dy] = [(shown.width - thrown.width) / 2, (shown.height - thrown.height) / 2];
   const pushed = rests.map(
-    ({ x, y, reach: [rx, ry] }) =>
-      x + (shown.width - thrown.width) / 2 < rx - shown.width / 2 ||
-      y - (shown.height - thrown.height) / 2 > shown.height / 2 - ry,
+    ({ x, y }, i) => anchored[i]?.[0] !== x + dx || anchored[i]?.[1] !== y - dy,
   );
   const fit = ([x, y]: readonly [number, number]): [number, number] => [
     within(x, (shown.width - SPACING) / 2),

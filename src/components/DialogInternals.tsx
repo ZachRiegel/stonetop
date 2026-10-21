@@ -1,5 +1,5 @@
 // The bare <dialog> that hoc/MakeDialog.tsx drives: closing goes through app state so the
-// exit animation plays. Modal, SidePanel and Popover style it. Its last child is the mount
+// exit animation plays. Modal and Popover style it. Its last child is the mount
 // node it offers as the portal target (PortalTargetContext.tsx): a contents box after the
 // section, so portaled content is in the top layer, later in tree order than anything in the
 // section (as anchor positioning wants), and adds no track to a grid of the dialog's own.
@@ -15,8 +15,8 @@ import {
   useState,
 } from "react";
 
-// boxless, so it adds no track to a dialog laid out as a grid (SidePanel.tsx) and nothing for
-// a click to land on; what is portaled into it is placed by the viewport
+// boxless, so it adds no track to a dialog laid out as a grid and nothing for a click to
+// land on; what is portaled into it is placed by the viewport
 const Mount = styled.div`
   display: contents;
 `;

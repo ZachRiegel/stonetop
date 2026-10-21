@@ -126,11 +126,17 @@ export const layoutOf = ({ centre, corner, rings }: MenuSpec): Layout => {
       arcs: arcs.map((arc, i) => arcOf(arc, ring, i, radius, depth, corner)),
     };
   });
-  // the rings by their place, since they are described in any order
+  // the rings by their place, since they are described in any order; the first wins a tie
   const startOf = ({ radius, depth }: RingLayout) => radius - depth / 2;
   const endOf = ({ radius, depth }: RingLayout) => radius + depth / 2;
-  const [innermost] = laid.toSorted((a, b) => startOf(a) - startOf(b));
-  const [outermost] = laid.toSorted((a, b) => endOf(b) - endOf(a));
+  const innermost = laid.reduce<RingLayout | undefined>(
+    (best, ring) => (best && startOf(best) <= startOf(ring) ? best : ring),
+    undefined,
+  );
+  const outermost = laid.reduce<RingLayout | undefined>(
+    (best, ring) => (best && endOf(best) >= endOf(ring) ? best : ring),
+    undefined,
+  );
   const inner = innermost ? startOf(innermost) : centre;
   return {
     button: (centre + inner) / 2,
@@ -234,9 +240,11 @@ const circleOf = (radius: number) =>
 
 export type Hit = { kind: "centre" } | { kind: "segment"; segment: SegmentLayout };
 // layouts are rebuilt every render, so segments are compared by their place in the
-// description, not by identity
-export const sameSegment = (a: SegmentLayout, b: SegmentLayout) =>
-  a.ring === b.ring && a.arc === b.arc && a.index === b.index;
+// description, not by identity; null, for no segment, is the same only as null
+export const sameSegment = (a: SegmentLayout | null, b: SegmentLayout | null) =>
+  a === b || (!!a && !!b && a.ring === b.ring && a.arc === b.arc && a.index === b.index);
+// the segment a hit is on, or null for the centre button or nothing
+export const segmentOf = (found: Hit | null) => (found?.kind === "segment" ? found.segment : null);
 
 // whether a point is on a segment: within its ring's band, along its run; the rounded
 // corners are counted square, so a run's end counts to its edge

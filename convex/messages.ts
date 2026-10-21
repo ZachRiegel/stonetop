@@ -2,8 +2,8 @@ import type { Doc } from "_generated/dataModel";
 import { mutation, type MutationCtx, query, type QueryCtx } from "_generated/server";
 import type { WithoutSystemFields } from "convex/server";
 import { ConvexError, v } from "convex/values";
-import { membershipOf, requireMember, requireUser } from "lib/access";
-import { drawFaces, MAX_POOL, mulberry32, newSeed, score } from "pages/dice/dice";
+import { membershipFromParam, requireMember } from "lib/access";
+import { drawFaces, MAX_POOL, mulberry32, newSeed, rolledOf, score } from "pages/dice/dice";
 import schema, { dieColour, messageKind } from "schema";
 
 // The seed of a campaign's next roll. A campaign made before the dice roller has
@@ -15,17 +15,18 @@ export const seedOf = (campaign: Doc<"campaigns">) =>
 // Omit over a union keeps only the shared keys; distributed, each kind keeps its own
 type Draft<M> = M extends unknown ? Omit<M, "sequence"> : never;
 
-// Appends a message to its campaign's feed, numbered after the campaign's latest, and
-// moves the campaign on to it. Callers check membership first. Two posts to one campaign
-// at once conflict on the campaign row and one is retried, so sequences never repeat.
-export const post = async (
+// Appends a message to the campaign's feed, numbered after the campaign's latest, and moves
+// the campaign on to it, with any other change to the campaign (`also`) in the same write.
+// Callers check membership and read the campaign first. Two posts to one campaign at once
+// conflict on the campaign row and one is retried, so sequences never repeat.
+const post = async (
   ctx: MutationCtx,
+  campaign: Doc<"campaigns">,
   message: Draft<WithoutSystemFields<Doc<"messages">>>,
+  also: Partial<WithoutSystemFields<Doc<"campaigns">>> = {},
 ) => {
-  const campaign = await ctx.db.get(message.campaignId);
-  if (!campaign) throw new Error("This campaign no longer exists");
   const sequence = (campaign.messageSequence ?? 0) + 1;
-  await ctx.db.patch(campaign._id, { messageSequence: sequence });
+  await ctx.db.patch(campaign._id, { ...also, messageSequence: sequence });
   return ctx.db.insert("messages", { ...message, sequence });
 };
 
@@ -41,12 +42,6 @@ const withAuthor = async (ctx: QueryCtx, message: Doc<"messages">) => {
     ? { ...message, author: { displayName: sender.displayName, picture: sender.picture } }
     : null;
 };
-// the campaign's id when the caller is a member of it, otherwise null (a malformed id too)
-const readableCampaign = async (ctx: QueryCtx, campaignId: string) => {
-  const user = await requireUser(ctx);
-  const id = ctx.db.normalizeId("campaigns", campaignId);
-  return id && (await membershipOf(ctx, id, user._id)) ? id : null;
-};
 
 // The campaign's newest message of this kind (or of any kind, "all") and who sent it:
 // null before the first, and for anyone outside the campaign
@@ -54,7 +49,7 @@ export const latest = query({
   args: { campaignId: v.string(), kind: v.union(messageKind, v.literal("all")) },
   returns: v.union(authored, v.null()),
   handler: async (ctx, { campaignId, kind }) => {
-    const id = await readableCampaign(ctx, campaignId);
+    const id = (await membershipFromParam(ctx, campaignId))?.campaignId;
     if (!id) return null;
     const message = await (
       kind === "all"
@@ -79,7 +74,7 @@ export const recent = query({
   args: { campaignId: v.string() },
   returns: v.array(authored),
   handler: async (ctx, { campaignId }) => {
-    const id = await readableCampaign(ctx, campaignId);
+    const id = (await membershipFromParam(ctx, campaignId))?.campaignId;
     if (!id) return [];
     const rolls = await ctx.db
       .query("messages")
@@ -109,16 +104,20 @@ export const roll = mutation({
       throw new Error(`A roll is 1 to ${MAX_POOL} dice`);
     if (seed !== seedOf(campaign)) throw new ConvexError({ code: "SEED_CONFLICT" });
     const faces = drawFaces(mulberry32(seed), dice.length);
-    await post(ctx, {
-      kind: "roll",
-      campaignId,
-      userId: membership.userId,
-      seed,
-      dice,
-      faces,
-      totals: score(dice.map((colour, i) => ({ colour, face: faces[i] ?? 0 }))),
-    });
-    await ctx.db.patch(campaignId, { rollSeed: newSeed() });
+    await post(
+      ctx,
+      campaign,
+      {
+        kind: "roll",
+        campaignId,
+        userId: membership.userId,
+        seed,
+        dice,
+        faces,
+        totals: score(rolledOf(dice, faces)),
+      },
+      { rollSeed: newSeed() },
+    );
     return null;
   },
 });

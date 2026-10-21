@@ -39,7 +39,7 @@ const Overview = () => {
         art={playbooksPng}
         fit="icon"
         title="Character"
-        caption={campaign ? roleOf(campaign) : ""}
+        caption={campaign ? roleOf(campaign.isOwner, campaign.myCharacter) : ""}
       />
       <Poster
         to={`/campaign/${campaignId}/players`}

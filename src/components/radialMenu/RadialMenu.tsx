@@ -10,7 +10,6 @@ import Centre, { type CentreProps } from "components/radialMenu/Centre.tsx";
 import {
   bubbleOf,
   held,
-  type Hit,
   hit,
   homeCentre,
   insideRing,
@@ -20,6 +19,7 @@ import {
   type MenuSpec,
   sameSegment,
   type SegmentLayout,
+  segmentOf,
   segmentPath,
 } from "components/radialMenu/geometry.ts";
 import Glass, { type Drawn } from "components/radialMenu/Glass.tsx";
@@ -31,6 +31,7 @@ import React, {
   cloneElement,
   isValidElement,
   type ReactNode,
+  useCallback,
   useEffect,
   useId,
   useRef,
@@ -107,9 +108,23 @@ const specOf = ({ centre, rings }: Tree, corner: number): MenuSpec => ({
     arcs: arcs.map(({ props, items }) => ({ angle: props.angle, items })),
   })),
 });
-// a laid-out segment's description
-const describedAs = (segment: SegmentLayout, tree: Tree) =>
-  tree.rings[segment.ring]?.arcs[segment.arc]?.segments[segment.index]?.props;
+// a laid-out segment's description, by the segment's place in it
+const describedAs = (
+  { ring, arc, index }: Pick<SegmentLayout, "ring" | "arc" | "index">,
+  tree: Tree,
+) => tree.rings[ring]?.arcs[arc]?.segments[index]?.props;
+
+// the pointer's offset from the centre item's centre, held within the menu's reach
+const offsetOf = (
+  anchor: HTMLElement | null,
+  { clientX, clientY }: { clientX: number; clientY: number },
+  layout: Layout,
+) => {
+  const rect = anchor?.getBoundingClientRect();
+  return rect
+    ? held(clientX - rect.left - rect.width / 2, clientY - rect.top - rect.height / 2, layout)
+    : null;
+};
 
 const shrink = keyframes`
   from {
@@ -266,9 +281,10 @@ const RadialMenu = ({
   const anchor = useRef<HTMLDivElement>(null);
   const tree = treeOf(children);
   const layout = layoutOf(specOf(tree, corner));
-  // the description and its layout as the window listeners of a press see them: the latest
-  const latest = useRef({ tree, layout, onDragCentre, requestClose });
-  latest.current = { tree, layout, onDragCentre, requestClose };
+  // the description, its layout and the props as the handlers see them: the latest, so the
+  // handlers keep one identity while reading what is current
+  const latest = useRef({ tree, layout, isOpen, requestOpen, requestClose, onDragCentre });
+  latest.current = { tree, layout, isOpen, requestOpen, requestClose, onDragCentre };
   // the segment under the pointer between presses, and the bubble of the last drag
   const [hovered, setHovered] = useState<SegmentLayout | null>(null);
   const [drawn, setDrawn] = useState<Drawn | null>(null);
@@ -283,24 +299,11 @@ const RadialMenu = ({
     setDrawn(null);
   }, [isOpen]);
 
-  // the pointer's offset from the centre item's centre, held within the menu's reach
-  const offsetOf = ({ clientX, clientY }: { clientX: number; clientY: number }, layout: Layout) => {
-    const rect = anchor.current?.getBoundingClientRect();
-    return rect
-      ? held(clientX - rect.left - rect.width / 2, clientY - rect.top - rect.height / 2, layout)
-      : null;
-  };
-  // what a release, or Enter on a focused segment, does
-  const activate = (target: Hit | null) => {
-    const { tree, requestClose } = latest.current;
-    if (target?.kind === "segment") describedAs(target.segment, tree)?.onActivate();
-    else requestClose();
-  };
   // A press, reported by the window until it ends, since the dialog that opens mid-press
   // makes the button inert (captured events still bubble). A `drag` starts on the centre
   // button: the bubble follows, and each segment it arrives on is told, as is a return
   // inside the innermost ring. A press on the open menu moves nothing until it is released.
-  const startPress = (event: React.PointerEvent, drag: boolean) => {
+  const startPress = useCallback((event: React.PointerEvent, drag: boolean) => {
     if (event.button !== 0) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     // whether the press has left the button, the segment the bubble is on, and whether it
@@ -310,7 +313,7 @@ const RadialMenu = ({
     let inside = true;
     const onMove = (event: PointerEvent) => {
       const { layout, tree, onDragCentre } = latest.current;
-      const at = offsetOf(event, layout);
+      const at = offsetOf(anchor.current, event, layout);
       if (!at || !drag) return;
       const found = hit(...at, layout);
       const { d, placed } = bubbleOf(found, layout);
@@ -324,20 +327,22 @@ const RadialMenu = ({
       }));
       if (found?.kind !== "centre") left = true;
       // arriving on a segment, or back inside the innermost ring
-      const segment = found?.kind === "segment" ? found.segment : null;
+      const segment = segmentOf(found);
       const within = insideRing(...at, layout);
-      if (segment && !(on && sameSegment(on, segment))) describedAs(segment, tree)?.onDragEnter?.();
+      if (segment && !sameSegment(on, segment)) describedAs(segment, tree)?.onDragEnter?.();
       if (within && !inside) onDragCentre?.();
       on = segment;
       inside = within;
     };
     const onUp = (event: PointerEvent) => {
       stop();
-      const { layout } = latest.current;
-      const at = offsetOf(event, layout);
+      const { layout, tree, requestClose } = latest.current;
+      const at = offsetOf(anchor.current, event, layout);
       const target = at && hit(...at, layout);
       // a press that never left the button is a click, and leaves the menu it opened
-      if (!(drag && !left && target?.kind === "centre")) activate(target);
+      if (drag && !left && target?.kind === "centre") return;
+      if (target?.kind === "segment") describedAs(target.segment, tree)?.onActivate();
+      else requestClose();
     };
     const stop = () => {
       pressed.current = null;
@@ -353,12 +358,47 @@ const RadialMenu = ({
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
     window.addEventListener("pointercancel", stop);
-  };
+  }, []);
+  const onBoardPointerDown = useCallback(
+    (event: React.PointerEvent) => startPress(event, false),
+    [startPress],
+  );
+  const onBoardPointerMove = useCallback((event: React.PointerEvent) => {
+    const { layout } = latest.current;
+    const at = offsetOf(anchor.current, event, layout);
+    if (pressed.current || !at) return;
+    // only a change re-renders: the pointer reports far more often than it moves on
+    const next = segmentOf(hit(...at, layout));
+    setHovered((previous) => (sameSegment(previous, next) ? previous : next));
+  }, []);
+  const onBoardPointerLeave = useCallback(() => {
+    if (!pressed.current) setHovered(null);
+  }, []);
+  const onCentrePointerDown = useCallback(
+    (event: React.PointerEvent) => {
+      const { tree, isOpen, requestOpen } = latest.current;
+      if (!requestOpen || event.button !== 0 || tree.centre.children.props.disabled || isOpen)
+        return;
+      requestOpen();
+      startPress(event, true);
+    },
+    [startPress],
+  );
+  // Enter or Space on a focused segment activates it; the segment is found by the place it
+  // carries in its data attributes, so one handler serves every segment
+  const onSegmentKeyDown = useCallback((event: React.KeyboardEvent<SVGPathElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    const { ring, arc, index } = event.currentTarget.dataset;
+    describedAs(
+      { ring: Number(ring), arc: Number(arc), index: Number(index) },
+      latest.current.tree,
+    )?.onActivate();
+  }, []);
 
   // the arcs: each drawn at home and turned into place, its segments' shapes first and
   // their content over them
-  const under = drawn?.shown && drawn.on?.kind === "segment" ? drawn.on.segment : null;
-  const isHovered = (segment: SegmentLayout) => hovered !== null && sameSegment(hovered, segment);
+  const under = drawn?.shown ? segmentOf(drawn.on) : null;
   const art = layout.rings.map((ring, r) =>
     ring.arcs.map((arc, a) => {
       const described = tree.rings[r]?.arcs[a];
@@ -367,13 +407,12 @@ const RadialMenu = ({
         [
           dimmed ||
           (described.props.dimOthersUnderDrag &&
-            under !== null &&
-            under.ring === r &&
+            under?.ring === r &&
             under.arc === a &&
             under.index !== segment.index)
             ? "dimmed"
             : undefined,
-          isHovered(segment) ? "hovered" : undefined,
+          sameSegment(hovered, segment) ? "hovered" : undefined,
         ]
           .filter(Boolean)
           .join(" ") || undefined;
@@ -388,17 +427,16 @@ const RadialMenu = ({
             <Shape
               key={segment.index}
               d={segmentPath(segment)}
-              paint={isHovered(segment) ? (props.hoverFill ?? props.fill) : props.fill}
+              paint={sameSegment(hovered, segment) ? (props.hoverFill ?? props.fill) : props.fill}
               outlined={props.outlined ?? true}
               className={classes(segment, props)}
               role="menuitem"
               tabIndex={0}
               aria-label={props.label}
-              onKeyDown={(event) => {
-                if (event.key !== "Enter" && event.key !== " ") return;
-                event.preventDefault();
-                props.onActivate();
-              }}
+              data-ring={segment.ring}
+              data-arc={segment.arc}
+              data-index={segment.index}
+              onKeyDown={onSegmentKeyDown}
             />
           ))}
           {segments.map(({ segment, props }) => {
@@ -431,22 +469,9 @@ const RadialMenu = ({
           role="menu"
           extent={extent}
           pointing={hovered !== null}
-          onPointerDown={(event) => startPress(event, false)}
-          onPointerMove={(event) => {
-            const at = offsetOf(event, layout);
-            if (pressed.current || !at) return;
-            const found = hit(...at, layout);
-            // only a change re-renders: the pointer reports far more often than it moves on
-            const next = found?.kind === "segment" ? found.segment : null;
-            setHovered((previous) =>
-              previous === next || (previous && next && sameSegment(previous, next))
-                ? previous
-                : next,
-            );
-          }}
-          onPointerLeave={() => {
-            if (!pressed.current) setHovered(null);
-          }}
+          onPointerDown={onBoardPointerDown}
+          onPointerMove={onBoardPointerMove}
+          onPointerLeave={onBoardPointerLeave}
         >
           <svg
             width={extent * 2}
@@ -463,12 +488,7 @@ const RadialMenu = ({
         ref={anchor}
         className={className}
         diameter={tree.centre.diameter}
-        onPointerDown={(event) => {
-          if (!requestOpen || event.button !== 0 || tree.centre.children.props.disabled || isOpen)
-            return;
-          requestOpen();
-          startPress(event, true);
-        }}
+        onPointerDown={onCentrePointerDown}
       >
         {cloneElement(tree.centre.children, {
           "aria-haspopup": requestOpen && "menu",

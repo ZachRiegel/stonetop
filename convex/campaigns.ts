@@ -1,7 +1,7 @@
 import type { Doc } from "_generated/dataModel";
 import { mutation, query, type QueryCtx } from "_generated/server";
 import { v } from "convex/values";
-import { membershipOf, requireGameMaster, requireUser } from "lib/access";
+import { membershipFromParam, membershipOf, requireGameMaster, requireUser } from "lib/access";
 import { seedOf } from "messages";
 import { newSeed } from "pages/dice/dice";
 import schema from "schema";
@@ -90,10 +90,8 @@ export const get = query({
   args: { campaignId: v.string() },
   returns: v.union(card, v.null()),
   handler: async (ctx, { campaignId }) => {
-    const user = await requireUser(ctx);
-    const id = ctx.db.normalizeId("campaigns", campaignId);
-    const membership = id && (await membershipOf(ctx, id, user._id));
-    return membership ? await cardOf(ctx, membership) : null;
+    const membership = await membershipFromParam(ctx, campaignId);
+    return membership && cardOf(ctx, membership);
   },
 });
 

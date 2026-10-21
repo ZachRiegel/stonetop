@@ -13,12 +13,11 @@ import {
   type DieColour,
   type DieSymbol,
   type Face,
-  FAIL_PATH,
+  FILL_RULE,
   GLYPH_BOX,
   glyphTransform,
-  HEX,
   LABELS,
-  SPECIAL_PATH,
+  pathOf,
   SYMBOL_SCALE,
   SYMBOLS,
 } from "pages/dice/dice.ts";
@@ -38,10 +37,9 @@ export type Readout = {
 // counts of two dice colours
 const NAME_WIDTH = 160;
 
-// the totals' marks: a plain burst, since no one die is meant; and each mark's half extent
+// the totals' marks (a plain burst, since no one die is meant): each mark's half extent
 // about the glyph box's middle once scaled, so its svg clips to it and the row's gaps are
 // true: both hexagons are circumradius 38 (dice.ts), the wrench reaches 38.4 from the middle
-const PATHS: Record<DieSymbol, string> = { burst: HEX, special: SPECIAL_PATH, skull: FAIL_PATH };
 const HEXAGON: readonly [number, number] = [38 * Math.cos(Math.PI / 6), 38];
 const HALF: Record<DieSymbol, readonly [number, number]> = {
   burst: HEXAGON,
@@ -176,14 +174,13 @@ const capitalised = (name: string) => name.charAt(0).toUpperCase() + name.slice(
 const timeOf = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
 
 const RollReadout = ({
-  className,
   condensed = false,
   author,
   time,
   dice,
   totals,
-}: Readout & { className?: string; condensed?: boolean }) => (
-  <Rows className={className} condensed={condensed}>
+}: Readout & { condensed?: boolean }) => (
+  <Rows condensed={condensed}>
     <Head>
       <Avatar src={author.picture} alt="" />
       <Line>
@@ -208,8 +205,8 @@ const RollReadout = ({
           <Numeral>{totals[symbol]}</Numeral>
           <Mark viewBox={boxOf(HALF[symbol])} role="img" aria-label={LABELS[symbol]}>
             <path
-              d={PATHS[symbol]}
-              fillRule={symbol === "skull" ? "nonzero" : "evenodd"}
+              d={pathOf(symbol)}
+              fillRule={FILL_RULE[symbol]}
               transform={glyphTransform(
                 GLYPH_BOX * SYMBOL_SCALE[symbol],
                 GLYPH_BOX / 2,

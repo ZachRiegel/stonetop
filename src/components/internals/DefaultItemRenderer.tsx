@@ -3,6 +3,7 @@ import styled from "@emotion/styled";
 import Button from "components/Button.tsx";
 import { FontCSS } from "components/Font.tsx";
 import type { Subscription } from "hooks/useNavigationGroup.ts";
+import { useCallback } from "react";
 
 // A row in the Glass look: plain text that lifts to white under the pointer; the highlighted
 // row (the one arrows point at) wears a grey outline, cream once focus is on the row itself,
@@ -74,16 +75,18 @@ const DefaultItemRenderer = <T,>({
   subscription: Subscription;
   itemToLabel: (val: T) => string;
   select: (val: T) => void;
-  query?: string;
-}) => (
-  <RowButton
-    ref={subscription}
-    tabIndex={tabIndex}
-    text={itemToLabel(item)}
-    onClick={() => select(item)}
-    isHighlighted={isHighlighted}
-    isSelected={isSelected}
-  />
-);
+}) => {
+  const onClick = useCallback(() => select(item), [select, item]);
+  return (
+    <RowButton
+      ref={subscription}
+      tabIndex={tabIndex}
+      text={itemToLabel(item)}
+      onClick={onClick}
+      isHighlighted={isHighlighted}
+      isSelected={isSelected}
+    />
+  );
+};
 
 export default DefaultItemRenderer;

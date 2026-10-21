@@ -170,8 +170,7 @@ const RootLayout = () => {
           /*
           10. Create a root stacking context
         */
-          #root,
-          #__next {
+          #root {
             isolation: isolate;
           }
           /* 11. Remove default anchor styling */
@@ -183,13 +182,11 @@ const RootLayout = () => {
             width: 100vw;
             height: 100vh;
             background-color: transparent;
-            margin: 0;
             padding: 0;
             outline: none;
             border: none;
             max-width: unset;
             max-height: unset;
-            user-select: none;
           }
           /* Firefox: no way to pin an exact width; thin renders at 8px */
           * {

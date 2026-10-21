@@ -8,9 +8,9 @@ import stones from "pages/landing/footer.png";
 
 export type CampaignCard = NonNullable<FunctionReturnType<typeof api.campaigns.get>>;
 
-// "Game Master", or the caller's character
-export const roleOf = (campaign: Pick<CampaignCard, "isOwner" | "myCharacter">) =>
-  campaign.isOwner ? "Game Master" : (campaign.myCharacter?.name ?? "No character yet");
+// "Game Master", or the member's character
+export const roleOf = (isOwner: boolean, character: { name: string } | null) =>
+  isOwner ? "Game Master" : (character?.name ?? "No character yet");
 
 // everyone but the caller (null or undefined while the caller is unknown), for a card's faces
 // and names

@@ -11,8 +11,15 @@ import RadialMenu from "components/radialMenu/RadialMenu.tsx";
 import Ring from "components/radialMenu/Ring.tsx";
 import Segment from "components/radialMenu/Segment.tsx";
 import useModal from "hooks/useModal.ts";
-import { DICE, DIE_COLOURS, type DieColour, glyphTransform, MAX_POOL } from "pages/dice/dice.ts";
-import { useCallback, useEffect, useState } from "react";
+import {
+  byColour,
+  DICE,
+  DIE_COLOURS,
+  type DieColour,
+  glyphTransform,
+  MAX_POOL,
+} from "pages/dice/dice.ts";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // the die button's cell, and its margin from the page's corner: 8px between the page edge
 // and the lowest (or rightmost) point of the count arc swung to blue (or orange), measured
@@ -67,12 +74,6 @@ const Mark = styled(Glyph)`
 `;
 // the dice marks' size in the menu, in px
 const MARK_SIZE = 30;
-const glyph = (name: "Chat" | "Cog") => (
-  <PillGlyph
-    d={iconPath(name)}
-    transform={`translate(${-ICON_SIZE / 2} ${-ICON_SIZE / 2}) scale(${ICON_SIZE / 24})`}
-  />
-);
 
 // A radial menu round one die button: a chosen colour unfolds a count arc, and a count
 // rolls. Click through it, or press the button and drag through a colour to a count: passing
@@ -99,10 +100,10 @@ const RollMenu = ({
 }) => {
   const { isOpen, open: openMenu, close: closeMenu } = useModal();
   const [colour, setColour] = useState<DieColour | null>(null);
-  const open = () => {
+  const open = useCallback(() => {
     openMenu();
     onOpen?.();
-  };
+  }, [openMenu, onOpen]);
   const close = useCallback(() => {
     closeMenu();
     setColour(null);
@@ -110,22 +111,43 @@ const RollMenu = ({
   useEffect(() => {
     if (locked) close();
   }, [locked, close]);
-  // an activation that closes the menu
-  const then = (act: () => void) => () => {
-    act();
+  const clearColour = useCallback(() => setColour(null), []);
+  // one chooser per colour, made once
+  const choose = useMemo(() => byColour((die) => () => setColour(die)), []);
+  // the pills and the counts close the menu as they act
+  const openLog = useCallback(() => {
+    onLog();
     close();
-  };
-  const pill = (name: "Chat" | "Cog", label: string, act: () => void) => (
+  }, [onLog, close]);
+  const openSettings = useCallback(() => {
+    onSettings();
+    close();
+  }, [onSettings, close]);
+  // the count arc's rolls of the chosen colour, one to MAX_POOL dice
+  const rolls = useMemo(
+    () =>
+      colour === null
+        ? []
+        : Array.from({ length: MAX_POOL }, (_, i) => () => {
+            onRoll(Array.from({ length: i + 1 }, () => colour));
+            close();
+          }),
+    [colour, onRoll, close],
+  );
+  const pill = (name: "Chat" | "Cog", label: string, onActivate: () => void) => (
     <Segment
       span={70}
       label={label}
       fill="var(--neutral-150)"
       hoverFill="var(--neutral-250)"
       outlined={false}
-      onActivate={then(act)}
-      onDragEnter={() => setColour(null)}
+      onActivate={onActivate}
+      onDragEnter={clearColour}
     >
-      {glyph(name)}
+      <PillGlyph
+        d={iconPath(name)}
+        transform={`translate(${-ICON_SIZE / 2} ${-ICON_SIZE / 2}) scale(${ICON_SIZE / 24})`}
+      />
     </Segment>
   );
   return (
@@ -134,7 +156,7 @@ const RollMenu = ({
       isOpen={isOpen}
       requestOpen={locked ? undefined : open}
       requestClose={close}
-      onDragCentre={() => setColour(null)}
+      onDragCentre={clearColour}
     >
       {/* the rings are 40px deep and 12px off the button and each other */}
       <Centre diameter={CELL}>
@@ -150,28 +172,28 @@ const RollMenu = ({
               fill={`var(--${RAMPS[die]}-500)`}
               hoverFill={`var(--${RAMPS[die]}-600)`}
               dimmed={colour !== null && colour !== die}
-              onActivate={() => setColour(die)}
-              onDragEnter={() => setColour(die)}
+              onActivate={choose[die]}
+              onDragEnter={choose[die]}
             >
               {/* the die's mark, outlined, as on the die icons */}
               <Mark d={DICE[die].burst} fillRule="evenodd" transform={glyphTransform(MARK_SIZE)} />
             </Segment>
           ))}
         </Arc>
-        <Arc angle={0}>{pill("Chat", "log", onLog)}</Arc>
-        <Arc angle={270}>{pill("Cog", "settings", onSettings)}</Arc>
+        <Arc angle={0}>{pill("Chat", "log", openLog)}</Arc>
+        <Arc angle={270}>{pill("Cog", "settings", openSettings)}</Arc>
       </Ring>
       <Ring startDistance={88} endDistance={128}>
         {colour && (
           <Arc angle={angleOf(colour)} dimOthersUnderDrag>
-            {Array.from({ length: MAX_POOL }, (_, i) => (
+            {rolls.map((roll, i) => (
               <Segment
                 key={i}
                 span={DIE_SPAN / 2}
                 label={`roll ${i + 1} ${colour} dice`}
                 fill="var(--cream)"
                 hoverFill="var(--white)"
-                onActivate={then(() => onRoll(Array.from({ length: i + 1 }, () => colour)))}
+                onActivate={roll}
               >
                 <Numeral>{i + 1}</Numeral>
               </Segment>

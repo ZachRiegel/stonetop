@@ -8,15 +8,26 @@ import {
   DIE_COLOURS,
   drawFaces,
   FAIL_PATH,
+  FILL_RULE,
+  FRAME_STRIDE,
+  frameAt,
   glyphTransform,
+  HEX,
   mulberry32,
   newSeed,
+  pathOf,
   reach,
+  rolledOf,
   score,
+  secondsAt,
   SPACING,
   SPECIAL_PATH,
 } from "pages/dice/dice.ts";
 import { describe, expect, test } from "vitest";
+
+// the arena the dice in the anchor and arrange tests were thrown in, and a die lying flat
+const thrown = { width: 20, height: 10 };
+const flat = [0.5, 0.5] as const;
 
 describe("drawFaces", () => {
   test("draws one face per die, the same every time for the same seed", () => {
@@ -60,6 +71,23 @@ describe("score", () => {
     ).toEqual({ burst: 3, special: 1, skull: 1 });
     expect(score([])).toEqual({ burst: 0, special: 0, skull: 0 });
   });
+
+  test("pairs each die with its face, a missing face counted as the first", () => {
+    expect(rolledOf(["blue", "orange"], [5, 2])).toEqual([
+      { colour: "blue", face: 5 },
+      { colour: "orange", face: 2 },
+    ]);
+    expect(rolledOf(["violet"], [])).toEqual([{ colour: "violet", face: 0 }]);
+  });
+});
+
+describe("playback", () => {
+  test("finds a die's numbers in a frame, and the frame's time", () => {
+    expect(frameAt(0, 0, 3)).toBe(0);
+    expect(frameAt(2, 1, 3)).toBe(7 * FRAME_STRIDE);
+    expect(secondsAt(0)).toBe(0);
+    expect(secondsAt(60)).toBe(1);
+  });
 });
 
 describe("newSeed", () => {
@@ -96,6 +124,14 @@ describe("glyph paths", () => {
     expect(DICE.orange.burst).toContain("ZM50.0,30.0L67.3,60.0L32.7,60.0Z");
   });
 
+  test("draws a burst as a die's own or the plain hexagon, and only the wrench nonzero", () => {
+    expect(pathOf("burst", DICE.blue.burst)).toBe(DICE.blue.burst);
+    expect(pathOf("burst")).toBe(HEX);
+    expect(pathOf("special", DICE.blue.burst)).toBe(SPECIAL_PATH);
+    expect(pathOf("skull")).toBe(FAIL_PATH);
+    expect(FILL_RULE).toEqual({ burst: "evenodd", special: "evenodd", skull: "nonzero" });
+  });
+
   test("the hollow hex and wrench stay inside the box", () => {
     [SPECIAL_PATH, FAIL_PATH].forEach((d) => {
       const all = coordinates(d).flat();
@@ -124,9 +160,6 @@ describe("reach", () => {
 });
 
 describe("anchor", () => {
-  const thrown = { width: 20, height: 10 };
-  const flat = [0.5, 0.5] as const;
-
   test("is the identity in the arena the die was thrown in", () => {
     expect(anchor(3, -2, flat, thrown, thrown)).toEqual([3, -2]);
     expect(anchor(-9.5, 4.5, flat, thrown, thrown)).toEqual([-9.5, 4.5]);
@@ -150,8 +183,6 @@ describe("anchor", () => {
 });
 
 describe("arrange", () => {
-  const thrown = { width: 20, height: 10 };
-  const flat = [0.5, 0.5] as const;
   const rest = (x: number, y: number) => ({ x, y, reach: flat });
   // where the dice end up: their anchored spots plus their shifts
   const placed = (rests: { x: number; y: number; reach: typeof flat }[], shown: Arena) =>

@@ -1,10 +1,8 @@
-/// <reference types="vite/client" />
 import { internal } from "_generated/api";
 import { convexTest } from "convex-test";
 import schema from "schema";
+import { modules } from "testing.setup";
 import { describe, expect, test } from "vitest";
-
-const modules = import.meta.glob("./**/*.ts");
 
 // The Better Auth component calls these internal mutations with the component
 // document that changed; they keep the app-side `users` rows in step.

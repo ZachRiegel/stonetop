@@ -26,14 +26,8 @@ const BaseLoading = styled(LoadingInternal)`
 `;
 
 const Loading = {
-  Small: styled(BaseLoading)`
-    height: 64px;
-  `,
   Medium: styled(BaseLoading)`
     height: 128px;
-  `,
-  Large: styled(BaseLoading)`
-    height: 256px;
   `,
 };
 

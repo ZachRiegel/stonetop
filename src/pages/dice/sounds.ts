@@ -4,24 +4,19 @@
 // CC0 Impact Sounds (kenney.nl/assets/impact-sounds), impactWood_heavy_000 to 004 and
 // impactWood_medium_000 to 004, chosen by the user after auditioning the packs and mixed down
 // to mono WAV since Safari cannot decode the Ogg Vorbis they ship as.
-import clack0 from "assets/diceClack0.wav";
-import clack1 from "assets/diceClack1.wav";
-import clack2 from "assets/diceClack2.wav";
-import clack3 from "assets/diceClack3.wav";
-import clack4 from "assets/diceClack4.wav";
-import knock0 from "assets/diceKnock0.wav";
-import knock1 from "assets/diceKnock1.wav";
-import knock2 from "assets/diceKnock2.wav";
-import knock3 from "assets/diceKnock3.wav";
-import knock4 from "assets/diceKnock4.wav";
 import type { Contact } from "pages/dice/dice.ts";
 import { preference } from "pages/dice/preferences.ts";
 
 // the loudest an impact plays; the user brought it down twice by ear (0.7, then 0.7 of that)
 const VOLUME = 0.49;
+// the takes' URLs; their order is of no account, as each impact picks one at random
 const URLS: Record<Contact["kind"], string[]> = {
-  table: [knock0, knock1, knock2, knock3, knock4],
-  dice: [clack0, clack1, clack2, clack3, clack4],
+  table: Object.values(
+    import.meta.glob<string>("/src/assets/diceKnock*.wav", { eager: true, import: "default" }),
+  ),
+  dice: Object.values(
+    import.meta.glob<string>("/src/assets/diceClack*.wav", { eager: true, import: "default" }),
+  ),
 };
 // a device preference (preferences.ts); only "off" is stored
 const store = preference("dice-sounds");

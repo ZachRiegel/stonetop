@@ -196,7 +196,7 @@ Ask your Game Master to invite you or create one.`}
                 paper="slate"
                 art={artOf(campaign._id)}
                 title={campaign.name}
-                caption={`${roleOf(campaign)} · ${count(others.length, campaign.isOwner ? "player" : "other")}`}
+                caption={`${roleOf(campaign.isOwner, campaign.myCharacter)} · ${count(others.length, campaign.isOwner ? "player" : "other")}`}
                 people={facesOf(others)}
               />
             );

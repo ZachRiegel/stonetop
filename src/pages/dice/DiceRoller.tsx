@@ -7,12 +7,13 @@ import { ConvexError } from "convex/values";
 import useModal from "hooks/useModal.ts";
 import {
   DIE_SHARE,
+  type DieColour,
   EYE,
   FADE_SECONDS,
-  FRAME_RATE,
-  PLAYBACK_RATE,
+  rolledOf,
   type RollResult,
   score,
+  secondsAt,
 } from "pages/dice/dice.ts";
 import DiceScene from "pages/dice/DiceScene.tsx";
 import DiceSettings from "pages/dice/DiceSettings.tsx";
@@ -21,7 +22,7 @@ import { take } from "pages/dice/rollCache.ts";
 import RollLog, { type LogPhase } from "pages/dice/RollLog.tsx";
 import RollMenu, { MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollNotification from "pages/dice/RollNotification.tsx";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "react-router";
 import { MathUtils } from "three";
 
@@ -36,6 +37,9 @@ const CAMERA = {
   near: 1,
   far: 100,
 };
+// the renderer: transparent over the page, at up to twice the CSS pixel density
+const GL = { alpha: true, antialias: true };
+const DPR: [number, number] = [1, 2];
 
 // one cell: the transparent render floats over the page's ground, the UI on top of both. A
 // faint rule along the top marks where the table starts under the strip, since the dice
@@ -136,7 +140,7 @@ const DiceRoller = () => {
           at: Date.now(),
           id: latest._id,
           simulation,
-          dice: latest.dice.map((colour, i) => ({ colour, face: latest.faces[i] ?? 0 })),
+          dice: rolledOf(latest.dice, latest.faces),
           author: latest.author,
         });
       },
@@ -161,15 +165,55 @@ const DiceRoller = () => {
     return () => clearTimeout(timer);
   }, [arrived, clearSeconds, dismiss]);
 
+  const onArrive = useCallback(
+    (id: string) => {
+      setArrived({ id, at: Date.now() });
+      setBloomed(id);
+      // a roll that lands while the log is up has joined the log instead: its card wilts
+      // unseen, rather than waiting under the log to show once it closes
+      if (log !== "closed") setDismissed(id);
+    },
+    [log],
+  );
+  // withheld while the settings card is up over this corner, and laid as it closes with
+  // whatever wait is left (the notification reads the wait once, as it lays the card)
+  const announced = useMemo(
+    () =>
+      settingsOpen || !result
+        ? undefined
+        : {
+            id: result.id,
+            author: result.author,
+            dice: result.dice.map(({ colour }) => colour),
+            totals: score(result.dice),
+            // once the faces have settled and faded (wall-clock; a stalled tab's playback is
+            // clamped and may land a little after), less the time the settings held it back
+            delaySeconds: Math.max(
+              0,
+              secondsAt(result.simulation.frameCount) +
+                FADE_SECONDS -
+                Math.max(0, settingsClosedAt - result.at) / 1000,
+            ),
+            clearSeconds,
+          },
+    [settingsOpen, result, settingsClosedAt, clearSeconds],
+  );
+  const onRoll = useCallback(
+    (dice: DieColour[]) => {
+      if (!campaign) return;
+      // the roll comes back through the subscription; a seed another player's roll has just
+      // replaced is declined, and their roll plays instead
+      roll({ campaignId: campaign._id, seed: campaign.rollSeed, dice }).catch((error: unknown) => {
+        if (!(error instanceof ConvexError && error.data.code === "SEED_CONFLICT")) throw error;
+      });
+    },
+    [campaign, roll],
+  );
+  const openLog = useCallback(() => setLog("open"), []);
+
   return (
     <Page>
-      <Canvas
-        flat
-        shadows="soft"
-        dpr={[1, 2]}
-        gl={{ alpha: true, antialias: true }}
-        camera={CAMERA}
-      >
+      <Canvas flat shadows="soft" dpr={DPR} gl={GL} camera={CAMERA}>
         <DiceScene result={result} seed={campaign?.rollSeed} />
       </Canvas>
       <Overlay>
@@ -181,54 +225,16 @@ const DiceRoller = () => {
           isOpen={result !== undefined}
           concealed={log !== "closed"}
           dismissed={dismissed}
-          onArrive={(id) => {
-            setArrived({ id, at: Date.now() });
-            setBloomed(id);
-            // a roll that lands while the log is up has joined the log instead: its card
-            // wilts unseen, rather than waiting under the log to show once it closes
-            if (log !== "closed") setDismissed(id);
-          }}
+          onArrive={onArrive}
           onDismiss={dismiss}
-          // withheld while the settings card is up over this corner, and laid as it closes
-          // with whatever wait is left (the notification reads the wait once, as it lays
-          // the card)
-          roll={
-            settingsOpen
-              ? undefined
-              : result && {
-                  id: result.id,
-                  author: result.author,
-                  dice: result.dice.map(({ colour }) => colour),
-                  totals: score(result.dice),
-                  // once the faces have settled and faded (wall-clock; a stalled tab's
-                  // playback is clamped and may land a little after), less the time the
-                  // settings held it back
-                  delaySeconds: Math.max(
-                    0,
-                    result.simulation.frameCount / FRAME_RATE / PLAYBACK_RATE +
-                      FADE_SECONDS -
-                      Math.max(0, settingsClosedAt - result.at) / 1000,
-                  ),
-                  clearSeconds,
-                }
-          }
+          roll={announced}
         />
         <RollLog phase={log} onPhase={setLog} campaignId={campaignId} pending={flying} />
         <Menu
           disabled={!campaign}
           locked={flying !== undefined}
-          onRoll={(dice) => {
-            if (!campaign) return;
-            // the roll comes back through the subscription; a seed another player's roll
-            // has just replaced is declined, and their roll plays instead
-            roll({ campaignId: campaign._id, seed: campaign.rollSeed, dice }).catch(
-              (error: unknown) => {
-                if (!(error instanceof ConvexError && error.data.code === "SEED_CONFLICT"))
-                  throw error;
-              },
-            );
-          }}
-          onLog={() => setLog("open")}
+          onRoll={onRoll}
+          onLog={openLog}
           onSettings={openSettings}
           // the card over the button's spot goes as the menu opens round it
           onOpen={dismiss}

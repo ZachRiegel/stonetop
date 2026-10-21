@@ -1,3 +1,5 @@
+import useFocusEvents from "hooks/useFocusEvents.ts";
+import useKeyedRefs from "hooks/useKeyedRefs.ts";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type Subscription = (element: Element | null) => void;
@@ -34,9 +36,6 @@ const useNavigationGroup = <T>(
   { loop = false }: { loop?: boolean } = {},
 ) => {
   const elements = useRef(new Map<number, Element>());
-  // one callback ref per index, created once: a fresh function each render would make React
-  // detach (null) and reattach the element on every commit
-  const refs = useRef(new Map<number, Subscription>());
   const controllerElement = useRef<Element | null>(null);
   // the item arrows go from next: the focused one while focus is in the group, the highlighted
   // one while focus is on the controller, none otherwise
@@ -64,20 +63,15 @@ const useNavigationGroup = <T>(
     [indexOf, inController],
   );
 
-  const subscription = useCallback(
-    (index: number): Subscription => {
-      const existing = refs.current.get(index);
-      if (existing) return existing;
-      const ref: Subscription = (element) => {
-        if (element === null) elements.current.delete(index);
-        else elements.current.set(index, element);
-        // the focused item leaving the DOM fires no blur, so the answer must be rechecked here
-        setActiveIndex((previous) => resolve(previous));
-      };
-      refs.current.set(index, ref);
-      return ref;
-    },
-    [resolve],
+  // the focused item leaving the DOM fires no blur, so the answer is rechecked as items come
+  // and go
+  const subscription: (index: number) => Subscription = useKeyedRefs(
+    elements,
+    useCallback(() => setActiveIndex((previous) => resolve(previous)), [resolve]),
+  );
+  useFocusEvents(
+    useCallback((target) => setActiveIndex((previous) => resolve(previous, target)), [resolve]),
+    useCallback(() => setActiveIndex(null), []),
   );
   const controller = useCallback((element: Element | null) => {
     controllerElement.current = element;
@@ -107,14 +101,6 @@ const useNavigationGroup = <T>(
       return pool.sort((a, b) => (a.distance - b.distance) * order)[0]?.index;
     };
 
-    // focus/blur don't bubble, so listen in the capture phase at the window
-    const onFocus = (event: FocusEvent) =>
-      setActiveIndex((previous) => resolve(previous, event.target));
-    // relatedTarget is where focus is going; when it is somewhere, that element's own
-    // focus event decides. null means it left the document (dead click, tab switch).
-    const onBlur = (event: FocusEvent) => {
-      if (event.relatedTarget === null) setActiveIndex(null);
-    };
     // typing in the controller is about to change the list the highlight pointed into. Bubble
     // phase, after React's own change handlers: a state flush before them re-renders a
     // controlled input with its old value and the typed character is lost.
@@ -138,19 +124,15 @@ const useNavigationGroup = <T>(
       // subscribed elements are focusable by construction (they carry the tabIndex), svg included
       else (elements.current.get(to) as Element & HTMLOrSVGElement).focus();
     };
-    window.addEventListener("focus", onFocus, true);
-    window.addEventListener("blur", onBlur, true);
     window.addEventListener("input", onInput);
     // capture phase: a dialog stops keydown at its own handler (components/DialogInternals.tsx),
     // so a bubble listener at the window never hears a key pressed inside one
     window.addEventListener("keydown", onKeyDown, true);
     return () => {
-      window.removeEventListener("focus", onFocus, true);
-      window.removeEventListener("blur", onBlur, true);
       window.removeEventListener("input", onInput);
       window.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [activeIndex, inController, indexOf, loop, resolve]);
+  }, [activeIndex, inController, indexOf, loop]);
 
   const selectedIndex = items.findIndex(isSelected);
   // focus or a highlight inside the group wins, so Tab leaves from the focused item (or lands on

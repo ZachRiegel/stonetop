@@ -36,10 +36,11 @@ const post = (current: Store, { seed, count }: Entry) =>
 
 // the entry for this roll, requested now if it is new (or once the cache is configured)
 const entryOf = (seed: number, count: number): Entry => {
-  const existing = entries.get(keyOf(seed, count));
+  const key = keyOf(seed, count);
+  const existing = entries.get(key);
   if (existing) return existing;
   const entry = { seed, count, ...Promise.withResolvers<Simulation>(), ready: false, taken: false };
-  entries.set(keyOf(seed, count), entry);
+  entries.set(key, entry);
   if (store) post(store, entry);
   return entry;
 };
@@ -96,8 +97,8 @@ export const release = (owner: Owner) => {
 // The simulation of this roll; one the cache never prepared (a stale cache, or a page
 // opened mid-roll) is simulated on demand.
 export const take = (seed: number, count: number) => {
-  const entry = entryOf(seed, count);
-  if (entry.ready) entries.delete(keyOf(seed, count));
-  else entries.set(keyOf(seed, count), { ...entry, taken: true });
+  const [entry, key] = [entryOf(seed, count), keyOf(seed, count)];
+  if (entry.ready) entries.delete(key);
+  else entries.set(key, { ...entry, taken: true });
   return entry.promise;
 };

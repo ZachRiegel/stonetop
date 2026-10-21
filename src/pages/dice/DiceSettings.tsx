@@ -21,8 +21,6 @@ import { CELL, MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import { isEnabled, play, setEnabled, subscribe, unlock } from "pages/dice/sounds.ts";
 import { useCallback, useState, useSyncExternalStore } from "react";
 
-// the die button's cell, which the page sets MARGIN in from its corner, the viewport's
-const BUTTON = CELL;
 // wide enough that no hint wraps beside its control (user, 2026-10-19)
 const WIDTH = 400;
 const CORNER = 16;
@@ -30,7 +28,7 @@ const CORNER = 16;
 // a band the button's top quarter sits in (the user's numbers, 2026-10-19). The time field's
 // list opens downward into that air and overhangs the card's foot by some 50px; the full
 // 144px that kept it inside made the card too big
-const AIR = 96 + BUTTON / 2 + 10;
+const AIR = 96 + CELL / 2 + 10;
 // the open and the close, and the card's rise within the open
 const MS = 150;
 
@@ -68,8 +66,8 @@ const Dialog = styled(DialogInternals)<{ isOpen: boolean }>`
     position: fixed;
     right: ${MARGIN}px;
     bottom: ${MARGIN}px;
-    width: ${BUTTON}px;
-    height: ${BUTTON}px;
+    width: ${CELL}px;
+    height: ${CELL}px;
     display: grid;
     animation: ${({ isOpen }) => (isOpen ? fadeIn : fadeOut)} ${MS}ms
       ${({ isOpen }) => (isOpen ? "ease-out" : "ease-in")} both;
@@ -80,8 +78,8 @@ const Dialog = styled(DialogInternals)<{ isOpen: boolean }>`
 // bottom-right corner on the button's centre
 const Card = styled.div`
   position: absolute;
-  right: ${BUTTON / 2}px;
-  bottom: ${BUTTON / 2}px;
+  right: ${CELL / 2}px;
+  bottom: ${CELL / 2}px;
   width: ${WIDTH}px;
   padding: 24px 32px ${AIR}px;
   border-radius: ${CORNER}px;
@@ -114,9 +112,7 @@ const row = css`
   column-gap: 12px;
   min-height: 48px;
 `;
-const Row = styled.div`
-  ${row}
-`;
+const Row = styled.div(row);
 // the Toggle as a row, its switch at the right: the whole row is the switch's label, so a
 // click anywhere on it flips the switch and the words name it to a screen reader
 const Switch = styled(Toggle)`

@@ -7,36 +7,23 @@ const FadeIn = keyframes`
   from {
     opacity: 0;
   }
-  to {
-    opacity: 1;
-  }
 `;
 
 const FadeOut = keyframes`
-  from {
-    opacity: 1;
-  }
   to {
     opacity: 0;
   }
 `;
 
-// the backdrop dims the page with the palette's black, as SidePanel.tsx does (a navy tint
-// read too blue); ::backdrop inherits the dialog's custom properties, which RootLayout.tsx
-// sets on dialog as well as :root
+// the backdrop dims the page with the palette's black (a navy tint read too blue); ::backdrop
+// inherits the dialog's custom properties, which RootLayout.tsx sets on dialog as well as :root
 const BackdropIn = keyframes`
   from {
     background-color: transparent;
   }
-  to {
-    background-color: color-mix(in srgb, var(--neutral-0) 20%, transparent);
-  }
 `;
 
 const BackdropOut = keyframes`
-  from {
-    background-color: color-mix(in srgb, var(--neutral-0) 20%, transparent);
-  }
   to {
     background-color: transparent;
   }
@@ -63,6 +50,7 @@ const Modal = styled(DialogInternals)<{ isOpen: boolean }>`
   &::backdrop {
     position: fixed;
     inset: 0;
+    background-color: color-mix(in srgb, var(--neutral-0) 20%, transparent);
     animation: ${(props) => (props.isOpen ? BackdropIn : BackdropOut)} 300ms linear both;
   }
 `;

@@ -1,7 +1,8 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { DIE_COLOURS } from "pages/dice/dice";
 
-export const characterClasses = [
+const characterClasses = [
   "BLESSED",
   "FOX",
   "HEAVY",
@@ -12,19 +13,12 @@ export const characterClasses = [
   "SEEKER",
   "WOULD_BE_HERO",
 ] as const;
-export const characterClass = v.union(...characterClasses.map((name) => v.literal(name)));
+const characterClass = v.union(...characterClasses.map((name) => v.literal(name)));
 
-// the dice roller's model; kept in step with src/pages/dice/dice.ts, which the roll
-// functions import for the face tables
-export const dieColour = v.union(v.literal("blue"), v.literal("violet"), v.literal("orange"));
-export const faceIndex = v.union(
-  v.literal(0),
-  v.literal(1),
-  v.literal(2),
-  v.literal(3),
-  v.literal(4),
-  v.literal(5),
-);
+// the dice roller's model, from src/pages/dice/dice.ts, which the roll functions import for
+// the face tables
+export const dieColour = v.union(...DIE_COLOURS.map((colour) => v.literal(colour)));
+const faceIndex = v.union(...([0, 1, 2, 3, 4, 5] as const).map((face) => v.literal(face)));
 // the kinds of message in a campaign's feed; widen as kinds are added
 export const messageKind = v.literal("roll");
 

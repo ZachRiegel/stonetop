@@ -43,7 +43,11 @@ const Home = () => {
         art={latest ? artOf(latest._id) : landscape}
         eyebrow={campaigns && count(campaigns.length, "campaign")}
         title="Campaigns"
-        caption={latest ? `${latest.name} · ${roleOf(latest)}` : "Join one, or start your own"}
+        caption={
+          latest
+            ? `${latest.name} · ${roleOf(latest.isOwner, latest.myCharacter)}`
+            : "Join one, or start your own"
+        }
         people={latest && facesOf(othersOf(latest, me))}
       />
       <Poster

@@ -1,8 +1,7 @@
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
-import { type IconProps } from "components/Icon.tsx";
-import { type ComponentProps, useTransition } from "react";
+import { type ComponentProps, useCallback, useTransition } from "react";
 
 const wiggle = keyframes`
   0%, 60%, 100% {
@@ -52,13 +51,13 @@ const ButtonInternals = ({
   onClick?: () => void | Promise<unknown>;
   type?: "button" | "submit" | "reset";
   className?: string;
-  Icon?: React.FC<IconProps>;
+  Icon?: React.FC<{ className?: string }>;
   disabled?: boolean;
   // anything else a button takes (aria attributes, a ref) goes straight through
 } & Omit<ComponentProps<"button">, "onClick" | "type" | "className" | "disabled" | "children">) => {
   const [isLoading, startTransition] = useTransition();
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     const result = onClick?.();
     if (result instanceof Promise) {
       startTransition(async () => {
@@ -66,12 +65,10 @@ const ButtonInternals = ({
           result,
           new Promise((resolve) => setTimeout(resolve, 500)),
         ]);
-        if (settled.status === "rejected") {
-          throw settled.reason;
-        }
+        if (settled.status === "rejected") throw settled.reason;
       });
     }
-  };
+  }, [onClick]);
 
   return (
     <button
@@ -82,7 +79,7 @@ const ButtonInternals = ({
       disabled={disabled || isLoading}
     >
       <Content isLoading={isLoading}>
-        {Icon && <Icon size={24} />}
+        {Icon && <Icon />}
         {text && <div>{text}</div>}
       </Content>
       {isLoading && (
@@ -133,16 +130,6 @@ const Transparent = styled(BaseButton)`
 `;
 
 const Button = {
-  Default: styled(BaseButton)`
-    background: var(--neutral-0);
-    color: var(--neutral-900);
-    &:where(:hover:not(:disabled)) {
-      background: var(--neutral-100);
-    }
-    &:where(:active:not(:disabled)) {
-      background: var(--neutral-200);
-    }
-  `,
   Secondary: styled(BaseButton)`
     background: var(--neutral-200);
     color: var(--neutral-700);

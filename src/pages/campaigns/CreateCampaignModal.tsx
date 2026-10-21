@@ -7,7 +7,7 @@ import Modal from "components/Modal.tsx";
 import { api } from "convex/_generated/api";
 import { useMutation } from "convex/react";
 import MakeDialog from "hoc/MakeDialog.tsx";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 const CardHeader = styled.div`
   padding: 12px 20px;
@@ -27,7 +27,6 @@ const CardFooter = styled.div`
 const Card = styled.div`
   display: grid;
   grid-template-rows: max-content max-content 1fr;
-  flex-direction: column;
   width: 360px;
   border-radius: 16px;
   background: var(--neutral-75);
@@ -41,13 +40,13 @@ const CreateCampaignModal = ({ requestClose }: { isOpen: boolean; requestClose: 
   const createCampaign = useMutation(api.campaigns.create);
   const [name, setName] = useState("");
 
-  const submit = async () => {
+  const submit = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
     await createCampaign({ name: trimmed });
     setName("");
     requestClose();
-  };
+  }, [name, createCampaign, requestClose]);
 
   return (
     <Card>

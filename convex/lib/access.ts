@@ -30,13 +30,24 @@ export const membershipOf = (ctx: Ctx, campaignId: Id<"campaigns">, userId: Id<"
     )
     .unique();
 
+// The caller's membership row in the campaign a route param names, or null for a malformed,
+// stale or foreign id and for a campaign they are not in; signed out still throws
+export const membershipFromParam = async (ctx: Ctx, campaignId: string) => {
+  const user = await requireUser(ctx);
+  const id = ctx.db.normalizeId("campaigns", campaignId);
+  return id && (await membershipOf(ctx, id, user._id));
+};
+
+const callerMembership = async (ctx: Ctx, campaignId: Id<"campaigns">) =>
+  membershipOf(ctx, campaignId, (await requireUser(ctx))._id);
+
 export const requireMember = async (ctx: Ctx, campaignId: Id<"campaigns">) => {
-  const membership = await membershipOf(ctx, campaignId, (await requireUser(ctx))._id);
+  const membership = await callerMembership(ctx, campaignId);
   if (!membership) throw new Error("You are not in this campaign");
   return membership;
 };
 
 export const requireGameMaster = async (ctx: Ctx, campaignId: Id<"campaigns">) => {
-  const membership = await membershipOf(ctx, campaignId, (await requireUser(ctx))._id);
-  if (!membership?.isOwner) throw new Error("Only the Game Master may do that");
+  if (!(await callerMembership(ctx, campaignId))?.isOwner)
+    throw new Error("Only the Game Master may do that");
 };

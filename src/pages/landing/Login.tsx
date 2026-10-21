@@ -65,34 +65,32 @@ const DiscordButton = styled(Button.Primary)`
   }
 `;
 
-const Login = () => {
-  // carry a pending invite through the OAuth round-trip; the Campaigns page
-  // redeems it once we land back on "/"
-  const handleLogin = () => {
-    const inviteLinkId = sessionStorage.getItem("inviteLinkId");
-    return authClient.signIn.social({
-      provider: "discord",
-      callbackURL: `${window.location.origin}/${inviteLinkId ? `?inviteLinkId=${inviteLinkId}` : ""}`,
-    });
-  };
-
-  return (
-    <Page>
-      <Global styles={discordFont} />
-      <Content>
-        <h1>
-          <Font.Title80 text="Stonetop" />
-        </h1>
-        <DiscordButton
-          type="submit"
-          text="Sign in with Discord"
-          onClick={handleLogin}
-          Icon={Icon.Discord}
-        />
-      </Content>
-      <Footer src={footer} alt="" />
-    </Page>
-  );
+// carry a pending invite through the OAuth round-trip; the Home page redeems it once we land
+// back on "/"
+const signIn = () => {
+  const inviteLinkId = sessionStorage.getItem("inviteLinkId");
+  return authClient.signIn.social({
+    provider: "discord",
+    callbackURL: `${window.location.origin}/${inviteLinkId ? `?inviteLinkId=${inviteLinkId}` : ""}`,
+  });
 };
+
+const Login = () => (
+  <Page>
+    <Global styles={discordFont} />
+    <Content>
+      <h1>
+        <Font.Title80 text="Stonetop" />
+      </h1>
+      <DiscordButton
+        type="submit"
+        text="Sign in with Discord"
+        onClick={signIn}
+        Icon={Icon.Discord}
+      />
+    </Content>
+    <Footer src={footer} alt="" />
+  </Page>
+);
 
 export default Login;

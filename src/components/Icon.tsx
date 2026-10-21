@@ -8,7 +8,6 @@ import dieBlueSvg from "icons/dieBlue.svg?raw";
 import dieOrangeSvg from "icons/dieOrange.svg?raw";
 import dieVioletSvg from "icons/dieViolet.svg?raw";
 import discordSvg from "icons/discordLogo.svg?raw";
-import libraryBooksSvg from "icons/libraryBooks.svg?raw";
 import plusSvg from "icons/plus.svg?raw";
 import type { DieColour } from "pages/dice/dice.ts";
 
@@ -20,7 +19,6 @@ const IconSvgs = {
   Close: closeSvg,
   Die: dieSvg,
   Book2: book2Svg,
-  LibraryBooks: libraryBooksSvg,
   DieBlue: dieBlueSvg,
   DieViolet: dieVioletSvg,
   DieOrange: dieOrangeSvg,
@@ -33,14 +31,11 @@ type IconName = keyof typeof IconSvgs;
 export const iconPath = (icon: "Chat" | "Cog" | "Die") =>
   /\bd="([^"]+)"/.exec(IconSvgs[icon])?.[1] ?? "";
 
-type IconPropsInternal = { icon: IconName; className?: string; size: number };
-export type IconProps = Omit<IconPropsInternal, "icon">;
-
-const IconInternal = ({ icon, className }: IconPropsInternal) => (
+const IconInternal = ({ icon, className }: { icon: IconName; className?: string }) => (
   <div className={className} dangerouslySetInnerHTML={{ __html: IconSvgs[icon] }} />
 );
 
-const StyledIcon = styled(IconInternal)<{ size: number }>`
+const StyledIcon = styled(IconInternal)`
   display: inline-flex;
 
   object-fit: contain;
@@ -58,7 +53,7 @@ const StyledIcon = styled(IconInternal)<{ size: number }>`
 const Icon = Object.fromEntries(
   (Object.keys(IconSvgs) as IconName[]).map((icon) => [
     icon,
-    (props: IconProps) => <StyledIcon icon={icon} {...props} />,
+    ({ className }: { className?: string }) => <StyledIcon icon={icon} className={className} />,
   ]),
 ) as Record<IconName, React.FC<{ className?: string }>>;
 

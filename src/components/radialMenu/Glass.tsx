@@ -80,13 +80,15 @@ const Magnified = styled.use`
   transform: translate(var(--radial-menu-x), var(--radial-menu-y)) scale(${ZOOM})
     translate(calc(-1 * var(--radial-menu-x)), calc(-1 * var(--radial-menu-y)));
 `;
+// the Sobel kernels for the height map's slope across and down
+const SOBEL = [
+  ["dx", "-1 0 1 -2 0 2 -1 0 1"],
+  ["dy", "-1 -2 -1 0 0 0 1 2 1"],
+] as const;
 // the glass's layers share one place and one morphing shape. The shape is the CSS `d`,
 // which transitions, over the same path as the `d` attribute, which WebKit draws instead
 // (its CSS `d` was behind a flag as of iOS 18, WebKit bug 234227): no morph there, but a
 // bubble.
-const placedAt = css`
-  translate: var(--radial-menu-x) var(--radial-menu-y);
-`;
 const morphing = css`
   transition: d 200ms ease-out;
 
@@ -95,7 +97,7 @@ const morphing = css`
   }
 `;
 const Placed = styled.g`
-  ${placedAt}
+  translate: var(--radial-menu-x) var(--radial-menu-y);
 `;
 // the lens's clip is drawn at the origin and carried to the glass's place by the group it
 // clips, whose content is moved back: a transform on a clipPath's own child is less trodden
@@ -155,24 +157,18 @@ const Glass = ({ id, drawn }: { id: string; drawn: Drawn }) => {
             values="0 0 0 1 0  0 0 0 1 0  0 0 0 1 0  0 0 0 0 1"
             result="grey"
           />
-          <feConvolveMatrix
-            in="grey"
-            order={3}
-            kernelMatrix="-1 0 1 -2 0 2 -1 0 1"
-            divisor={2}
-            bias={0.5}
-            preserveAlpha
-            result="dx"
-          />
-          <feConvolveMatrix
-            in="grey"
-            order={3}
-            kernelMatrix="-1 -2 -1 0 0 0 1 2 1"
-            divisor={2}
-            bias={0.5}
-            preserveAlpha
-            result="dy"
-          />
+          {SOBEL.map(([result, kernelMatrix]) => (
+            <feConvolveMatrix
+              key={result}
+              in="grey"
+              order={3}
+              kernelMatrix={kernelMatrix}
+              divisor={2}
+              bias={0.5}
+              preserveAlpha
+              result={result}
+            />
+          ))}
           <feColorMatrix in="dx" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0 1" result="red" />
           <feColorMatrix
             in="dy"

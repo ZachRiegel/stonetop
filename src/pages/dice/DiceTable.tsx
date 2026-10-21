@@ -1,19 +1,19 @@
-import { type ThreeElements, useThree } from "@react-three/fiber";
+import { useThree } from "@react-three/fiber";
 import {
   arrange,
+  byColour,
   CREAM,
   DICE,
-  DIE_COLOURS,
   type DieColour,
   type Face,
   FACE_NORMALS,
   type FaceIndex,
-  FAIL_PATH,
-  FRAME_STRIDE,
+  FILL_RULE,
+  frameAt,
   GLYPH_BOX,
+  pathOf,
   reach,
   type RollResult,
-  SPECIAL_PATH,
   SYMBOL_SCALE,
   SYMBOLS,
 } from "pages/dice/dice.ts";
@@ -76,9 +76,7 @@ const glyphTexture = (face: Face, colour: DieColour, anisotropy: number) => {
   items.forEach((symbol, i) => {
     const [cx, cy, turn] = SLOTS[items.length]?.[i] ?? [50, 50, 0];
     const scale = GLYPH_SCALE * SYMBOL_SCALE[symbol];
-    const glyph = new Path2D(
-      symbol === "burst" ? DICE[colour].burst : symbol === "special" ? SPECIAL_PATH : FAIL_PATH,
-    );
+    const glyph = new Path2D(pathOf(symbol, DICE[colour].burst));
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate((turn * Math.PI) / 180);
@@ -88,10 +86,7 @@ const glyphTexture = (face: Face, colour: DieColour, anisotropy: number) => {
     ctx.lineWidth = 2 * OUTLINE;
     ctx.lineJoin = "round";
     ctx.stroke(glyph);
-    // the hollow hex cuts its hole by evenodd; the wrench's jaws overlap its bar and would
-    // cancel there, so it is the one nonzero fill
-    if (symbol === "skull") ctx.fill(glyph);
-    else ctx.fill(glyph, "evenodd");
+    ctx.fill(glyph, FILL_RULE[symbol]);
     ctx.restore();
   });
   const texture = new CanvasTexture(canvas);
@@ -101,6 +96,8 @@ const glyphTexture = (face: Face, colour: DieColour, anisotropy: number) => {
 };
 
 const IDENTITY = new Quaternion();
+// the cube and its glyph overlays catch the light alike
+const SURFACE = { roughness: 0.55, metalness: 0 };
 
 const normal = (face: FaceIndex) => new Vector3(...FACE_NORMALS[face]);
 
@@ -115,8 +112,7 @@ const DiceTable = ({
   size,
   result,
   seed,
-  ...group
-}: ThreeElements["group"] & {
+}: {
   width: number;
   height: number;
   size: number;
@@ -141,31 +137,22 @@ const DiceTable = ({
   // index) that each die copies so its own faces can fade and glow
   const materials = useMemo(
     () => ({
-      base: Object.fromEntries(
-        DIE_COLOURS.map((colour) => [
-          colour,
-          new MeshStandardMaterial({ color: DICE[colour].hex, roughness: 0.55, metalness: 0 }),
-        ]),
-      ) as Record<DieColour, MeshStandardMaterial>,
-      glyphs: Object.fromEntries(
-        DIE_COLOURS.map((colour) => [
-          colour,
-          DICE[colour].faces.map(
-            (face) =>
-              new MeshStandardMaterial({
-                map: glyphTexture(face, colour, anisotropy),
-                transparent: true,
-                color: CREAM,
-                emissive: "#ffffff",
-                emissiveIntensity: 0,
-                roughness: 0.55,
-                metalness: 0,
-                polygonOffset: true,
-                polygonOffsetFactor: -1,
-              }),
-          ),
-        ]),
-      ) as Record<DieColour, MeshStandardMaterial[]>,
+      base: byColour((colour) => new MeshStandardMaterial({ color: DICE[colour].hex, ...SURFACE })),
+      glyphs: byColour((colour) =>
+        DICE[colour].faces.map(
+          (face) =>
+            new MeshStandardMaterial({
+              map: glyphTexture(face, colour, anisotropy),
+              transparent: true,
+              color: CREAM,
+              emissive: "#ffffff",
+              emissiveIntensity: 0,
+              ...SURFACE,
+              polygonOffset: true,
+              polygonOffsetFactor: -1,
+            }),
+        ),
+      ),
     }),
     [anisotropy],
   );
@@ -187,7 +174,7 @@ const DiceTable = ({
     if (!result) return [];
     const { frames, frameCount, count } = result.simulation;
     const last = (i: number, offset: number) =>
-      frames[((frameCount - 1) * count + i) * FRAME_STRIDE + offset] ?? 0;
+      frames[frameAt(frameCount - 1, i, count) + offset] ?? 0;
     return arrange(
       result.dice.map((_, i) => ({
         x: last(i, 0),
@@ -212,7 +199,7 @@ const DiceTable = ({
   );
 
   return (
-    <group {...group}>
+    <group>
       {result?.dice.map((die, i) => (
         <Die
           key={`${result.id}-${i}`}

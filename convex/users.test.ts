@@ -1,16 +1,9 @@
-/// <reference types="vite/client" />
 import { api } from "_generated/api";
 import { ConvexError } from "convex/values";
 import { convexTest } from "convex-test";
 import schema from "schema";
+import { modules, seedUser } from "testing.setup";
 import { describe, expect, test } from "vitest";
-
-const modules = import.meta.glob("./**/*.ts");
-
-const seedUser = (t: ReturnType<typeof convexTest>, authId: string, displayName: string) =>
-  t.run((ctx) =>
-    ctx.db.insert("users", { authId, displayName, picture: `https://cdn.example/${authId}.png` }),
-  );
 
 describe("users.me", () => {
   test("throws when signed out", async () => {
