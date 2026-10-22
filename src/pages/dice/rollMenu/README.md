@@ -21,6 +21,12 @@ the menu knows nothing about rolling itself.
 - **Ring 2** (88px to 128px out): the count arc, five 22.5° segments, present only
   while a colour is chosen and centred on that die's line (`angleOf`), so a change of die
   swings it round. It has `dimOthersUnderDrag`: while a drag sits on a count the others dim.
+- **On a phone** (`useResponsiveSize` says `mobile`, under 600px wide) the pills are left
+  out and the count arc stays on the violet die's line whichever die is chosen, so the
+  menu's reach past the button towards the corner is the dice arc's ends alone (29px from
+  the centre) and the menu can sit near the corner (user, 2026-10-20: the menu far from
+  the corner looked odd there). The log and settings cards are only reachable from a
+  tablet or desktop; they keep the desktop placement.
 - Dice fill from the 300–700 ramps round each die colour in `RootLayout.tsx` (`--cyan`,
   `--magenta`, `--orange`; 500 is the die's own colour, 600 the hover); counts are `--cream`
   and hover `--white`; the pills are `--neutral-150` grey with a cream glyph and no border
@@ -49,10 +55,13 @@ the menu knows nothing about rolling itself.
 
 The die button's centre sits 113px from the page's bottom and right edges (an 89px margin on
 its 48px cell in `DiceRoller.tsx`), measured so the count arc swung to blue or orange clears
-the edge by 8px. The roll notification (`../RollNotification.tsx`) lays the middle of its
-right edge on that spot, under the button; the card is itself the button that takes the roll
-off the table, as does the menu opening or the page's clear timer (`../preferences.ts`, set
-in the settings card).
+the edge by 8px; on a phone the margin is 16px (`MOBILE_MARGIN`), the dice arc then 11px
+clear of the edges, and the page and notification switch at `MEDIA.mobile`. The roll
+notification (`../RollNotification.tsx`) lays the middle of its right edge on that spot,
+under the button; on a phone it spans the page from a 16px gutter to the button's centre
+with its foot on the button's, the button in its bottom-right corner, and its readout at
+the log's sizes. The card is itself the button that takes the roll off the table, as does
+the menu opening or the page's clear timer (`../preferences.ts`, set in the settings card).
 
 ## Decisions
 

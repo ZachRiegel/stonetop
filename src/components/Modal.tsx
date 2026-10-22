@@ -29,13 +29,17 @@ const BackdropOut = keyframes`
   }
 `;
 
+// centred on the page (an offset for the sidebar's rail went with the sidebar, 2026-10-20),
+// and scrolling if a phone turned sideways is shorter than the content
 const Modal = styled(DialogInternals)<{ isOpen: boolean }>`
   position: fixed;
   inset: 0;
   display: grid;
   justify-content: center;
-  align-content: center;
-  padding-left: 64px;
+  /* centred while it fits; once it is taller than the screen its top stays reachable */
+  align-content: safe center;
+  padding: 16px;
+  overflow-y: auto;
   cursor: default;
 
   /* the content's own corners, so the shadow follows them; deeper than --shadow-large, the

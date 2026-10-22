@@ -3,11 +3,13 @@
 // notification draws one on its glass card (no time: the card is the roll just made) and the
 // roll log one per entry, `condensed`, with the time; each sets the padding and surface. The
 // sizes are custom properties set once on the root (the text in the 20px faces at --text),
-// so the two versions differ only there.
+// so the two versions differ only there; a phone's card, narrower than three totals at the
+// card's size, takes the log's sizes.
 import { css } from "@emotion/react";
 import styled from "@emotion/styled";
 import Font, { FontCSS } from "components/Font.tsx";
 import { DIE_ICONS } from "components/Icon.tsx";
+import { MEDIA } from "hooks/useResponsiveSize.ts";
 import {
   countsOf,
   type DieColour,
@@ -49,26 +51,28 @@ const HALF: Record<DieSymbol, readonly [number, number]> = {
 const boxOf = ([halfWidth, halfHeight]: readonly [number, number]) =>
   `${GLYPH_BOX / 2 - halfWidth} ${GLYPH_BOX / 2 - halfHeight} ${2 * halfWidth} ${2 * halfHeight}`;
 
+// the log's sizes, which the card takes on a phone, and the card's own where it has the room
 const Rows = styled.div<{ condensed: boolean }>`
-  --text: 20px;
-  --line: 32px;
-  --avatar: 30px;
-  --die: 16px;
-  --numeral: 40px;
-  --mark: 30px;
-  --between: 16px;
-  --rows: 6px;
+  --text: 19px;
+  --line: 28px;
+  --avatar: 28px;
+  --die: 15px;
+  --numeral: 29px;
+  --mark: 22px;
+  --between: 14px;
+  --rows: ${({ condensed }) => (condensed ? 2 : 6)}px;
   ${({ condensed }) =>
-    condensed &&
+    !condensed &&
     css`
-      --text: 19px;
-      --line: 28px;
-      --avatar: 28px;
-      --die: 15px;
-      --numeral: 29px;
-      --mark: 22px;
-      --between: 14px;
-      --rows: 2px;
+      @media not ${MEDIA.mobile} {
+        --text: 20px;
+        --line: 32px;
+        --avatar: 30px;
+        --die: 16px;
+        --numeral: 40px;
+        --mark: 30px;
+        --between: 16px;
+      }
     `}
   display: grid;
   row-gap: var(--rows);
@@ -89,23 +93,35 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
-// the words and counts as inline text
+// the words and counts as inline text; one line, but for a phone's card, which is narrower
+// than a long name and three counts and lets them run on to a second
 const Line = styled.div`
   line-height: var(--line);
   white-space: nowrap;
+
+  @media ${MEDIA.mobile} {
+    white-space: normal;
+  }
 `;
 
 // a box of the line's height, so its text sits where the words beside it do; an
-// overflow-hidden inline block has no baseline of its own to align by
+// overflow-hidden inline block has no baseline of its own to align by. One line of its own
+// even where the line round it wraps, and read with a capital first letter whatever its
+// owner typed (user, 2026-10-21)
 const Name = styled.span`
   ${FontCSS.Bold20}
   font-size: var(--text);
   display: inline-block;
   vertical-align: top;
+  white-space: nowrap;
   color: var(--cream);
   max-width: ${NAME_WIDTH}px;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  &::first-letter {
+    text-transform: uppercase;
+  }
 `;
 
 const Word = styled.span`
@@ -115,9 +131,10 @@ const Word = styled.span`
 `;
 
 // a count with its die (an Icon's div) beside it, the die the height of the digit and its
-// bottom a hair below the baseline, so the two read as one mark
+// bottom a hair below the baseline, so the two read as one mark, and never parted by a wrap
 const Pip = styled.span`
   --icon-size: var(--die);
+  white-space: nowrap;
 
   & > div {
     vertical-align: -1px;
@@ -169,8 +186,6 @@ const Mark = styled.svg`
   fill: var(--cream);
 `;
 
-// a name reads as the start of a sentence whatever its owner typed
-const capitalised = (name: string) => name.charAt(0).toUpperCase() + name.slice(1);
 const timeOf = new Intl.DateTimeFormat(undefined, { timeStyle: "short" });
 
 const RollReadout = ({
@@ -184,7 +199,7 @@ const RollReadout = ({
     <Head>
       <Avatar src={author.picture} alt="" />
       <Line>
-        <Name>{capitalised(author.displayName)}</Name> <Word>rolled</Word>
+        <Name>{author.displayName}</Name> <Word>rolled</Word>
         {countsOf(dice).map(([colour, count]) => {
           const Die = DIE_ICONS[colour];
           return (

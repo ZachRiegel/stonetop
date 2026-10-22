@@ -38,9 +38,15 @@ const Avatar = styled.img`
   object-fit: cover;
 `;
 
+// a name reads with a capital first letter whatever was typed (user, 2026-10-21); a grid item
+// is a block container, so ::first-letter applies to the span
 const Name = styled(Font.Semibold14)`
   color: inherit;
   line-height: 1.2;
+
+  &::first-letter {
+    text-transform: uppercase;
+  }
 `;
 
 const MenuCard = styled.div`

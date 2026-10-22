@@ -9,7 +9,8 @@ import { css, keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { FontCSS } from "components/Font.tsx";
 import AnimateInOut from "hoc/AnimateInOut.tsx";
-import { CELL, MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
+import { MEDIA } from "hooks/useResponsiveSize.ts";
+import { CELL, MARGIN, MOBILE_MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollReadout, { type Readout } from "pages/dice/RollReadout.tsx";
 import { type AnimationEvent, useCallback, useState } from "react";
 
@@ -22,9 +23,13 @@ export type Announced = Omit<Readout, "time"> & {
   clearSeconds?: number;
 };
 
-// the die button (CELL) sits half over the card's right edge; the card is one width whatever
-// the name (the readout cuts it), and its contents stop a side padding short of the button
+// the die button (CELL) sits half over the card's right edge: at its middle on a desktop,
+// where the card is one width whatever the name (the readout cuts it); in its bottom corner
+// on a phone, where the card spans the page from a gutter at the left to the button, since
+// its middle would lie too near the page's foot. Its contents stop a side padding short of
+// the button either way, and the readout's head line wraps on a phone.
 const WIDTH = 396;
+const GUTTER = 16;
 const PADDING = 12;
 const RADIUS = 16;
 // the bloom's timing, and the circle it starts from: a little inside the button, since the
@@ -73,7 +78,7 @@ const cover = keyframes`
       ${2 * SEED}px ${2 * SEED}px,
       100% 100%;
     mask-position:
-      calc(100% + ${SEED}px) 50%,
+      calc(100% + ${SEED}px) var(--cover-from-y),
       0 0;
     opacity: 1;
   }
@@ -82,7 +87,7 @@ const cover = keyframes`
       calc(2 * var(--reach)) calc(2 * var(--reach)),
       100% 100%;
     mask-position:
-      calc(100% + var(--reach)) 50%,
+      calc(100% + var(--reach)) var(--cover-to-y),
       0 0;
     opacity: 0;
   }
@@ -100,12 +105,12 @@ const fadeOut = keyframes`
 // a card's arrival is its bloom, or under reduced motion its fade in
 const arriving = (animationName: string) =>
   animationName === bloom.name || animationName === fadeIn.name;
-// the bloom's reach, set as each card mounts: from the button's centre to the far top-left
-// corner, and a little past
+// the bloom's reach, set as each card mounts: the card's diagonal, which reaches the far
+// top-left corner from wherever on the right edge the button sits, and a little past
 const measureReach = (element: HTMLElement | null) =>
   element?.style.setProperty(
     "--reach",
-    `${Math.hypot(element.offsetWidth, element.offsetHeight / 2) + 8}px`,
+    `${Math.hypot(element.offsetWidth, element.offsetHeight) + 8}px`,
   );
 
 // the cards, over one another, the newest on top, under the die button; hidden, not
@@ -122,6 +127,15 @@ const Stack = styled.div<{ concealed: boolean }>`
   translate: 0 50%;
   display: grid;
 
+  /* on a phone the card's foot is the button's, and it spans the page to the gutter (the
+     page's width, not the readout's: a long name and three counts wrap instead) */
+  @media ${MEDIA.mobile} {
+    justify-self: stretch;
+    min-width: 0;
+    margin: 0 ${MOBILE_MARGIN + CELL / 2}px ${MOBILE_MARGIN}px ${GUTTER}px;
+    translate: none;
+  }
+
   & > * {
     grid-area: 1 / 1;
   }
@@ -129,12 +143,26 @@ const Stack = styled.div<{ concealed: boolean }>`
 
 // blooms when it mounts, once the dice have settled; fades when leaving; and once
 // `covered` (the seconds until the next card blooms over it), has that bloom cut out of it.
-// Under reduced motion the dice jump to rest, so it fades at once.
+// Under reduced motion the dice jump to rest, so it fades at once. --origin-y is where on
+// the right edge the button's centre lies, and --cover-from-y and --cover-to-y put the
+// cover's disc there in mask-position terms (a percentage places the disc by its own
+// extent, so the middle is 50% and a point off the foot is 100% shifted by the radius)
 const Card = styled.div<{ leaving: boolean; delaySeconds: number; covered?: number }>`
   position: relative;
   width: ${WIDTH}px;
-  --origin: 100% 50%;
+  --origin-y: 50%;
+  --cover-from-y: 50%;
+  --cover-to-y: 50%;
+  --origin: 100% var(--origin-y);
   transform-origin: var(--origin);
+
+  @media ${MEDIA.mobile} {
+    width: auto;
+    min-width: 0;
+    --origin-y: calc(100% - ${CELL / 2}px);
+    --cover-from-y: calc(100% + ${SEED - CELL / 2}px);
+    --cover-to-y: calc(100% + var(--reach) - ${CELL / 2}px);
+  }
   animation: ${({ leaving }) => (leaving ? fadeOut : bloom)}
     ${({ leaving }) => (leaving ? FADE_MS : BLOOM_MS)}ms
     ${({ leaving }) => (leaving ? "ease-in" : "ease-out")}
@@ -170,7 +198,7 @@ const Lens = styled.div`
 const Ring = styled.div<{ delaySeconds: number }>`
   position: absolute;
   left: 100%;
-  top: 50%;
+  top: var(--origin-y);
   translate: -50% -50%;
   border: 4px solid var(--cream);
   border-radius: 999px;
@@ -222,8 +250,8 @@ const Fuse = styled.div<{ seconds: number; delaySeconds: number }>`
 `;
 
 // the card's button: a transparent layer over the readout and the fuse, so a press anywhere
-// lands on it, named in the bottom-right corner (clear of the die button) only while pointed
-// at or focused, so the readout stays the card's face
+// lands on it, named in the bottom corner clear of the die button (right on a desktop, left
+// on a phone) only while pointed at or focused, so the readout stays the card's face
 const Dismiss = styled.button`
   ${FontCSS.Semibold14}
   position: absolute;
@@ -243,6 +271,11 @@ const Dismiss = styled.button`
   &:hover,
   &:focus-visible {
     opacity: 1;
+  }
+
+  @media ${MEDIA.mobile} {
+    justify-content: start;
+    padding: 0 0 8px 14px;
   }
 `;
 

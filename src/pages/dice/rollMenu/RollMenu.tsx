@@ -1,6 +1,7 @@
 // The roll menu, declared on components/radialMenu: dice colours up and to the left, log
-// right, settings below, and a count arc that swings onto the chosen die. README.md has
-// what it declares and why.
+// right, settings below, and a count arc that swings onto the chosen die. On a phone the
+// pills are left out and the count arc stays on the middle die's line, so the menu fits
+// closer to the corner. README.md has what it declares and why.
 import styled from "@emotion/styled";
 import Button from "components/Button.tsx";
 import { FontCSS } from "components/Font.tsx";
@@ -11,6 +12,7 @@ import RadialMenu from "components/radialMenu/RadialMenu.tsx";
 import Ring from "components/radialMenu/Ring.tsx";
 import Segment from "components/radialMenu/Segment.tsx";
 import useModal from "hooks/useModal.ts";
+import useResponsiveSize from "hooks/useResponsiveSize.ts";
 import {
   byColour,
   DICE,
@@ -23,9 +25,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 // the die button's cell, and its margin from the page's corner: 8px between the page edge
 // and the lowest (or rightmost) point of the count arc swung to blue (or orange), measured
-// in the browser. The page places the cell; the roll log and notification build on it.
+// in the browser. The page places the cell; the roll log and notification build on it. On
+// a phone nothing swings and the pills are gone, so only the dice arc's ends reach past the
+// button towards the corner (29px from its centre, against the cell's 24px), and the cell
+// sits a phone's usual 16px in, 11px clear of the edges.
 export const CELL = 48;
 export const MARGIN = 89;
+export const MOBILE_MARGIN = 16;
 
 // the dice arc is centred up and to the left, 45° a die, so blue sits straight left and
 // orange straight above (README.md has the rings' angles and why the gaps are unequal)
@@ -100,6 +106,10 @@ const RollMenu = ({
 }) => {
   const { isOpen, open: openMenu, close: closeMenu } = useModal();
   const [colour, setColour] = useState<DieColour | null>(null);
+  // a phone gets the dice and counts alone, the count arc held on the dice arc's own line
+  // (the violet die's) whichever die is chosen, so the menu's reach is the same whatever is
+  // open and it can sit near the corner
+  const mobile = useResponsiveSize() === "mobile";
   const open = useCallback(() => {
     openMenu();
     onOpen?.();
@@ -180,12 +190,12 @@ const RollMenu = ({
             </Segment>
           ))}
         </Arc>
-        <Arc angle={0}>{pill("Chat", "log", openLog)}</Arc>
-        <Arc angle={270}>{pill("Cog", "settings", openSettings)}</Arc>
+        {!mobile && <Arc angle={0}>{pill("Chat", "log", openLog)}</Arc>}
+        {!mobile && <Arc angle={270}>{pill("Cog", "settings", openSettings)}</Arc>}
       </Ring>
       <Ring startDistance={88} endDistance={128}>
         {colour && (
-          <Arc angle={angleOf(colour)} dimOthersUnderDrag>
+          <Arc angle={mobile ? DICE_ANGLE : angleOf(colour)} dimOthersUnderDrag>
             {rolls.map((roll, i) => (
               <Segment
                 key={i}

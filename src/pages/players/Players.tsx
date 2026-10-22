@@ -1,154 +1,200 @@
 import styled from "@emotion/styled";
-import Font from "components/Font.tsx";
+import Font, { EYEBROW, TITLE } from "components/Font.tsx";
 import Loading from "components/Loading.tsx";
 import { GROUND } from "components/PosterWall.tsx";
 import { api } from "convex/_generated/api";
 import { useQuery } from "convex/react";
 import useMinimumLoading from "hooks/useMinimumLoading.ts";
-import { roleOf } from "pages/campaigns/card.ts";
-import footer from "pages/campaigns/footer.png";
-import misc from "pages/campaigns/misc.png";
+import { MEDIA } from "hooks/useResponsiveSize.ts";
+import treePng from "icons/tree.png";
+import { type CampaignCard, roleOf } from "pages/campaigns/card.ts";
 import InvitePlayers from "pages/players/InvitePlayers.tsx";
 import { useParams } from "react-router";
 
-// paints its own ground and isolates, so the landscape's screen blend meets it (see GROUND)
+// The campaign's members as a roster on the ground, "grouped cells" of the seven takes in
+// src/holding/playersDrafts.html (user, 2026-10-21; navigation/README.md): no paper and no
+// title, the strip's pill saying where you are; two small-caps heads, Game Master and Players
+// with their count; the members as soft cells; the tree screened at the right; and the Game
+// Master's invite as pills at the bottom right. A 360px card with a title, a 340px scroll of
+// rows and two grey buttons was the page before, from the sidebar's day.
 const Page = styled.div`
   ${GROUND}
   position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
-
-  display: grid;
-  grid-template-rows: 1fr max-content 1fr;
-  justify-content: center;
 `;
 
-const Footer = styled.img`
+// the tree, the page's own mark (the Players tab's glyph and poster), screened large at the
+// right of a desktop and low at the right of a phone, under the rows. Blends onto GROUND.
+const Hero = styled.img`
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -32px;
-  width: 100vw;
-  object-fit: cover;
-  object-position: top;
-  aspect-ratio: 2301 / 844;
+  z-index: 0;
+  inset: auto -60px -40px auto;
+  width: 360px;
+  height: 400px;
+  object-fit: contain;
+  object-position: right bottom;
   mix-blend-mode: screen;
-  max-height: 600px;
-  opacity: 0.7;
-`;
+  opacity: 0.18;
+  pointer-events: none;
+  mask-image: linear-gradient(#000 60%, transparent);
 
-const Card = styled.div`
-  grid-row: 2;
-  display: flex;
-  flex-direction: column;
-  width: min(360px, calc(100vw - 32px));
-  border-radius: 16px;
-  background-color: var(--neutral-75);
-  overflow: hidden;
-  box-shadow: 8px 8px 12px 12px rgba(0 0 0 / 0.3);
-  isolation: isolate;
-`;
-
-const CardHeader = styled.div`
-  padding: 12px 20px;
-`;
-
-const ScrollArea = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  height: 340px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  /* 8px scrollbar gutter (styled globally in RootLayout) + 12px right
-     padding = 20px, matching CardHeader */
-  padding: 12px 12px 12px 20px;
-  scrollbar-gutter: stable;
-  border-top: 2px solid var(--neutral-100);
-`;
-
-const EmptyState = styled.div`
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  text-align: center;
-
-  img {
-    height: 232px;
-    aspect-ratio: 648 / 828;
-    mix-blend-mode: screen;
+  @media ${MEDIA.desktop} {
+    inset: auto -40px -60px auto;
+    width: 560px;
+    height: 620px;
+    opacity: 0.22;
+    mask-image:
+      linear-gradient(90deg, transparent, #000 40%), linear-gradient(#000 70%, transparent);
+    mask-composite: intersect;
   }
 `;
 
-const CardBottom = styled.div`
+const Centred = styled.div`
+  position: relative;
+  z-index: 1;
   display: grid;
-  padding: 16px 20px;
-  border-top: 2px solid var(--neutral-100);
+  place-items: center;
+  height: 100%;
+  padding: 0 36px;
+  text-align: center;
 `;
 
-const PlayerLabel = styled.div`
+// the roster from the left gutter, scrolling down once it outgrows the page, its foot clear
+// of the invite pills' band; half the page on a desktop
+const Roster = styled.div`
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  row-gap: 8px;
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 2px 16px 84px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media ${MEDIA.desktop} {
+    width: 50%;
+    padding: 10px 36px 110px;
+  }
+`;
+
+// a head in small caps, the strip's eyebrow a touch larger
+const Head = styled.div`
+  ${EYEBROW}
+  padding: 14px 4px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--neutral-500);
+
+  &:first-of-type {
+    padding-top: 4px;
+  }
+`;
+
+// a member: a soft cell a shade up from the ground, rounded like the sheets, the face ringed
+// in black like the faces on a poster beside the name over the part they play
+const Cell = styled.div`
   display: grid;
   grid-template-columns: max-content 1fr;
-  grid-auto-rows: max-content;
-  column-gap: 12px;
-  row-gap: 2px;
+  column-gap: 16px;
   align-items: center;
-  padding: 12px 12px 12px 16px;
-  border-radius: 16px;
-  background-color: var(--neutral-25);
-  box-shadow: var(--shadow-medium);
+  padding: 12px 16px 12px 12px;
+  border-radius: 12px;
+  background-color: var(--neutral-75);
 `;
 
-const Avatar = styled.img`
-  grid-row: span 2;
-  width: 30px;
-  height: 30px;
-  border: 2px solid var(--neutral-0);
+const Face = styled.img`
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgb(0 0 0 / 0.6);
   border-radius: 999px;
   object-fit: cover;
 `;
 
+const Who = styled.div`
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+`;
+
+const Name = styled.div`
+  ${TITLE}
+  font-size: 20px;
+  color: var(--cream);
+  overflow-wrap: anywhere;
+`;
+
+const Part = styled(Font.Italic14)`
+  color: var(--neutral-500);
+`;
+
+// the Game Master alone, under the empty Players head
+const Note = styled(Font.Italic16)`
+  padding: 6px 4px;
+  color: var(--neutral-600);
+`;
+
+const Invite = styled(InvitePlayers)`
+  position: absolute;
+  z-index: 3;
+  right: 16px;
+  bottom: 24px;
+
+  @media ${MEDIA.desktop} {
+    right: clamp(36px, 2.8vw, 72px);
+    bottom: clamp(28px, 2.2vw, 56px);
+  }
+`;
+
+// one member's cell, the same under either head
+const cellOf = (member: CampaignCard["members"][number]) => (
+  <Cell key={member._id}>
+    <Face src={member.picture} alt="" />
+    <Who>
+      <Name>{member.displayName}</Name>
+      <Part element="div" text={roleOf(member.isOwner, member.character)} />
+    </Who>
+  </Cell>
+);
+
 const Players = () => {
-  const { campaignId } = useParams();
-  // null means the caller is not a member; the server lists the Game Master first
-  const campaign = useQuery(api.campaigns.get, campaignId ? { campaignId } : "skip");
+  const { campaignId = "" } = useParams();
+  // null means the caller is not a member
+  const campaign = useQuery(api.campaigns.get, { campaignId });
   const isLoading = useMinimumLoading(campaign === undefined);
+  const players = campaign?.members.filter((member) => !member.isOwner) ?? [];
 
   return (
     <Page>
-      <Footer src={footer} alt="" />
-      <Card>
-        <CardHeader>
-          <Font.Bold32 element="h1" text="Players" />
-        </CardHeader>
-        <ScrollArea>
-          {isLoading || campaign === undefined ? (
-            <Loading.Medium />
-          ) : campaign === null ? (
-            <EmptyState>
-              <img src={misc} alt="" />
-              <Font.Italic16 element="div" text="You are not a member of this campaign." />
-            </EmptyState>
-          ) : (
-            campaign.members.map((player) => (
-              <PlayerLabel key={player._id}>
-                <Avatar src={player.picture} alt={player.displayName} />
-                <Font.Bold20 text={player.displayName} />
-                <Font.Italic16 element="div" text={roleOf(player.isOwner, player.character)} />
-              </PlayerLabel>
-            ))
+      {isLoading || campaign === undefined ? (
+        <Centred>
+          <Loading.Medium />
+        </Centred>
+      ) : campaign === null ? (
+        <Centred>
+          <Font.Italic16 element="div" text="There is no such campaign, or you are not in it." />
+        </Centred>
+      ) : (
+        <Roster>
+          <Head>Game Master</Head>
+          {campaign.members.filter((member) => member.isOwner).map(cellOf)}
+          <Head>{`Players · ${players.length}`}</Head>
+          {players.map(cellOf)}
+          {campaign.isOwner && players.length === 0 && (
+            <Note element="div" text="Just you so far: send your players the invite link." />
           )}
-        </ScrollArea>
-        {campaign?.inviteToken && (
-          <CardBottom>
-            <InvitePlayers campaignId={campaign._id} inviteToken={campaign.inviteToken} />
-          </CardBottom>
-        )}
-      </Card>
+        </Roster>
+      )}
+      {campaign?.inviteToken && (
+        <Invite campaignId={campaign._id} inviteToken={campaign.inviteToken} />
+      )}
+      <Hero src={treePng} alt="" />
     </Page>
   );
 };

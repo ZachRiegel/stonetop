@@ -24,11 +24,14 @@ const discordFont = css`
 const Page = styled.div`
   ${GROUND}
   display: grid;
-  justify-content: center;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
   align-content: center;
   align-items: center;
-  min-width: 100vw;
+  width: 100%;
   min-height: 100vh;
+  /* the visible height on a phone, whose browser bars come and go */
+  min-height: 100dvh;
   grid-template-rows: 1fr auto;
 `;
 
@@ -40,15 +43,24 @@ const Content = styled.div`
   height: max-content;
 `;
 
+// the page's width (an auto width let the image run to its own 3309px on a phone, with a
+// scrollbar to match, 2026-10-20), cropped to 600px tall at most and to under half the height
+// of a phone on its side, so the title and the button keep their room above it
 const Footer = styled.img`
   display: block;
-  max-height: 600px;
-  min-width: 100vw;
+  max-height: min(600px, 40vh);
+  width: 100%;
   object-position: top;
   object-fit: cover;
   mix-blend-mode: screen;
   opacity: 0.7;
   aspect-ratio: 3309 / 1127;
+`;
+
+// 80px from a tablet up, and down to what a phone's width, or a sideways phone's height,
+// holds
+const Title = styled(Font.Title80)`
+  font-size: clamp(44px, min(15vw, 18vh), 80px);
 `;
 
 const DiscordButton = styled(Button.Primary)`
@@ -80,7 +92,7 @@ const Login = () => (
     <Global styles={discordFont} />
     <Content>
       <h1>
-        <Font.Title80 text="Stonetop" />
+        <Title text="Stonetop" />
       </h1>
       <DiscordButton
         type="submit"

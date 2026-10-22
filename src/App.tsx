@@ -140,6 +140,7 @@ const router = createBrowserRouter([
                     },
                   },
                   { path: "players", element: <Players /> },
+                  { path: "rules", element: null },
                 ],
               },
             ],

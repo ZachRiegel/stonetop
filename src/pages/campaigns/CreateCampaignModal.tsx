@@ -8,6 +8,7 @@ import { api } from "convex/_generated/api";
 import { useMutation } from "convex/react";
 import MakeDialog from "hoc/MakeDialog.tsx";
 import { useCallback, useState } from "react";
+import { useNavigate } from "react-router";
 
 const CardHeader = styled.div`
   padding: 12px 20px;
@@ -24,10 +25,11 @@ const CardFooter = styled.div`
   padding: 16px 20px;
 `;
 
+// a phone's width less the modal's 16px margins, up to the card's own
 const Card = styled.div`
   display: grid;
   grid-template-rows: max-content max-content 1fr;
-  width: 360px;
+  width: min(360px, calc(100vw - 32px));
   border-radius: 16px;
   background: var(--neutral-75);
 
@@ -38,15 +40,19 @@ const Card = styled.div`
 
 const CreateCampaignModal = ({ requestClose }: { isOpen: boolean; requestClose: () => void }) => {
   const createCampaign = useMutation(api.campaigns.create);
+  const navigate = useNavigate();
   const [name, setName] = useState("");
 
+  // a new campaign is entered at once (user, 2026-10-21): the list would only show it to be
+  // clicked, and the overview greets the Game Master with the invite card
   const submit = useCallback(async () => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    await createCampaign({ name: trimmed });
+    const campaignId = await createCampaign({ name: trimmed });
     setName("");
     requestClose();
-  }, [name, createCampaign, requestClose]);
+    navigate(`/campaign/${campaignId}`);
+  }, [name, createCampaign, requestClose, navigate]);
 
   return (
     <Card>

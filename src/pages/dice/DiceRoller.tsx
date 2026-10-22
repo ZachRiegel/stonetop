@@ -5,6 +5,7 @@ import { api } from "convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import useModal from "hooks/useModal.ts";
+import { MEDIA } from "hooks/useResponsiveSize.ts";
 import {
   DIE_SHARE,
   type DieColour,
@@ -20,7 +21,7 @@ import DiceSettings from "pages/dice/DiceSettings.tsx";
 import { clearAfter } from "pages/dice/preferences.ts";
 import { take } from "pages/dice/rollCache.ts";
 import RollLog, { type LogPhase } from "pages/dice/RollLog.tsx";
-import RollMenu, { MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
+import RollMenu, { MARGIN, MOBILE_MARGIN } from "pages/dice/rollMenu/RollMenu.tsx";
 import RollNotification from "pages/dice/RollNotification.tsx";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useParams } from "react-router";
@@ -68,12 +69,17 @@ const Hint = styled(Font.Italic16)`
   place-self: center;
 `;
 
-// in the page's corner, by the menu's own measure
+// in the page's corner, by the menu's own measure: nearer it on a phone, where the menu is
+// smaller
 const Menu = styled(RollMenu)`
   grid-area: 2 / 1;
   justify-self: end;
   align-self: end;
   margin: 0 ${MARGIN}px ${MARGIN}px 0;
+
+  @media ${MEDIA.mobile} {
+    margin: 0 ${MOBILE_MARGIN}px ${MOBILE_MARGIN}px 0;
+  }
 `;
 
 // Every roll in the campaign plays here, whoever threw it: the campaign's next seed is

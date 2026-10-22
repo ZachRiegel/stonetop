@@ -1,6 +1,6 @@
 // The strip across the top of every signed-in page (README.md here).
 import styled from "@emotion/styled";
-import { TITLE_CAPS } from "components/Font.tsx";
+import { EYEBROW, TITLE } from "components/Font.tsx";
 import NavigationIcon from "components/NavigationIcon.tsx";
 import TabRow from "components/TabRow.tsx";
 import standingStonePng from "icons/standingStone.png";
@@ -51,15 +51,17 @@ const Where = styled.div<{ compact: boolean }>`
 `;
 
 const Eyebrow = styled.div<{ compact: boolean }>`
+  ${EYEBROW}
   font-size: ${({ compact }) => (compact ? 11 : 10)}px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--neutral-500);
 `;
 
+// a line box the face's full height: at the stack's 1.1 the clipped box cut 1px off the
+// caps' top and foot
 const Name = styled.div`
-  ${TITLE_CAPS}
+  ${TITLE}
   font-size: 16px;
+  line-height: 1.25;
   letter-spacing: 0.04em;
   color: var(--cream);
   white-space: nowrap;

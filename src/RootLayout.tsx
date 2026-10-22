@@ -124,6 +124,10 @@ const RootLayout = () => {
             /* every page's ground: one flat dark neutral (user, 2026-10-19: no texture), a
                shade under the cards' neutral-75 so they still stand off it */
             background-color: var(--neutral-50);
+            /* a safety net only: an element that sets no face shows DM Sans instead of the
+               browser's serif (Times New Roman on the Players page, 2026-10-21). Text still
+               takes its type from components/Font.tsx (CLAUDE.md), never from this */
+            font-family: "DM Sans", sans-serif;
             /* 4. Increase line-height */
             line-height: 1.5;
             /* 5. Improve text rendering */

@@ -29,7 +29,10 @@ const CampaignNavigationLayout = () => {
             glyph: { src: playbooksPng },
             paper: "purple",
           },
-          { to: `${base}/players`, text: "Players", glyph: { src: treePng }, paper: "orange" },
+          { to: `${base}/players`, text: "Players", glyph: { src: treePng }, paper: "green" },
+          // the rules inside the campaign too (user, 2026-10-21), with the book for a glyph so
+          // the phone row tells it from Character's playbooks
+          { to: `${base}/rules`, text: "Rules", glyph: { Icon: Icon.Book2 }, paper: "orange" },
         ],
       };
     }, [campaignId, name]),

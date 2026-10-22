@@ -26,6 +26,24 @@ const thirtyMinutesInSeconds = 30 * 60
 func(thirtyMinutesInSeconds)
 ```
 
+Every piece of text goes through the typography in `src/components/Font.tsx`: a `Font.X`
+component, or a styled rule that spreads `FontCSS.X`, `TITLE`, `TITLE_CAPS` or `EYEBROW` and then
+adjusts size, weight or colour. Never type `font-family` into a component and never leave an
+element to inherit its face from `body`; that fallback exists only so a miss shows as DM Sans
+instead of the browser's serif, not as a way to set type. If no entry fits, add one to Font.tsx.
+
+Write markup as markup. Do not build arrays of React elements and pick or reorder them by
+index; name each element once and write each arrangement out in JSX. An array of elements is
+only for mapping a set whose members are not known when the code is written.
+
+Let CSS do what CSS can. Before writing JavaScript that shapes how something looks or moves,
+ask whether a rule does it: `::first-letter` or `text-transform` over a string helper,
+`:has()`, `:empty` and attribute selectors over a class toggled in code, transitions,
+animations and `clip-path` over per-frame state, `aspect-ratio`, `clamp()`, container queries
+and `@media` over measuring the window, `scroll-snap` and `overflow` over scroll handlers.
+JavaScript is for what CSS cannot see: data, time, the network, and attributes such as `title`
+and `alt`. When a rule nearly fits, say in one line why it did not.
+
 Memoization is mandatory, not a nicety. A function or object handed to a child, a DOM element
 (event handlers, refs), a context, or an effect's dependencies keeps one identity for the life of
 the component: `useCallback`/`useMemo` with honest dependencies, or define it outside the
@@ -111,3 +129,37 @@ Convex agent skills for common tasks can be installed by running
 `npx convex ai-files install`.
 
 <!-- convex-ai-end -->
+
+Holding pages are static HTML mocks in `src/holding/`. Vite serves them from the project root,
+so when you create or change one, end your final message with its link:
+`http://localhost:5173/src/holding/<name>.html` (start `yarn dev` first if it is not running).
+
+## Checks and verification
+
+The checks every change must pass, in this order; fix what they raise:
+
+```
+yarn typecheck
+yarn lint
+yarn prettier --check src convex vite.config.ts
+yarn test
+yarn build
+```
+
+`yarn format:check` is broken (it points at a prettier outside the project); call prettier
+directly as above. `yarn test` runs the `convex-test` suites in `convex/*.test.ts` and the unit
+tests under `src/` (vitest, `edge-runtime`). Tests are added only for pure, untested behaviour,
+by extending the nearest existing test file; a new test file is for a DOM-free module worth
+pinning (geometry, parsing, scoring), never just to have one.
+
+Anything visible is verified in the browser with the Claude in Chrome tools against the dev
+server at `http://localhost:5173` (check it is already up before starting `yarn dev`). Without
+those tools, say so rather than substitute another browser. Scratch harnesses go in
+`src/holding/` (gitignored) and are deleted when done.
+
+Under `convex/`, audit validators, the indexes queries use, auth and membership checks
+(`convex/lib/access.ts`) and OCC, after reading `convex/_generated/ai/guidelines.md`.
+
+Nothing is committed or deployed by the assistant: the user commits and deploys (Amplify
+Hosting runs `npx convex deploy` from `amplify.yml`). `yarn convex dev --once` is the only
+deployment that may be run, and only when Convex code changed.

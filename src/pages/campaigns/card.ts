@@ -1,5 +1,6 @@
 // What the pages say about a campaign card (convex/campaigns.ts): the caller's part in it,
-// the other people, and the woodcut that stands for it.
+// the other people, and the woodcut and paper that stand for it.
+import type { Paper } from "components/Poster.tsx";
 import type { api } from "convex/_generated/api";
 import type { FunctionReturnType } from "convex/server";
 import landscape from "pages/campaigns/footer.png";
@@ -23,9 +24,14 @@ export const facesOf = (members: CampaignCard["members"]) =>
 // "1 player", "2 players"; `many` for an irregular plural
 export const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-// a campaign has no picture of its own yet, so one of three woodcuts stands for it, chosen by
-// its id so a campaign keeps its picture from page to page
+// a campaign has no picture or colour of its own yet, so one of three woodcuts and one of the
+// four papers stand for it, picked from its id so it keeps them from page to page and from
+// member to member (user, 2026-10-21: random per campaign rather than by its place in the
+// row). The paper reads other bits of the hash than the art, so the two do not go together.
+const hashOf = (id: string) =>
+  [...id].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
 const ARTS = [landscape, stones, gear];
-export const artOf = (campaignId: string) =>
-  ARTS[[...campaignId].reduce((sum, char) => sum + char.charCodeAt(0), 0) % ARTS.length] ??
-  landscape;
+export const artOf = (campaignId: string) => ARTS[hashOf(campaignId) % ARTS.length] ?? landscape;
+const PAPERS_OF_CAMPAIGNS: Paper[] = ["blue", "purple", "green", "orange"];
+export const paperOf = (campaignId: string) =>
+  PAPERS_OF_CAMPAIGNS[(hashOf(campaignId) >>> 8) % PAPERS_OF_CAMPAIGNS.length] ?? "blue";
