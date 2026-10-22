@@ -34,7 +34,8 @@ const Home = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot on mount; re-running on later renders would join/navigate again
   }, []);
 
-  const latest = campaigns?.at(-1);
+  // the most recently active, which the list puts first
+  const latest = campaigns?.[0];
   return (
     <PosterWall hero={stones}>
       <Poster

@@ -52,36 +52,43 @@ const bleed = keyframes`
   }
 `;
 
-// a flat paper with a hard black offset shadow, lifting a touch under the pointer, rimmed by
-// 2px of its own paper: the art and the shade stop at the padding edge, so the rim reads as
-// a light line strongest along the shaded foot (the user's favourite part of the cards,
-// 2026-10-20; do not take it for an idle border). A wall may set its posters' shadow (--lift,
-// --lift-hover) and sizes them through --poster-padding, --poster-radius, --poster-title and
-// --poster-caption.
+// a flat paper with a hard black offset shadow, lifting a touch under the pointer onto a
+// lighter paper (user, 2026-10-22: the paper answers the pointer, in place of the cream glow
+// the campaign cards alone had), rimmed by 2px of its own paper: the art and the shade stop
+// at the padding edge, so the rim reads as a light line strongest along the shaded foot (the
+// user's favourite part of the cards, 2026-10-20; do not take it for an idle border). A wall
+// sizes its posters through --poster-padding, --poster-title and --poster-caption.
 const Sheet = styled(Link, {
   shouldForwardProp: (prop) => prop !== "paper" && prop !== "suggested",
 })<{ paper: Paper; suggested: boolean }>`
   ${({ paper }) => PAPERS[paper]}
+  --paper-lit: oklch(from var(--paper) calc(l + 0.07) c h);
   position: relative;
   display: grid;
   align-content: end;
   overflow: hidden;
   padding: var(--poster-padding, 16px);
   border: 2px solid var(--paper);
-  border-radius: var(--poster-radius, 12px);
+  border-radius: 12px;
   background: var(--paper);
   color: var(--cream);
   text-decoration: none;
   isolation: isolate;
-  box-shadow: var(--lift, 4px 4px 0 var(--neutral-0));
+  box-shadow: 4px 4px 0 var(--neutral-0);
   cursor: pointer;
   transition:
     translate 160ms ease-out,
-    box-shadow 160ms ease-out;
+    box-shadow 160ms ease-out,
+    background-color 160ms ease-out,
+    border-color 160ms ease-out;
 
+  /* a suggested poster's rim keeps its beat under the pointer: its animation holds the
+     border */
   &:hover {
     translate: -2px -2px;
-    box-shadow: var(--lift-hover, 6px 6px 0 var(--neutral-0));
+    box-shadow: 6px 6px 0 var(--neutral-0);
+    border-color: var(--paper-lit);
+    background-color: var(--paper-lit);
   }
   &:focus-visible {
     outline: 3px solid var(--cream);

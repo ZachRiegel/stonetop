@@ -16,7 +16,8 @@ export const seedOf = (campaign: Doc<"campaigns">) =>
 type Draft<M> = M extends unknown ? Omit<M, "sequence"> : never;
 
 // Appends a message to the campaign's feed, numbered after the campaign's latest, and moves
-// the campaign on to it, with any other change to the campaign (`also`) in the same write.
+// the campaign on to it, stamped as active now (campaigns.ts lists by it), with any other
+// change to the campaign (`also`) in the same write.
 // Callers check membership and read the campaign first. Two posts to one campaign at once
 // conflict on the campaign row and one is retried, so sequences never repeat.
 const post = async (
@@ -26,7 +27,7 @@ const post = async (
   also: Partial<WithoutSystemFields<Doc<"campaigns">>> = {},
 ) => {
   const sequence = (campaign.messageSequence ?? 0) + 1;
-  await ctx.db.patch(campaign._id, { ...also, messageSequence: sequence });
+  await ctx.db.patch(campaign._id, { ...also, messageSequence: sequence, activeAt: Date.now() });
   return ctx.db.insert("messages", { ...message, sequence });
 };
 

@@ -42,16 +42,40 @@ The papers are `PAPERS` in `components/Poster.tsx`.
 
 - **Home, Campaigns, Rules, About** at the top. Home (`pages/home/Home.tsx`) is a wall of the
   other three as posters (`components/PosterWall.tsx`), Campaigns the main one. Campaigns
-  (`pages/campaigns/Campaigns.tsx`) is one row of campaign cards on the posters' papers, each
+  (`pages/campaigns/Campaigns.tsx`) is a wall of campaign cards on the posters' papers, each
   campaign's paper and woodcut picked from its id (user, 2026-10-21; a slate paper, colour
-  being kept for the home wall, came first and was lost in the landscape). The cards are 17
-  wide to 28 tall, 340 by 560 at 1280 wide and growing with the screen, 237 by 390 on a phone
-  (the sizes were settled over 2026-10-21: 250 by 500 at every size was too small on a
-  desktop, cards sized from the row too big); they start from the left gutter on a desktop
-  and snap card to card, centred, below that. The landscape is screened faintly over the
-  whole page (a pool of black behind the row, from "Spotlight", one of six drafts in
-  `src/holding/campaignSelector.html`, was tried and dropped), and a cream "+ New campaign"
-  pill sits at the page's bottom right (a New-campaign card was tried and dropped). Rules and
+  being kept for the home wall, came first and was lost in the landscape), the most recently
+  active first (`campaigns.list` sorts by `activeAt`, stamped when a campaign is joined or
+  rolled in, not when its invite is rotated, its creation standing until then; user,
+  2026-10-22; the home wall's poster shows that first one). The wall scrolls down, as many
+  cards across as fit, wrapping into rows ("Wall", draft A of six in
+  `src/holding/campaignScroll.html`, user 2026-10-22; a sideways row, 2026-10-19 to
+  2026-10-22, snapping card to card below a desktop with a mouse's wheel turned sideways by a
+  script, was clunky to scroll, and its drafts are in `src/holding/campaignSelector.html`).
+  The cards are 17 wide to 28 tall around the row's sizes, 340 by 560 at 1280 wide growing
+  with a desktop to 520 by 856, 285 by 470 on a phone (the port sized them as a share of the
+  width and the user found them too big, 2026-10-22), and flex so a row runs edge to edge
+  (user, 2026-10-22; fixed tracks centred with margins came first): as many columns as fit at
+  the floor, 15% under on a desktop, 40% under on a tablet and half on a phone, so a phone
+  holds two across and a tablet three or four, share the width, and a card stops 15% over,
+  keeping left in its column, where a share would pass that (one or two columns). The tracks
+  are an `auto-fill` repeat of `minmax(floor, 1fr)` with the ceiling on the card, since a
+  track with a definite max is counted by that max (five cards sat as four at their largest
+  and a gap); `auto-fill` keeps the empty tracks, so a partial row keeps left at the full
+  rows' size (a cap of four columns and the centring went the same day: the user would
+  rather the screen filled). One row stands centred in the height above the pill's band, its
+  cards shortened to fit rather than clipped; more rows fill the page from the top and
+  scroll. The page sits below the strip like the others (for a day it reached up behind the
+  strip, whose empty ground let the pointer through, so the row's wheel worked from there;
+  the user undid that, 2026-10-22), spaced as the home and overview walls are (user,
+  2026-10-22; 24px under the strip and 32px between the cards came first): 6px under the
+  strip, a desktop's 36px gutters and 16px below one, 18px and 16px between the cards (a tad
+  over the walls' 14px and 12px), and the pill's band at the foot as on the players page.
+  The landscape keeps to a band along the foot, as on the players page (screened faintly
+  over the whole page behind the row; a pool of black behind it, from "Spotlight", was tried
+  and dropped), and a cream "+ New campaign" pill sits at the page's bottom right (a
+  New-campaign card was tried and dropped). The cards lift under the pointer as every poster
+  does; the cream glow around them, the last of "Spotlight", went on 2026-10-22. Rules and
   About have no pages yet.
 - **Overview, Table, Character, Players, Rules** inside a campaign. The overview
   (`pages/campaign/Overview.tsx`) is a staggered wall of all four (user, 2026-10-21, so it
@@ -95,6 +119,7 @@ and `campaignSelector.html`). A poster a wall puts forward as the thing to do (`
 its rim lit in cream with a soft light bleeding in from it (user, 2026-10-21; nine animations
 and four colourings drafted in `src/holding/posterAttention.html` and `posterRims.html`: a
 drop-shadow glow breathing outside the sheet, a spark running round the rim, the palette's
-opposites on every paper); a wall's usual lead is never lit for being the lead. A campaign has no picture or colour
-of its own yet, so `pages/campaigns/card.ts` picks one of three woodcuts and one of the four
-papers by its id.
+opposites on every paper); a wall's usual lead is never lit for being the lead. Under the
+pointer every poster lifts a touch onto a lighter paper (user, 2026-10-22). A campaign has no
+picture or colour of its own yet, so `pages/campaigns/card.ts` picks one of three woodcuts
+and one of the four papers by its id.

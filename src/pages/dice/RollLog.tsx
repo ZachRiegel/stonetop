@@ -93,7 +93,6 @@ const Log = styled.div<{ count: number }>`
   height: calc(var(--shown) * var(--h) + var(--room) + ${CELL - FOOT}px);
   padding-bottom: calc(${CELL - FOOT}px + var(--gap));
   overflow-y: auto;
-  scrollbar-width: none;
   overscroll-behavior: contain;
   /* fit() sizes the box after a first layout at the content's height; anchoring would then
      hold the top card in view, where that layout had it, instead of the foot */
@@ -101,10 +100,6 @@ const Log = styled.div<{ count: number }>`
   scroll-snap-type: y mandatory;
   display: flex;
   flex-direction: column-reverse;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 `;
 
 // the cards, the oldest at the top with the pile's room above it; nothing shrinks, the

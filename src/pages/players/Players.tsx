@@ -71,12 +71,7 @@ const Roster = styled.div`
   row-gap: 8px;
   height: 100%;
   overflow-y: auto;
-  scrollbar-width: none;
   padding: 2px 16px 84px;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
 
   @media ${MEDIA.desktop} {
     width: 50%;

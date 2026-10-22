@@ -72,6 +72,7 @@ describe("messages.roll", () => {
       },
     ]);
     expect(await seedOf(t, campaignId)).not.toBe(seed);
+    expect((await t.run((ctx) => ctx.db.get(campaignId)))?.activeAt).toEqual(expect.any(Number));
   });
 
   test("accepts the derived seed of a campaign from before the dice roller", async () => {

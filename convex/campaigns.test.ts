@@ -80,11 +80,30 @@ describe("campaigns.list", () => {
     const roles = (cards: { _id: Id<"campaigns">; name: string; isOwner: boolean }[]) =>
       cards.map(({ _id, name, isOwner }) => ({ _id, name, isOwner }));
     expect(roles(await asPlayer.query(api.campaigns.list))).toEqual([
-      { _id: campaignId, name: "Stonetop", isOwner: false },
       { _id: ownCampaignId, name: "Marshedge", isOwner: true },
+      { _id: campaignId, name: "Stonetop", isOwner: false },
     ]);
     expect(roles(await asGm.query(api.campaigns.list))).toEqual([
       { _id: campaignId, name: "Stonetop", isOwner: true },
+    ]);
+  });
+
+  test("lists the most recently active campaign first, one never stamped by its creation", async () => {
+    const { t, asPlayer, campaignId } = await setup();
+    const laterId = await asPlayer.mutation(api.campaigns.create, { name: "Marshedge" });
+    const olderId = await asPlayer.mutation(api.campaigns.create, { name: "Barrowmere" });
+    const unstampedId = await asPlayer.mutation(api.campaigns.create, { name: "Thornwall" });
+    await t.run(async (ctx) => {
+      const created = (await ctx.db.get(unstampedId))?._creationTime ?? 0;
+      await ctx.db.patch(campaignId, { activeAt: created + 3000 });
+      await ctx.db.patch(laterId, { activeAt: created + 2000 });
+      await ctx.db.patch(olderId, { activeAt: created - 1000 });
+    });
+    expect((await asPlayer.query(api.campaigns.list)).map(({ _id }) => _id)).toEqual([
+      campaignId,
+      laterId,
+      unstampedId,
+      olderId,
     ]);
   });
 
@@ -101,7 +120,7 @@ describe("campaigns.list", () => {
       playerId,
       "Elsewhere",
     );
-    const [card] = await asGm.query(api.campaigns.list);
+    const card = (await asGm.query(api.campaigns.list)).find(({ _id }) => _id === campaignId);
     expect(
       card?.members.map(({ _id, displayName, isOwner, character }) => ({
         _id,
@@ -128,8 +147,8 @@ describe("campaigns.list", () => {
         myCharacter: myCharacter?._id ?? null,
       })),
     ).toEqual([
-      { _id: campaignId, myCharacter: gmCharacterId },
       { _id: otherCampaignId, myCharacter: null },
+      { _id: campaignId, myCharacter: gmCharacterId },
     ]);
     expect(await asPlayer.query(api.campaigns.list)).toMatchObject([
       { _id: campaignId, myCharacter: { _id: playerCharacterId, name: "Vahid" } },
@@ -224,7 +243,9 @@ describe("campaigns.get", () => {
 describe("campaigns.join", () => {
   test("adds the caller as a player and returns the campaign", async () => {
     const { t, asOutsider, campaignId, gmId, playerId, outsiderId, inviteToken } = await setup();
+    await t.run((ctx) => ctx.db.patch(campaignId, { activeAt: 1 }));
     expect(await asOutsider.mutation(api.campaigns.join, { inviteToken })).toBe(campaignId);
+    expect((await t.run((ctx) => ctx.db.get(campaignId)))?.activeAt).toBeGreaterThan(1);
     expect(await membersOf(t, campaignId)).toMatchObject([
       { userId: gmId, isOwner: true },
       { userId: playerId, isOwner: false },

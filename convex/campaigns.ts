@@ -69,7 +69,12 @@ const cardOf = async (ctx: QueryCtx, membership: Doc<"campaignMembers">) => {
   };
 };
 
-// Every campaign the caller is in, in the order they joined them
+// when the campaign was last joined or rolled in (join below and post in messages.ts stamp
+// it), or made, which needs no stamp of its own
+const activeAtOf = (campaign: Pick<Doc<"campaigns">, "activeAt" | "_creationTime">) =>
+  campaign.activeAt ?? campaign._creationTime;
+
+// Every campaign the caller is in, the most recently active first (user, 2026-10-22)
 export const list = query({
   args: {},
   returns: v.array(card),
@@ -80,7 +85,9 @@ export const list = query({
       .withIndex("by_userId", (q) => q.eq("userId", user._id))
       .collect();
     const cards = await Promise.all(memberships.map((membership) => cardOf(ctx, membership)));
-    return cards.filter((campaign) => campaign !== null);
+    return cards
+      .filter((campaign) => campaign !== null)
+      .sort((a, b) => activeAtOf(b) - activeAtOf(a) || b._creationTime - a._creationTime);
   },
 });
 
@@ -126,12 +133,14 @@ export const join = mutation({
       .withIndex("by_inviteToken", (q) => q.eq("inviteToken", inviteToken))
       .unique();
     if (!campaign) throw new Error("This invite link is invalid or has expired");
-    if (!(await membershipOf(ctx, campaign._id, user._id)))
+    if (!(await membershipOf(ctx, campaign._id, user._id))) {
       await ctx.db.insert("campaignMembers", {
         campaignId: campaign._id,
         userId: user._id,
         isOwner: false,
       });
+      await ctx.db.patch(campaign._id, { activeAt: Date.now() });
+    }
     return campaign._id;
   },
 });

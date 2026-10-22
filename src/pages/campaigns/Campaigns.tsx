@@ -15,6 +15,9 @@ import CreateCampaignDialog from "pages/campaigns/CreateCampaignModal.tsx";
 import landscape from "pages/campaigns/footer.png";
 import { useSearchParams } from "react-router";
 
+// the page below the strip, as the other pages sit (user, 2026-10-22; from 2026-10-21 to
+// then it spanned the layout's rows behind the strip to take the wheel from its empty
+// ground, for the sideways row)
 const Page = styled.div`
   ${GROUND}
   position: relative;
@@ -23,23 +26,39 @@ const Page = styled.div`
   overflow: hidden;
 `;
 
-// the landscape screened over the whole page behind the cards and faded in under the strip:
-// its own image rather than the wall's hero, whose box cropped the wide woodcut to its right
-// third (user, 2026-10-19), and dimmed to weather rather than wallpaper (user, 2026-10-21: at
-// 30% the cards were lost in it; a pool of black behind the row, from the chosen draft E of
-// six in src/holding/campaignSelector.html, was tried and dropped as a shadow mid-page).
-// Blends onto the page's GROUND.
+// the one scroller on the page, with its bar (the app shows every scrollbar, user
+// 2026-10-22; RootLayout.tsx styles them), and the size the wall measures its cards against
+const Scroller = styled.div`
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  container-type: size;
+  overflow-y: auto;
+`;
+
+// the landscape along the foot of the page behind the wall, screened onto the ground and
+// faded in from its top, so the cards sit on plain ground and the grass shows at the end
+// (its own image: the wall's hero cropped the wide woodcut to its right third, 2026-10-19;
+// screened over the whole page behind the sideways row, 2026-10-21 to 2026-10-22)
 const Hero = styled.img`
   position: absolute;
-  inset: 0;
   z-index: 0;
+  left: 0;
+  right: 0;
+  bottom: -40px;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 2301 / 844;
   object-fit: cover;
+  object-position: top;
   mix-blend-mode: screen;
-  opacity: 0.16;
+  opacity: 0.38;
   pointer-events: none;
-  mask-image: linear-gradient(transparent, #000 20%);
+  mask-image: linear-gradient(transparent, #000 45%);
+
+  @media ${MEDIA.mobile} {
+    bottom: 0;
+    opacity: 0.3;
+  }
 `;
 
 const Notice = styled(Font.Italic16)`
@@ -51,106 +70,66 @@ const Notice = styled(Font.Italic16)`
   text-align: center;
 `;
 
-// One row of campaigns on the posters' papers, each by its id. The cards are 17 wide to 28
-// tall: 340 by 560 at 1280 wide, growing with a desktop to 520 by 856 (user, 2026-10-21: 250
-// by 500 at every size was too small on a desktop, 2 to 4 sized from the row too big, and
-// 340 by 560 in the draft's 1280 frame is the proportion kept), 285 by 470 on a phone (user,
-// 2026-10-21: 237 by 390, 30% under, was a bit small), shorter only where the row less a
-// margin is and never under 200px (a phone on its side), narrower only where a phone is. The
-// row is a size container, so the cards are measured against it. On a desktop the cards start
-// from the page's left gutter (user, 2026-10-19; centred came first) and scroll sideways once
-// they outgrow it. On a phone the row snaps card to card against a 16px left gutter (user,
-// 2026-10-21: centred, which came first that day, sat the card too far from the left); between
-// the two the row snaps each card centred. 24px between cards (12px let the edges run together;
-// the draft's 40px on a desktop was too loose).
-const Row = styled.div`
-  position: relative;
-  z-index: 1;
-  container-type: size;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  height: 100%;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  /* the cards keep above the New campaign pill's band at the foot */
-  padding-bottom: 64px;
-  --card-height: max(200px, min(100cqh - 48px, clamp(560px, 32.1vw, 856px)));
+// The campaigns as a wall of posters, the most recently active first (campaigns.list),
+// wrapping into rows: one row stands centred in the height above the New campaign pill's
+// band, more fill the page from the top and scroll (navigation/README.md has the drafts and
+// the history). The cards are 17 wide to 28 tall around the sizes the sideways row settled
+// on: 340 by 560 at 1280 wide, growing with a desktop to 520 by 856, 285 by 470 on a phone,
+// shorter where the scroller less its paddings is, never under 200px (a phone on its side).
+// A row runs edge to edge (user, 2026-10-22): as many columns as fit at the floor, 15% under
+// on a desktop, 40% under on a tablet and half on a phone (two across), share the width, and
+// a card stops at 15% over, keeping left in its column, where a share would pass it (one or
+// two columns). auto-fill keeps the empty tracks, so a partial row keeps left at the full
+// rows' size; the ceiling is on the card, not the track, since a track with a definite max
+// is counted by that max (css-grid 7.2.3.2: five cards sat as four at their largest and a
+// gap). The rows take their height from the cards' ratio, so the cards are not stretched.
+// Spaced as the home and overview walls are: 6px under the strip, 36px gutters on a desktop
+// and 16px below one, 18px and 16px between the cards (a tad over the walls' 14px and 12px,
+// user), the pill's band at the foot as on the players page. A cap of four columns, the
+// centring and a cream glow on the cards (the last of "Spotlight") all went on 2026-10-22.
+const Wall = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min), 1fr));
+  align-content: safe center;
+  align-items: start;
+  gap: var(--gap);
+  min-height: 100%;
+  padding: 6px 16px 84px;
+  --gap: 16px;
+  /* the tallest a card can stand: the scroller less the 90px of top and bottom padding */
+  --card-ceiling: max(200px, 100cqh - 90px);
+  --card-height: min(560px, var(--card-ceiling));
+  --card-min: calc(var(--card-height) * 0.6 * 17 / 28);
+  --card-max: calc(min(var(--card-height) * 1.15, var(--card-ceiling)) * 17 / 28);
 
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  /* rounder than the walls' posters, and lit: the hard black shadow under a small cream
-     light (user, 2026-10-21: the draft's 56px was too much). The height holds where a phone
-     caps the width, so a narrow phone's card runs a little taller than its ratio. */
   & > * {
-    flex: 0 0 auto;
-    height: var(--card-height);
+    max-width: var(--card-max);
     aspect-ratio: 17 / 28;
-    max-width: calc(100cqw - 48px);
-    scroll-snap-align: center;
-    --lift: 0 0 28px rgb(from var(--cream) r g b / 0.13), 6px 6px 0 var(--neutral-0);
-    --lift-hover: 0 0 40px rgb(from var(--cream) r g b / 0.2), 8px 8px 0 var(--neutral-0);
-    --poster-padding: 20px;
-    --poster-title: 28px;
-    --poster-caption: 15px;
-    --poster-radius: 12px;
-  }
-  /* the margins that centre the first and last cards in the row at rest, down to the gap
-     where a phone caps the width; on the cards rather than the row, whose trailing padding
-     is not reliably scrollable */
-  & > :first-child {
-    margin-left: max(24px, calc(50cqw - var(--card-height) * 17 / 56));
-  }
-  & > :last-child {
-    margin-right: max(24px, calc(50cqw - var(--card-height) * 17 / 56));
+    --poster-padding: 16px;
+    --poster-title: 20px;
+    --poster-caption: 13px;
   }
 
-  /* a phone: the smaller cards, each snapped to the left gutter, centred in the whole row's
-     height since the pill at the foot has room under them, with the words sized as the
-     250-wide cards' were */
+  /* a phone: two cards across, the words sized to them */
   @media ${MEDIA.mobile} {
-    padding-bottom: 0;
-    scroll-padding-left: 16px;
-    --card-height: max(200px, min(100cqh - 48px, 470px));
+    --card-height: min(470px, var(--card-ceiling));
+    --card-min: calc(var(--card-height) * 0.5 * 17 / 28);
 
     & > * {
-      scroll-snap-align: start;
-      max-width: calc(100cqw - 32px);
-      --poster-padding: 16px;
-      --poster-title: 20px;
-      --poster-caption: 13px;
-    }
-    & > :first-child {
-      margin-left: 16px;
-    }
-    & > :last-child {
-      margin-right: 16px;
+      --poster-padding: 12px;
+      --poster-title: 16px;
+      --poster-caption: 12px;
     }
   }
-  /* a phone on its side: the cards at their 200px floor above the pill's band, the words
-     sized to fit */
-  @media (height < 500px) {
-    padding-bottom: 64px;
-
-    & > * {
-      --poster-padding: 14px;
-      --poster-title: 18px;
-      --poster-caption: 13px;
-    }
-  }
-
+  /* the words grow with the card: 28px, 15px and 20px at 1280, and their caps where the
+     card reaches its own */
   @media ${MEDIA.desktop} {
-    padding-inline: 36px;
-    scroll-snap-type: none;
+    padding: 6px 36px 110px;
+    --gap: 18px;
+    --card-ceiling: max(200px, 100cqh - 116px);
+    --card-height: min(clamp(560px, 32.1vw, 856px), var(--card-ceiling));
+    --card-min: calc(var(--card-height) * 0.85 * 17 / 28);
 
-    & > :first-child,
-    & > :last-child {
-      margin: 0;
-    }
-    /* the words grow with the card: 28px, 15px and 20px at 1280, and their caps where the
-       card reaches its own */
     & > * {
       --poster-padding: clamp(20px, 1.6vw, 30px);
       --poster-title: clamp(28px, 2.2vw, 42px);
@@ -212,22 +191,24 @@ Ask your Game Master to invite you or create one.`}
           />
         </Centred>
       ) : (
-        <Row>
-          {campaigns.map((campaign) => {
-            const others = othersOf(campaign, me);
-            return (
-              <Poster
-                key={campaign._id}
-                to={`/campaign/${campaign._id}`}
-                paper={paperOf(campaign._id)}
-                art={artOf(campaign._id)}
-                title={campaign.name}
-                caption={`${roleOf(campaign.isOwner, campaign.myCharacter)} · ${count(others.length, campaign.isOwner ? "player" : "other")}`}
-                people={facesOf(others)}
-              />
-            );
-          })}
-        </Row>
+        <Scroller>
+          <Wall>
+            {campaigns.map((campaign) => {
+              const others = othersOf(campaign, me);
+              return (
+                <Poster
+                  key={campaign._id}
+                  to={`/campaign/${campaign._id}`}
+                  paper={paperOf(campaign._id)}
+                  art={artOf(campaign._id)}
+                  title={campaign.name}
+                  caption={`${roleOf(campaign.isOwner, campaign.myCharacter)} · ${count(others.length, campaign.isOwner ? "player" : "other")}`}
+                  people={facesOf(others)}
+                />
+              );
+            })}
+          </Wall>
+        </Scroller>
       )}
       <NewButton onClick={createModal.open}>
         <Icon.Plus />

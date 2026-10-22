@@ -37,12 +37,16 @@ export default defineSchema({
   // it to be accepted, and each accepted roll replaces it. Campaigns from
   // before the dice roller have none; see seedOf in messages.ts. messageSequence
   // is the sequence of the campaign's latest message (none before the first):
-  // post in messages.ts numbers the next one after it.
+  // post in messages.ts numbers the next one after it. activeAt is when the
+  // campaign last changed hands or saw play, joined or rolled in; until then its
+  // creation stands (activeAtOf in campaigns.ts), and the Campaigns page lists the
+  // latest first.
   campaigns: defineTable({
     name: v.string(),
     inviteToken: v.string(),
     rollSeed: v.optional(v.number()),
     messageSequence: v.optional(v.number()),
+    activeAt: v.optional(v.number()),
   }).index("by_inviteToken", ["inviteToken"]),
   // Membership is one row per (campaign, user), the Game Master included with
   // isOwner set, so "who is in this campaign" and "who runs it" are answered
