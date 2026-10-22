@@ -35,8 +35,8 @@ Grey caps in the title face; the open one a rounded pill with a soft shadow (a t
 stamp with a hard shadow, and a random tilt, came before). At the top level the pill takes the
 paper of that section's poster on the home wall (Campaigns blue, Rules orange, About purple),
 and inside a campaign the paper of its poster on the overview (Table blue, Character purple,
-Players green, Rules orange); Home and Overview stay cream. The papers are `PAPERS` in
-`components/Poster.tsx`.
+Players green, Rules orange), its name in cream; Home and Overview stay cream with black type.
+The papers are `PAPERS` in `components/Poster.tsx`.
 
 ## The levels
 
@@ -54,8 +54,13 @@ Players green, Rules orange); Home and Overview stay cream. The papers are `PAPE
   pill sits at the page's bottom right (a New-campaign card was tried and dropped). Rules and
   About have no pages yet.
 - **Overview, Table, Character, Players, Rules** inside a campaign. The overview
-  (`pages/campaign/Overview.tsx`) is a wall of three of them, the table the main one unless
-  the campaign needs something first. The
+  (`pages/campaign/Overview.tsx`) is a staggered wall of all four (user, 2026-10-21, so it
+  reads apart from the home bento: "H · Staggered", one of eight drafts in
+  `src/holding/posterLayout.html`, rows, banners, spines, a shelf, a tinted mirror, tiles and
+  tall columns the others): two columns whose seams do not meet, the table tall at the top
+  left over the character, the players short at the top right over the rules, the players
+  given the short box so as not to lead. The boxes are fixed; what the campaign needs next is
+  lit, not moved (three posters reordered by need came before). The
   table has no page yet (user: empty, not a copy of the dice page). The dice page stands in
   for the character sheet, and lost its title: the pill says where you are. Players
   (`pages/players/Players.tsx`, user 2026-10-21) is a roster on the ground, no paper and no
@@ -71,6 +76,13 @@ Players green, Rules orange); Home and Overview stay cream. The papers are `PAPE
   the page before, from the sidebar's day. Rules (user, 2026-10-21) has no page yet, like
   the top-level one; its glyph is the book, Character having the playbooks.
 
+## The walls: `components/PosterWall.tsx`
+
+The ground with a woodcut screened onto it and the posters over it, in two arrangements: the
+home's bento of three, the main one tall at the left of two on a desktop and wide above two
+on a phone; and the overview's staggered four, in the same left half of a desktop and down the
+whole phone. Both set their posters' sizes through the `--poster-*` custom properties.
+
 ## The posters: `components/Poster.tsx`
 
 A screenprint: a flat paper in one of the palette's hues (relative colour syntax, so the hue
@@ -79,10 +91,10 @@ along the foot with a capital first letter, a caption, and the people on it. The
 is a purple from the magenta's hue and the fourth a green for the players (user, 2026-10-20; a
 gold from the cream's hue was drafted in `src/holding/pageMocks.html` and dropped, and a slate
 for the campaign cards was lost in the landscape however it was rimmed, `campaignCards.html`
-and `campaignSelector.html`). A poster a wall promotes past its usual order (`suggested`) has
+and `campaignSelector.html`). A poster a wall puts forward as the thing to do (`suggested`) has
 its rim lit in cream with a soft light bleeding in from it (user, 2026-10-21; nine animations
 and four colourings drafted in `src/holding/posterAttention.html` and `posterRims.html`: a
 drop-shadow glow breathing outside the sheet, a spark running round the rim, the palette's
-opposites on every paper); the usual lead is never lit. A campaign has no picture or colour
+opposites on every paper); a wall's usual lead is never lit for being the lead. A campaign has no picture or colour
 of its own yet, so `pages/campaigns/card.ts` picks one of three woodcuts and one of the four
 papers by its id.

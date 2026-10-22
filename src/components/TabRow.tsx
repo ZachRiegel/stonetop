@@ -24,10 +24,12 @@ const Row = styled.nav<{ compact: boolean }>`
   gap: ${({ compact }) => (compact ? 6 : 10)}px;
 `;
 
-// grey caps, the open one a rounded pill in its paper (a tilted stamp came before; the user
-// asked for the pill, 2026-10-19). Compact, each is a glyph cell and only the open one spreads
-// into its pill with its name, so the row fits a phone. The router marks the open one with
-// aria-current (NavLink, matched exactly: Home and Overview are prefixes of their siblings).
+// grey caps, the open one a rounded pill in its paper with cream type (black on the cream
+// pill of a tab with no paper; orange took black ink until the user asked for cream,
+// 2026-10-21). A tilted stamp came before; the user asked for the pill, 2026-10-19. Compact,
+// each is a glyph cell and only the open one spreads into its pill with its name, so the row
+// fits a phone. The router marks the open one with aria-current (NavLink, matched exactly:
+// Home and Overview are prefixes of their siblings).
 const Pill = styled(NavLink, {
   shouldForwardProp: (prop) => prop !== "paper" && prop !== "compact",
 })<{ paper?: Paper; compact: boolean }>`
@@ -57,7 +59,7 @@ const Pill = styled(NavLink, {
   }
   &[aria-current="page"] {
     background: var(--paper, var(--cream));
-    color: var(--stamp-ink, var(--neutral-0));
+    color: ${({ paper }) => (paper ? "var(--cream)" : "var(--neutral-0)")};
     box-shadow: var(--shadow-small);
     ${({ compact }) => compact && "padding: 0 16px 0 12px;"}
   }

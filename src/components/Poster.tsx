@@ -7,7 +7,6 @@ import { Link } from "react-router";
 
 // The poster papers: each a palette hue (RootLayout.tsx) brought down to paper with relative
 // colour syntax, so the hue stays the palette's own, and its ink the same hue darker still.
-// --stamp-ink is the type colour a tab's pill takes on that paper (components/TabRow.tsx).
 // Purple is the magenta's hue; the campaign cards take these papers too, each by its id
 // (navigation/README.md has the papers drafted and dropped).
 export type Paper = "blue" | "orange" | "purple" | "green";
@@ -15,22 +14,18 @@ export const PAPERS: Record<Paper, SerializedStyles> = {
   blue: css`
     --paper: oklch(from var(--cyan-500) 0.46 0.08 h);
     --ink: oklch(from var(--cyan-500) 0.24 0.05 h);
-    --stamp-ink: var(--cream);
   `,
   orange: css`
     --paper: oklch(from var(--orange-500) 0.6 0.15 h);
     --ink: oklch(from var(--orange-500) 0.32 0.1 h);
-    --stamp-ink: var(--neutral-0);
   `,
   purple: css`
     --paper: oklch(from var(--magenta-500) 0.46 0.11 h);
     --ink: oklch(from var(--magenta-500) 0.25 0.08 h);
-    --stamp-ink: var(--cream);
   `,
   green: css`
     --paper: oklch(from var(--green-500) 0.46 0.1 h);
     --ink: oklch(from var(--green-500) 0.25 0.07 h);
-    --stamp-ink: var(--cream);
   `,
 };
 
@@ -194,10 +189,10 @@ const Face = styled.img`
   object-fit: cover;
 `;
 
-// A poster on one of the papers: its title in caps along the foot over a caption, an eyebrow
-// above when given, and the people on it, if any, as a stack of faces. `suggested` marks a
-// poster a wall promotes beyond its default order as the next thing to do (user, 2026-10-21:
-// a wall's usual lead is not lit): its rim lights up in cream.
+// A poster on one of the papers: its title along the foot over a caption, an eyebrow above
+// when given, and the people on it, if any, as a stack of faces. `suggested` marks the poster
+// a wall puts forward as the next thing to do (the overview's players or character poster):
+// its rim lights up in cream. A wall's lead is never lit for being the lead (user, 2026-10-21).
 const Poster = ({
   to,
   paper,
