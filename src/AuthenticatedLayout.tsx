@@ -7,12 +7,12 @@ import Strip from "navigation/Strip.tsx";
 import { useState } from "react";
 import { Outlet } from "react-router";
 
-// the strip across the top, then the page: one row for the strip on a desktop, two (the
-// header and the tab row) on a phone or tablet
-const Layout = styled.div<{ compact: boolean }>`
+// the strip across the top, then the page. The page's scroller names its scroll timeline
+// `--page`; scoped here, the strip's foot (navigation/Strip.tsx) can follow it.
+const Layout = styled.div`
   display: grid;
-  grid-template-rows: ${({ compact }) =>
-    compact ? "max-content max-content minmax(0, 1fr)" : "max-content minmax(0, 1fr)"};
+  timeline-scope: --page;
+  grid-template-rows: max-content minmax(0, 1fr);
   height: 100vh;
   /* the viewport less a phone browser's own bars, as they come and go */
   height: 100dvh;
@@ -32,7 +32,7 @@ const AuthenticatedLayout = () => {
 
   return (
     <NavigationContext value={setNavigation}>
-      <Layout compact={compact}>
+      <Layout>
         <Strip navigation={navigation} user={currentUser ?? undefined} compact={compact} />
         <Main>
           <Outlet />

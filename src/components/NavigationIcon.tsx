@@ -1,13 +1,14 @@
 import { css } from "@emotion/react";
 import type { FC } from "react";
 
-// Either a white-on-black PNG painted through a luminance mask, or an inline SVG
-// icon that keeps its own colours (the mask would paint it grey).
+// Either a white-on-transparent PNG, or an inline SVG icon that keeps its own colours (the
+// mask would paint it grey).
 export type Glyph =
   { src: string; Icon?: never } | { Icon: FC<{ className?: string }>; src?: never };
 
-// `size` is the box; a PNG is painted in the text's colour, an SVG icon draws itself at
-// --icon-size, which the text around it may set
+// `size` is the box; a PNG is the box itself, painted in the text's colour through its alpha
+// (WebKit ignores mask-mode: luminance on a raster image, bug 282530: a white-on-black glyph
+// was a solid square on an iPhone, 2026-10-22); an SVG icon draws itself at --icon-size
 const NavigationIcon = ({
   src,
   Icon,
@@ -21,25 +22,19 @@ const NavigationIcon = ({
       height: ${size}px;
       display: grid;
       place-items: center;
-      flex: none;
+      ${
+        src &&
+        `
+        background-color: currentColor;
+        mask-image: url("${src}");
+        mask-position: center;
+        mask-repeat: no-repeat;
+        mask-size: contain;
+      `
+      }
     `}
   >
-    {Icon ? (
-      <Icon />
-    ) : (
-      <div
-        css={css`
-          width: ${size}px;
-          height: ${size}px;
-          background-color: currentColor;
-          mask-image: url("${src}");
-          mask-mode: luminance;
-          mask-position: center;
-          mask-repeat: no-repeat;
-          mask-size: contain;
-        `}
-      />
-    )}
+    {Icon && <Icon />}
   </div>
 );
 

@@ -27,17 +27,19 @@ const Page = styled.div`
 `;
 
 // the one scroller on the page, with its bar (the app shows every scrollbar, user
-// 2026-10-22; RootLayout.tsx styles them), and the size the wall measures its cards against
+// 2026-10-22; RootLayout.tsx styles them), and the size the wall measures its cards against.
+// Its scroll is the strip's `--page` timeline (navigation/Strip.tsx draws its foot by it).
 const Scroller = styled.div`
   position: relative;
   z-index: 1;
   height: 100%;
   container-type: size;
   overflow-y: auto;
+  scroll-timeline: --page block;
 `;
 
-// the landscape along the foot of the page behind the wall, screened onto the ground and
-// faded in from its top, so the cards sit on plain ground and the grass shows at the end
+// the landscape along the foot of the page behind the wall, faint on the ground and faded in
+// from its top, so the cards sit on plain ground and the grass shows at the end
 // (its own image: the wall's hero cropped the wide woodcut to its right third, 2026-10-19;
 // screened over the whole page behind the sideways row, 2026-10-21 to 2026-10-22)
 const Hero = styled.img`
@@ -50,7 +52,6 @@ const Hero = styled.img`
   aspect-ratio: 2301 / 844;
   object-fit: cover;
   object-position: top;
-  mix-blend-mode: screen;
   opacity: 0.38;
   pointer-events: none;
   mask-image: linear-gradient(transparent, #000 45%);

@@ -7,10 +7,9 @@ under `AuthenticatedLayout` (`CampaignNavigationLayout.tsx`, `LoggedInUserNaviga
 describes its navigation as data, a `Navigation` (`NavigationContext.tsx`): the campaign it is
 in, if any, by name, and its sections as tabs (`components/TabRow.tsx`'s `Tab`: a path, a
 label, a glyph and the paper of its pill; the router marks the open one, each tab being a
-`NavLink` matched exactly). The layout hands that
-to `hooks/useNavigation.ts`, which keeps it in `AuthenticatedLayout`'s state while the layout
-is mounted, and `AuthenticatedLayout` draws `Strip.tsx` from it, full size from 1024px and
-compact below (`hooks/useResponsiveSize.ts`).
+`NavLink` matched exactly). The layout hands that to `hooks/useNavigation.ts`, which keeps it
+in `AuthenticatedLayout`'s state while the layout is mounted, and `AuthenticatedLayout` draws
+`Strip.tsx` from it, full size from 1024px and compact below (`hooks/useResponsiveSize.ts`).
 
 Section paths are absolute. The links are rendered by `AuthenticatedLayout`, above the
 layout that describes them, so a relative path would resolve against the wrong route.
@@ -28,6 +27,20 @@ Compact (a phone or a tablet), the header is the stone, the app's or the campaig
 the account's picture alone, and the tabs are a second row of glyph cells in which only the
 open tab spreads into its pill with its name, so the row fits a phone (text and wrapping rows
 were tried first).
+
+The strip's foot is a rule, 1px in the character page's faint grey, with a shadow falling
+from it onto the page, both drawn in over the first 40px a page scrolls and gone as it comes
+back (user, 2026-10-22: "B · Hairline" of six treatments in `src/holding/headerScroll.html`;
+the page fading out under the strip, a dark glass, the strip shrinking, folding to a chip of
+the stone, the open pill and the picture, and a standing black band were the others; the
+draft's solid ground was not kept). The rule is the border of the strip's shell, the header
+and the phone's tab row together, and the shadow is the shell's own, so the phone gets one
+line under its tab row and not its header (the draft had both), and the shadow has the
+strip's whole body to cast from (a 1px bar carrying a box-shadow came first, user: a blur
+smears so thin a box to nearly nothing whatever its colour). It is a CSS scroll-driven
+animation: a page's scroller names its scroll `--page` (`pages/campaigns/Campaigns.tsx`,
+`pages/players/Players.tsx`), `AuthenticatedLayout` scopes the name, and the shell's border
+colour and shadow animate on it; a page without a scroller leaves them unseen.
 
 ## The tabs: `components/TabRow.tsx`
 
@@ -102,7 +115,7 @@ The papers are `PAPERS` in `components/Poster.tsx`.
 
 ## The walls: `components/PosterWall.tsx`
 
-The ground with a woodcut screened onto it and the posters over it, in two arrangements: the
+The ground with a woodcut laid faintly on it and the posters over it, in two arrangements: the
 home's bento of three, the main one tall at the left of two on a desktop and wide above two
 on a phone; and the overview's staggered four, in the same left half of a desktop and down the
 whole phone. Both set their posters' sizes through the `--poster-*` custom properties.
@@ -123,3 +136,10 @@ opposites on every paper); a wall's usual lead is never lit for being the lead. 
 pointer every poster lifts a touch onto a lighter paper (user, 2026-10-22). A campaign has no
 picture or colour of its own yet, so `pages/campaigns/card.ts` picks one of three woodcuts
 and one of the four papers by its id.
+
+Every woodcut and glyph PNG is white on transparent and is masked by its alpha, never its
+luminance: WebKit ignores `mask-mode: luminance` on a raster image (WebKit bug 282530, open in
+Safari 18.4), so the white-on-black originals were slabs of ink on an iPhone (2026-10-22). The
+1-bit files were converted losslessly, the header rewritten to a two-entry palette with a
+transparency chunk and the pixels untouched. Nothing blends: white at an opacity reads the same
+with or without the screen blend the black originals needed.

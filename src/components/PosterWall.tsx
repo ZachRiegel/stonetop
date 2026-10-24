@@ -7,11 +7,9 @@ import styled from "@emotion/styled";
 import { MEDIA } from "hooks/useResponsiveSize.ts";
 import type { ReactNode } from "react";
 
-// The ground the hero blends onto (GROUND): a page that draws a Hero must paint this colour
-// itself and isolate, so the screen blend meets an opaque ground inside its own group. Blended
-// or masked against the page's backdrop instead, Chrome here drew the woodcut's black as a
-// black rectangle fading in at the hero's edge (seen 2026-10-19; luminance masks and an SVG
-// filter did the same).
+// A page's ground (GROUND): the colour, and a stacking context of its own, so the page's
+// layers (its hero at 0, its content over it, its pills on top) stay beneath the strip's
+// lifted shell (navigation/Strip.tsx) whatever their z-index.
 export const GROUND = css`
   background-color: var(--neutral-50);
   isolation: isolate;
@@ -25,14 +23,14 @@ const Wall = styled.div`
   overflow: hidden;
 `;
 
-// a woodcut (white on black) screened onto the ground and faded into it: the right of the
-// page on a desktop, behind the posters' top on a phone
+// a woodcut (white on transparent) laid faintly on the ground and faded into it: the right of
+// the page on a desktop, behind the posters' top on a phone. No blend: the art has no black to
+// drop since 2026-10-22, and white at an opacity is the same with or without a screen.
 const Hero = styled.img`
   position: absolute;
   z-index: 0;
   pointer-events: none;
   object-fit: cover;
-  mix-blend-mode: screen;
   top: -40px;
   left: -80px;
   width: 640px;

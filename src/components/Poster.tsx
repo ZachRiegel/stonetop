@@ -123,8 +123,9 @@ const Sheet = styled(Link, {
     `}
 `;
 
-// the woodcut (a white-on-black PNG) screenprinted into the paper in its ink: the whole
-// sheet for a picture, a mark set at the top right for an icon
+// the woodcut (a white-on-transparent PNG) screenprinted into the paper in its ink through its
+// alpha, the whole sheet for a picture, a mark at the top right for an icon. Never a luminance
+// mask: WebKit ignores mask-mode on a raster image (bug 282530), a slab of ink on an iPhone
 const Art = styled.div<{ fit: "cover" | "icon"; art: string }>`
   position: absolute;
   inset: 0;
@@ -132,7 +133,6 @@ const Art = styled.div<{ fit: "cover" | "icon"; art: string }>`
   background-color: var(--ink);
   opacity: 0.9;
   mask-image: url("${({ art }) => art}");
-  mask-mode: luminance;
   mask-repeat: no-repeat;
   mask-size: ${({ fit }) => (fit === "icon" ? "62%" : "cover")};
   mask-position: ${({ fit }) => (fit === "icon" ? "90% 28%" : "center")};
@@ -215,7 +215,7 @@ const Poster = ({
   to: string;
   paper: Paper;
   suggested?: boolean;
-  // a white-on-black PNG
+  // a white-on-transparent PNG
   art: string;
   fit?: "cover" | "icon";
   eyebrow?: string;

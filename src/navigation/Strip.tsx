@@ -1,4 +1,5 @@
 // The strip across the top of every signed-in page (README.md here).
+import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import { EYEBROW, TITLE } from "components/Font.tsx";
 import NavigationIcon from "components/NavigationIcon.tsx";
@@ -8,6 +9,31 @@ import AccountMenu from "navigation/AccountMenu.tsx";
 import type { Navigation } from "navigation/NavigationContext.tsx";
 import type { ComponentProps } from "react";
 import { Link } from "react-router";
+
+// The strip's foot: a rule and a shadow drawn in over the first 40px a page scrolls, on the
+// `--page` timeline the page's scroller names (README.md here has the drafts). The rule is a
+// border there at rest, clear, so nothing moves; the shadow is the whole shell's, since a blur
+// smears a 1px bar to nothing. Lifted over the page, which is painted after it.
+const settle = keyframes`
+  to {
+    border-color: var(--neutral-100);
+    box-shadow: 0 4px 10px rgb(0 0 0 / 0.7);
+  }
+`;
+
+// the header and a phone's tab row together, so the foot is one edge
+const Shell = styled.div`
+  position: relative;
+  z-index: 1;
+  border-bottom: 1px solid transparent;
+  box-shadow: 0 4px 10px transparent;
+
+  @supports (animation-timeline: scroll()) {
+    animation: ${settle} linear both;
+    animation-timeline: --page;
+    animation-range: 0 40px;
+  }
+`;
 
 // the head of the strip: the mark, where you are, the tabs (a desktop) and the account at
 // the end. Flex rather than grid: what it holds varies, and the account's auto margin sends
@@ -94,7 +120,7 @@ const Strip = ({
 }) => {
   const campaign = navigation?.campaign;
   return (
-    <>
+    <Shell>
       <Header compact={compact}>
         <Mark to="/" aria-label="Home" title="Home">
           <NavigationIcon src={standingStonePng} size={compact ? 32 : 36} />
@@ -119,7 +145,7 @@ const Strip = ({
         )}
       </Header>
       {compact && <Row tabs={navigation?.sections ?? []} compact />}
-    </>
+    </Shell>
   );
 };
 

@@ -25,8 +25,8 @@ const Page = styled.div`
   overflow: hidden;
 `;
 
-// the tree, the page's own mark (the Players tab's glyph and poster), screened large at the
-// right of a desktop and low at the right of a phone, under the rows. Blends onto GROUND.
+// the tree, the page's own mark (the Players tab's glyph and poster), faint and large at the
+// right of a desktop and low at the right of a phone, under the rows
 const Hero = styled.img`
   position: absolute;
   z-index: 0;
@@ -35,7 +35,6 @@ const Hero = styled.img`
   height: 400px;
   object-fit: contain;
   object-position: right bottom;
-  mix-blend-mode: screen;
   opacity: 0.18;
   pointer-events: none;
   mask-image: linear-gradient(#000 60%, transparent);
@@ -62,7 +61,8 @@ const Centred = styled.div`
 `;
 
 // the roster from the left gutter, scrolling down once it outgrows the page, its foot clear
-// of the invite pills' band; half the page on a desktop
+// of the invite pills' band; half the page on a desktop. Its scroll is the strip's `--page`
+// timeline (navigation/Strip.tsx draws its foot by it).
 const Roster = styled.div`
   position: relative;
   z-index: 1;
@@ -71,6 +71,7 @@ const Roster = styled.div`
   row-gap: 8px;
   height: 100%;
   overflow-y: auto;
+  scroll-timeline: --page block;
   padding: 2px 16px 84px;
 
   @media ${MEDIA.desktop} {

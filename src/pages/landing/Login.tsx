@@ -20,7 +20,7 @@ const discordFont = css`
   }
 `;
 
-// paints its own ground and isolates, so the footer's screen blend meets it (see GROUND)
+// the page on the app's ground (GROUND), the sign-in centred over the standing stones
 const Page = styled.div`
   ${GROUND}
   display: grid;
@@ -52,7 +52,6 @@ const Footer = styled.img`
   width: 100%;
   object-position: top;
   object-fit: cover;
-  mix-blend-mode: screen;
   opacity: 0.7;
   aspect-ratio: 3309 / 1127;
 `;
